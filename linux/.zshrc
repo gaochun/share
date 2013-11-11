@@ -637,18 +637,18 @@ PROMPT='%F{blue}%M%F{green}%/$(git_prompt_string)
 # ln -s /workspace/project/gyagp/share/linux/.zshrc ~/.zshrc
 
 # Chromium
-if [ ! -L /workspace/project/chromium/chromium.py ]; then
+if [ -d /workspace/project/chromium -a ! -L /workspace/project/chromium/chromium.py ]; then
    ln -s /workspace/project/gyagp/share/common/chromium.py /workspace/project/chromium/chromium.py
 fi
 export CHROME_DEVEL_SANDBOX=/usr/local/sbin/chrome-devel-sandbox
 
 # Android
-if [ ! -L /workspace/project/android/android.py ]; then
+if [ -d /workspace/project/android -a ! -L /workspace/project/android/android.py ]; then
    ln -s /workspace/project/gyagp/share/common/android.py /workspace/project/android/android.py
 fi
 
 # Skia
-if [ ! -L /workspace/project/skia/skia.py ]; then
+if [ -d /workspace/project/skia -a ! -L /workspace/project/skia/skia.py ]; then
    ln -s /workspace/project/gyagp/share/common/skia.py /workspace/project/skia/skia.py
 fi
 export ANDROID_SDK_ROOT=/workspace/topic/skia/adt-bundle-linux-x86_64/sdk

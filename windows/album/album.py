@@ -8,7 +8,7 @@ import sys
 import shutil
 
 script_dir = sys.path[0]
-check_dirs = [u'12月']
+check_dirs = [u'15月']
 
 origin_dir = u'e:/storage/origin/'
 storage_dir = 'e:/storage/'

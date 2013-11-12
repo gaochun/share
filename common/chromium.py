@@ -150,10 +150,11 @@ def build(args):
     cmd += ' -C out/' + args.build.capitalize()
 
     if args.platform == 'android':
-        os.chdir(src_dir + '/out/' + args.build.capitalize)
+        os.chdir(src_dir + '/out/' + args.build.capitalize())
         if os.path.isfile('content_shell'):
             execute('rm -f content_shell_file')
             execute('mv content_shell content_shell_file')
+        os.chdir(src_dir)
 
     execute(cmd)
 

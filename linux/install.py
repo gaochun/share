@@ -212,6 +212,18 @@ if __name__ == "__main__":
         installPackage("python-zsi");
 
 
+    # Java
+    # Download and copy Oracle JDK to /usr/lib/jvm
+    # Change in .zshrc
+    # Run following commands
+    #sudo update-alternatives --install /usr/bin/javac javac /usr/lib/jvm/jdk1.7.0_45/bin/javac 50000
+    #sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/jdk1.7.0_45/bin/java 50000
+    #sudo update-alternatives --install /usr/bin/javaws javaws /usr/lib/jvm/jdk1.7.0_45/bin/javaws 50000
+    #sudo update-alternatives --install /usr/bin/javap javap /usr/lib/jvm/jdk1.7.0_45/bin/javap 50000
+    #sudo update-alternatives --config javac
+    #sudo update-alternatives --config java
+    #sudo update-alternatives --config javaws
+    #sudo update-alternatives --config javap
 
 
 

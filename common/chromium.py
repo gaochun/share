@@ -173,7 +173,7 @@ def run(args):
         return()
 
     if args.platform == 'desktop':
-        option = ' --disable-setuid-sandbox --disable-hang-monitor --allow-file-access-from-files --user-data-dir=' + root_dir + '/user-data'
+        option = ' --flag-switches-begin --enable-experimental-web-platform-features --flag-switches-end --disable-setuid-sandbox --disable-hang-monitor --allow-file-access-from-files --user-data-dir=' + root_dir + '/user-data'
 
         if args.run_GPU:
             option += ' ' + '--enable-accelerated-2d-canvas --ignore-gpu-blacklist'

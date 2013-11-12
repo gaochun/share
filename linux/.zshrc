@@ -663,4 +663,8 @@ if [ ! -L ~/.config/sublime-text-2/Packages/User/Preferences.sublime-settings ];
    ln -s /workspace/project/gyagp/share/common/sublime/Preferences.sublime-settings ~/.config/sublime-text-2/Packages/User/Preferences.sublime-settings
 fi
 
+# Java
+export JAVA_HOME=/usr/lib/jvm/jdk1.7.0_45
+export PATH=$PATH:$JAVA_HOME/bin
+
 cd /workspace/project

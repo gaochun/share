@@ -146,10 +146,15 @@ if __name__ == "__main__":
     if status == 0:
         commands.getstatusoutput("sudo apt-file update");
 
-    # Install tsocks
+
     if profile == "PROXY":
+    # Install tsocks
         installPackage("tsocks");
         overwriteFile("tsocks.conf", "/etc", 1);
+    # Install privoxy
+        installPackage('privoxy')
+        copyFile('privoxy_config', '/etc/privoxy', 1)
+        os.system('sudo mv -f /etc/privoxy/privoxy_config /etc/privoxy/config')
 
     # Install Chrome, which needs to use tsocks
     (status, output) = commands.getstatusoutput("sudo apt-key list | grep 7FAC5991");
@@ -197,6 +202,25 @@ if __name__ == "__main__":
     installPackage("cmake");
     installPackage("hibernate");
     installPackage("libspeechd-dev"); # required by Chromium build
+    installPackage('libgdk-pixbuf2.0-dev')
+    installPackage('libgtk2.0-dev')
+    installPackage('libdrm-dev')
+    installPackage('libgnome-keyring-dev')
+    installPackage('libgconf2-dev')
+    installPackage('libudev-dev')
+    installPackage('libpci-dev')
+    installPackage('linux-tools')
+    installPackage('binutils-dev')
+    installPackage('libelf-dev')
+    installPackage('gperf')
+    installPackage('gcc-4.7-multilib')
+    installPackage('g++-4.7-multilib')
+    installPackage('bison')
+    #installPackage('')
+
+
+    installPackage('python-boto')
+    copyFile('.boto', '~/', 1)
 
     copyFile(".bashrc", homeDir, 0);
     copyFile(".gdbinit", homeDir, 0);
@@ -225,7 +249,8 @@ if __name__ == "__main__":
     #sudo update-alternatives --config javaws
     #sudo update-alternatives --config javap
 
-
+    # Chromium build
+    #sudo ln -s /usr/include/x86_64-linux-gnu/asm /usr/include/asm
 
 
 

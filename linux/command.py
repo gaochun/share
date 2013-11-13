@@ -77,10 +77,12 @@ commands = [
     ('uncompress', 'tar zxvf file.tgz', 'Uncompress tgz file', TYPE_NULL),
     ('uncompress', 'bunzip2 file.bz2', 'Uncompress bz2 file', TYPE_NULL),
     ('hardware', 'cat /proc/cpuinfo |grep -i -E "vmx|svm" |wc -l', 'virtualization support, >0 if support, vmx for Intel CPU, and svm for AMD CPU', TYPE_RUNNABLE),
-    ('hardware', 'cat /proc/cpuinfo | grep flags | grep "lm"|wc -l', 'CPU 64bit support, >0 if support, lm means long mode', TYPE_RUNNABLE),
+    ('hardware', 'cat /proc/cpuinfo | grep flags | grep "lm"|wc -l', 'CPU 64bit support, >0 if support, lm means long mode. This command doesnt apply for CTP+', TYPE_RUNNABLE),
+    ('hardware', 'cat /proc/cpuinfo |grep address', '36 bits physical, 48 bits virtual for 64-bit cpu', TYPE_RUNNABLE),
     ('hardware', 'getconf LONG_BIT', '32 or 64 bit system', TYPE_RUNNABLE),
     ('hardware', 'uname -a', '32 or 64 bit system, x86_64 for 64 bit system', TYPE_RUNNABLE),
     ('hardware', 'file /sbin/init', '32 or 64 bit system, ELF (32|64)-bit LSB executable', TYPE_RUNNABLE),
+    ('hardware', 'file /system/xbin/init', '32 or 64 bit system', TYPE_RUNNABLE),
     ('hardware', 'lspci |grep VGA', 'Info of display card', TYPE_RUNNABLE),
     ('tool', 'alacarte', 'menu setting', TYPE_NULL),
 	('tool', 'killall Xvnc4 && vncserver :1 -geometry 1920x1080', 'Start vnc server', TYPE_NULL),
@@ -95,6 +97,9 @@ commands = [
     ('misc', 'gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=all.pdf -dBATCH *.pdf', 'merge pdf', TYPE_RUNNABLE),
     ('perf', 'ps -e -o “%C : %p : %z : %a”|sort -k5 -nr', 'list processes sorted by memory usage', TYPE_NULL),
     ('perf', 'ps -e -o “%C : %p : %z : %a”|sort -nr', 'list processes sorted by CPU usage', TYPE_NULL),
+    ('android', 'adb shell am start -a android.intent.action.MAIN -n com.android.chrome/.Main -d http://baidu.com', 'open web page with Chrome for Android', TYPE_NULL),
+    ('python', 'pip install -U selenium', 'update python package', TYPE_NULL),
+    ('python', 'su, and tsocks pip install selenium', 'use proxy and need sudo. sudo tsocks and tsocks sudo dont work', TYPE_NULL),
     ('', '', '', TYPE_NULL),
 ]
 

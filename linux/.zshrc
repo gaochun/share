@@ -664,7 +664,33 @@ if [ ! -L ~/.config/sublime-text-2/Packages/User/Preferences.sublime-settings ];
 fi
 
 # Java
-export JAVA_HOME=/usr/lib/jvm/jdk1.7.0_45
+hostname |grep -E "ubuntu-ygu5-02" >/dev/null
+if [ $? -eq 0 ] ; then
+    export JAVA_HOME=/usr/lib/jvm/jdk1.6.0_45
+else
+    export JAVA_HOME=/usr/lib/jvm/jdk1.7.0_45
+fi
+echo "JAVA_HOME is "$JAVA_HOME
+
 export PATH=$PATH:$JAVA_HOME/bin
+
+complete () {
+        emulate -L zsh
+        local args void cmd print remove
+        args=("$@")
+        zparseopts -D -a void o: A: G: W: C: F: P: S: X: a b c d e f g j k u v p=print r=remove
+        if [[ -n $print ]]
+        then
+                printf 'complete %2$s %1$s\n' "${(@kv)_comps[(R)_bash*]#* }"
+        elif [[ -n $remove ]]
+        then
+                for cmd
+                do
+                        unset "_comps[$cmd]"
+                done
+        else
+                compdef _bash_complete\ ${(j. .)${(q)args[1,-1-$#]}} "$@"
+        fi
+}
 
 cd /workspace/project

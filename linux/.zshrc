@@ -346,7 +346,7 @@ if [ $? -eq 1 ] ; then
 else
     profile="PROXY"
 fi
-echo "profile is "$profile
+# echo "profile is "$profile
 
 
 
@@ -663,17 +663,6 @@ if [ ! -L ~/.config/sublime-text-2/Packages/User/Preferences.sublime-settings ];
    ln -s /workspace/project/gyagp/share/common/sublime/Preferences.sublime-settings ~/.config/sublime-text-2/Packages/User/Preferences.sublime-settings
 fi
 
-# Java
-hostname |grep -E "ubuntu-ygu5-02" >/dev/null
-if [ $? -eq 0 ] ; then
-    export JAVA_HOME=/usr/lib/jvm/jdk1.6.0_45
-else
-    export JAVA_HOME=/usr/lib/jvm/jdk1.7.0_45
-fi
-echo "JAVA_HOME is "$JAVA_HOME
-
-export PATH=$PATH:$JAVA_HOME/bin
-
 complete () {
         emulate -L zsh
         local args void cmd print remove
@@ -693,4 +682,19 @@ complete () {
         fi
 }
 
-cd /workspace/project
+# machine specific configuration
+hostname |grep -E "ubuntu-ygu5-02" >/dev/null
+if [ $? -eq 0 ] ; then
+    export JAVA_HOME=/usr/lib/jvm/jdk1.6.0_45
+    cd /workspace/project/android-ia && source /workspace/project/android-ia/build/envsetup.sh >/dev/null && lunch kvm_initrd_64bit-eng >/dev/null
+    cd /workspace/project/android-ia
+else
+    export JAVA_HOME=/usr/lib/jvm/jdk1.7.0_45
+    cd /workspace/project
+fi
+
+export PATH=$PATH:$JAVA_HOME/bin
+
+
+
+

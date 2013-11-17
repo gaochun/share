@@ -1,0 +1,1 @@
+cd /D d:/project/gyagp/share && git reset --hard && git pull

@@ -74,6 +74,7 @@ examples:
 
   python %(prog)s -s android-4.2.2_r1.1 -b -f all
   python %(prog)s -s android-4.3_r1 -l userdebug
+  python %(prog)s -s android-4.4_r1.1
   python %(prog)s -f all
 
   python %(prog)s -s android-4.3_r1 -b -f all

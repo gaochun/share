@@ -381,7 +381,7 @@ if [ $profile == "PROXY" ] ; then
     export socks_proxy=proxy.jf.intel.com:1080
 fi
 
-export PATH=$PATH:/workspace/project/depot_tools:/home/gyagp/Komodo-Edit-8/bin
+export PATH=$PATH:/workspace/project/depot_tools
 
 # ccache related
 export USE_CCACHE=1
@@ -629,6 +629,13 @@ compdef _git glp=git-log
 
 ########## End of git support ##########
 
+# Parameters: project, script
+function symbolic_link() {
+  if [ -d /workspace/project/$1 -a ! -L /workspace/project/$1/$2 ]; then
+     ln -s /workspace/project/gyagp/share/common/$2 /workspace/project/$1/$2
+  fi
+}
+
 setopt prompt_subst
 PROMPT='%F{blue}%M%F{green}%/$(git_prompt_string)
 %F{cyan}%n %F{yellow}>>>$FINISH'
@@ -636,21 +643,18 @@ PROMPT='%F{blue}%M%F{green}%/$(git_prompt_string)
 
 # ln -s /workspace/project/gyagp/share/linux/.zshrc ~/.zshrc
 
-# Chromium
-if [ -d /workspace/project/chromium -a ! -L /workspace/project/chromium/chromium.py ]; then
-   ln -s /workspace/project/gyagp/share/common/chromium.py /workspace/project/chromium/chromium.py
-fi
+# chromium-desktop
+symbolic_link chromium-desktop chromium.py
 export CHROME_DEVEL_SANDBOX=/usr/local/sbin/chrome-devel-sandbox
 
+# chromium-android
+symbolic_link chromium-android chromium.py
+
 # Android
-if [ -d /workspace/project/android -a ! -L /workspace/project/android/android.py ]; then
-   ln -s /workspace/project/gyagp/share/common/android.py /workspace/project/android/android.py
-fi
+symbolic_link android android.py
 
 # Skia
-if [ -d /workspace/project/skia -a ! -L /workspace/project/skia/skia.py ]; then
-   ln -s /workspace/project/gyagp/share/common/skia.py /workspace/project/skia/skia.py
-fi
+symbolic_link skia skia.py
 export ANDROID_SDK_ROOT=/workspace/topic/skia/adt-bundle-linux-x86_64/sdk
 
 # sublime

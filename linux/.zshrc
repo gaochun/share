@@ -654,6 +654,9 @@ symbolic_link chromium-android chromium.py
 # Android
 symbolic_link android android.py
 
+# Android-ia
+symbolic_link android-ia chromium64.py
+
 # Skia
 symbolic_link skia skia.py
 export ANDROID_SDK_ROOT=/workspace/topic/skia/adt-bundle-linux-x86_64/sdk

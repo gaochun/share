@@ -21,6 +21,9 @@ patches = [
 
     # Patches by our own
     'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/29/2329/1 && git checkout FETCH_HEAD',
+    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/41/2441/1 && git checkout FETCH_HEAD',
+    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/95/2395/1 && git checkout FETCH_HEAD',
+    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/99/2399/1 && git checkout FETCH_HEAD',
 ]
 
 def info(msg):

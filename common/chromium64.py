@@ -114,7 +114,7 @@ def mk64():
     if not args.mk64:
         return
 
-    command = 'export CHROME_ANDROID_BUILD_WEBVIEW=1 && . build/android/envsetup.sh --target-arch=x86_64 && android_gyp -Dwerror='
+    command = 'bash -c "export CHROME_ANDROID_BUILD_WEBVIEW=1 && . build/android/envsetup.sh --target-arch=x86_64 && android_gyp -Dwerror="'
     execute(command)
 
     # Remove all the linux-x86_64 files

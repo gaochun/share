@@ -7,7 +7,7 @@ import platform
 import re
 import sys
 
-root_dir = '/workspace/project/android-ia'
+root_dir = ''
 webview_dir = ''
 args = ''
 projects = []
@@ -21,6 +21,9 @@ patches = [
 
     # Patches by our own
     'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/29/2329/1 && git checkout FETCH_HEAD',
+    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/41/2441/1 && git checkout FETCH_HEAD',
+    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/95/2395/1 && git checkout FETCH_HEAD',
+    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/99/2399/1 && git checkout FETCH_HEAD',
 ]
 
 def info(msg):
@@ -73,14 +76,19 @@ examples:
     parser.add_argument('--mk64', dest='mk64', help='generate mk for x86_64', action='store_true')
     parser.add_argument('-b', '--build', dest='build', help='build', action='store_true')
     parser.add_argument('-c', '--build-clean', dest='build_clean', help='clean build', action='store_true')
+    parser.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
     args = parser.parse_args()
 
 def setup():
-    global webview_dir, projects
+    global root_dir, webview_dir, projects
+
+    if not args.root_dir:
+        root_dir = os.path.abspath(os.getcwd())
+    else:
+        root_dir = args.root_dir
 
     webview_dir = root_dir + '/external/chromium_org'
     os.chdir(webview_dir)
-
 
     r = os.popen('find -name ".git"')
     lines = r.read().split('\n')

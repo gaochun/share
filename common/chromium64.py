@@ -73,6 +73,7 @@ examples:
     parser.add_argument('--mk64', dest='mk64', help='generate mk for x86_64', action='store_true')
     parser.add_argument('-b', '--build', dest='build', help='build', action='store_true')
     parser.add_argument('-c', '--build-clean', dest='build_clean', help='clean build', action='store_true')
+    parser.add_argument('--build-onejob', dest='build_onejob', help='build with one job, and stop once failure happens', action='store_true')
     parser.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
     args = parser.parse_args()
 
@@ -178,7 +179,8 @@ def build():
     else:
         command += 'mmm ./'
 
-    command += ' -j -k'
+    if not args.build_onejob:
+        command += ' -j -k'
     execute(command)
 
 if __name__ == '__main__':

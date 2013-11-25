@@ -67,7 +67,6 @@ examples:
 
   python %(prog)s
 
-
 ''')
 
     parser.add_argument('--patch', dest='patch', help='apply patch from Gerrit', action='store_true')
@@ -116,7 +115,7 @@ def mk64():
         return
 
     command = 'export CHROME_ANDROID_BUILD_WEBVIEW=1 && . build/android/envsetup.sh --target-arch=x86_64 && android_gyp -Dwerror='
-    #execute(command)
+    execute(command)
 
     # Remove all the linux-x86_64 files
     r = os.popen('find -name "*linux-x86_64.mk"')
@@ -161,13 +160,12 @@ def mk64():
         if not os.path.exists(x64_file):
             print 'x64 version does not exist: ' + x86_file
 
-    info('number of x86 mk: ' + os.popen('find -name "*linux-x86.mk" |wc -l').read())
-    info('number of x64 mk: ' + os.popen('find -name "*linux-x86_64.mk" |wc -l').read())
+    info('Number of x86 mk: ' + os.popen('find -name "*linux-x86.mk" |wc -l').read()[:-1])
+    info('Number of x64 mk: ' + os.popen('find -name "*linux-x86_64.mk" |wc -l').read()[:-1])
 
 def check_status():
     for project in projects:
         execute('git status ' + project)
-
 
 def build():
     if not args.build:
@@ -180,7 +178,7 @@ def build():
     else:
         command += 'mmm ./'
 
-    command += ' -j16 -k'
+    command += ' -j -k'
     execute(command)
 
 if __name__ == '__main__':

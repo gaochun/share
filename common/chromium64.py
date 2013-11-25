@@ -20,10 +20,8 @@ patches = [
     #git fetch ssh://aia-review.intel.com/platform/frameworks/native refs/changes/50/1950/1 && git cherry-pick FETCH_HEAD # libbinder
 
     # Patches by our own
-    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/29/2329/1 && git checkout FETCH_HEAD',
-    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/41/2441/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/95/2395/1 && git checkout FETCH_HEAD',
-    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/99/2399/1 && git checkout FETCH_HEAD',
+    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/41/2441/1 && git checkout FETCH_HEAD',
 ]
 
 def info(msg):
@@ -175,7 +173,7 @@ def build():
     if not args.build:
         return
 
-    command = '. /workspace/project/android-ia/build/envsetup.sh && lunch kvm_initrd_64bit-eng && '
+    command = '. ' + root_dir + '/build/envsetup.sh && lunch kvm_initrd_64bit-eng && '
 
     if args.build_clean:
         command += 'mma'

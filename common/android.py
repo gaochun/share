@@ -1,6 +1,9 @@
 #! N:\Python27\python.exe
 # -*- coding: utf-8 -*-
 
+# Before build, download proprietary drivers from https://developers.google.com/android/nexus/drivers,
+# and put them into related directory under /workspace/topic/android/backup/vendor.
+
 
 import re
 import os
@@ -11,8 +14,14 @@ import sys
 import datetime
 
 root_dir = '/workspace/project/android/'
-backup_dir = '/workspace/topic/android/image/'
-
+backup_dir = '/workspace/topic/android/backup/'
+backup_driver_dir = backup_dir + 'vendor/'
+backup_image_dir = backup_dir + 'image/'
+args = ''
+device = ''
+device_code_name = ''
+variant = ''
+version = ''
 
 def get_datetime():
     now = datetime.datetime.now()
@@ -33,70 +42,96 @@ def execute(command):
         error('Failed to execute')
         quit()
 
-def flash(args):
-    if not args.flash:
-        return()
+def bashify(command):
+    return 'bash -c "' + command + '"'
 
-    if args.flash == 'all':
-        execute('bash -c ". build/envsetup.sh && lunch full_' + args.device + '-' + args.level + ' && fastboot -w flashall"')
+################################################################################
 
-def build(args):
-    if not args.build:
-        return()
+def handle_option():
+    global args
 
-    # Check proprietary binaries. Different version needs different binaries.
-    if not os.path.exists('vendor'):
-        error('Please copy the proprietary binaries')
-        quit()
-
-    start = datetime.datetime.now()
-    execute('bash -c ". build/envsetup.sh && lunch full_' + args.device + '-' + args.level + ' && make -j12"')
-    elapsed = (datetime.datetime.now() - start)
-    info('Time elapsed to build: ' + str(elapsed.seconds) + 's')
-
-    # Backup
-    dest_dir = backup_dir + get_datetime() + '-' + args.device + '-' + args.level + '/'
-    os.mkdir(dest_dir)
-    execute('cp ' + root_dir + 'out/target/product/' + args.device + '/*.img ' + dest_dir)
-
-def sync(args):
-    if not args.sync:
-        return()
-
-    execute('repo init -u https://android.googlesource.com/platform/manifest -b ' + args.sync)
-    execute('repo sync')
-
-if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = 'Script to sync, build Android',
                                      formatter_class = argparse.RawTextHelpFormatter,
                                      epilog = '''
 examples:
 
-  python %(prog)s -s android-4.2.2_r1.1 -b -f all
-  python %(prog)s -s android-4.3_r1 -l userdebug
-  python %(prog)s -s android-4.4_r1.1
+  python %(prog)s -s android-4.4_r1.2
   python %(prog)s -f all
 
   python %(prog)s -s android-4.3_r1 -b -f all
 
 ''')
 
-    parser.add_argument('-l', '--level', dest='level', help='level', choices=['user', 'userdebug', 'eng'], default='userdebug')
-    parser.add_argument('-d', '--device', dest='device', help='device', choices=['mako'], default='mako')
-    parser.add_argument('-b', '--build', dest='build', help='build', action='store_true')
     parser.add_argument('-s', '--sync', dest='sync', help='tag to sync')
+    parser.add_argument('-b', '--build', dest='build', help='build', action='store_true')
     parser.add_argument('-f', '--flash', dest='flash', help='type to flash', choices=['all'])
+
+    parser.add_argument('-d', '--device', dest='device', help='device', choices=['nexus4', 'nexus5'], default='nexus5')
+    parser.add_argument('-v', '--version', dest='version', help='version', choices=['4.3', '4.4'], default='4.4')
+    parser.add_argument('--variant', dest='variant', help='variant', choices=['user', 'userdebug', 'eng'], default='userdebug')
 
     args = parser.parse_args()
 
     if len(sys.argv) <= 1:
         parser.print_help()
 
-    if args.build != '':
-        build_type = args.build
+def setup():
+    global device, device_code_name, variant, version
 
+    device = args.device
+    if device == 'nexus4':
+        device_code_name = 'mako'
+    elif device == 'nexus5':
+        device_code_name = 'hammerhead'
+    else:
+        error('The device is not supported!')
+        exit(1)
+
+    variant = args.variant
+    version = args.version
     os.chdir(root_dir)
-    sync(args)
-    build(args)
-    flash(args)
+
+def sync():
+    if not args.sync:
+        return()
+
+    execute('repo init -u https://android.googlesource.com/platform/manifest -b ' + args.sync)
+    execute('repo sync')
+
+def build():
+    if not args.build:
+        return()
+
+    # Check proprietary binaries.
+    backup_specific_driver_dir = backup_driver_dir + device + '/' + version + '/vendor'
+    print backup_specific_driver_dir
+    if not os.path.exists(backup_specific_driver_dir):
+        error('Proprietary binaries dont exist')
+        quit()
+    execute('rm -rf vendor')
+    execute('cp -rf ' + backup_specific_driver_dir + ' ./')
+
+    start = datetime.datetime.now()
+    execute(bashify('. build/envsetup.sh && lunch full_' + device_code_name + '-' + variant + ' && make -j16'))
+    elapsed = (datetime.datetime.now() - start)
+    info('Time elapsed to build: ' + str(elapsed.seconds) + 's')
+
+    # Backup
+    dest_dir = backup_image_dir + get_datetime() + '-' + device + '-' + variant + '/'
+    os.mkdir(dest_dir)
+    execute('cp ' + root_dir + 'out/target/product/' + device_code_name + '/*.img ' + dest_dir)
+
+def flash():
+    if not args.flash:
+        return()
+
+    if args.flash == 'all':
+        execute('bash -c ". build/envsetup.sh && lunch full_' + device_code_name + '-' + variant + ' && fastboot -w flashall"')
+
+if __name__ == "__main__":
+    handle_option()
+    setup()
+    sync()
+    build()
+    flash()
 

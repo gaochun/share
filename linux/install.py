@@ -236,37 +236,6 @@ if __name__ == "__main__":
         installPackage("openconnect");
         installPackage("python-zsi");
 
-
-    # JDK
-    # 1.7
-    # Download and copy Oracle JDK to /usr/lib/jvm
-    # Change in .zshrc
-    # Run following commands
-    #sudo update-alternatives --install /usr/bin/javac javac /usr/lib/jvm/jdk1.7.0_45/bin/javac 50000
-    #sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/jdk1.7.0_45/bin/java 50000
-    #sudo update-alternatives --install /usr/bin/javaws javaws /usr/lib/jvm/jdk1.7.0_45/bin/javaws 50000
-    #sudo update-alternatives --install /usr/bin/javap javap /usr/lib/jvm/jdk1.7.0_45/bin/javap 50000
-    #sudo update-alternatives --config javac
-    #sudo update-alternatives --config java
-    #sudo update-alternatives --config javaws
-    #sudo update-alternatives --config javap
-
-    # 1.6
-    #cd /usr/lib/jvm && sudo /bin/sh ~/Downloads/jdk-6u45-linux-x64.bin -noregister
-
-    #sudo update-alternatives --install /usr/bin/javac javac /usr/lib/jvm/jdk1.6.0_45/bin/javac 50000
-    #sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/jdk1.6.0_45/bin/java 50000
-    #sudo update-alternatives --install /usr/bin/javaws javaws /usr/lib/jvm/jdk1.6.0_45/bin/javaws 50000
-    #sudo update-alternatives --install /usr/bin/javap javap /usr/lib/jvm/jdk1.6.0_45/bin/javap 50000
-    #sudo update-alternatives --install /usr/bin/jar jar /usr/lib/jvm/jdk1.6.0_45/bin/jar 50000
-    #sudo update-alternatives --install /usr/bin/jarsigner jarsigner /usr/lib/jvm/jdk1.6.0_45/bin/jarsigner 50000
-    #sudo update-alternatives --config javac
-    #sudo update-alternatives --config java
-    #sudo update-alternatives --config javaws
-    #sudo update-alternatives --config javap
-    #sudo update-alternatives --config jar
-    #sudo update-alternatives --config jarsigner
-
     # Chromium build
     #sudo ln -s /usr/include/x86_64-linux-gnu/asm /usr/include/asm
 

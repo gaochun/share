@@ -15,6 +15,7 @@ host_os = platform.system()
 args = ''
 target_os = ''
 target = ''
+target_arch = ''
 
 def is_system(name):
     if host_os == name:
@@ -109,10 +110,9 @@ examples:
   python %(prog)s -u runhooks
 
   build:
-  python %(prog)s -b release --target=chrome
-  python %(prog)s -b release -c -v
-  python %(prog)s -b release --target-os android --target=webview
-  python %(prog)s -b release --target-os linux --target chrome
+  python %(prog)s -b -c -v
+  python %(prog)s -b --target webview // out/Release/lib/libstandalonelibwebviewchromium.so->Release/android_webview_apk/libs/x86/libstandalonelibwebviewchromium.so
+  python %(prog)s -b --target chrome
 
   run:
   python %(prog)s -r release
@@ -148,7 +148,7 @@ examples:
 
     # Other options
     #dir: <arch>-<target-os>/out/<type>, example: x86-linux/out/Release
-    parser.add_argument('--arch', dest='arch', help='architecture', choices=['x86', 'arm', 'x86_64'], default='x86')
+    parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'arm', 'x86_64'], default='x86')
     #parser.add_argument('--target-os', dest='target_os', help='target os', choices=['linux', 'android'], default='linux')
     parser.add_argument('--type', dest='type', help='type', choices=['release', 'debug'], default='release')
     parser.add_argument('--target', dest='target', help='target to build', choices=['chrome', 'webview', 'content_shell'])
@@ -164,9 +164,10 @@ examples:
         parser.print_help()
 
 def setup():
-    global root_dir, src_dir, build_dir, target_os, target
+    global root_dir, src_dir, build_dir, target_os, target, target_arch
 
     target_os = get_target_os()
+    target_arch = args.target_arch
 
     if not args.root_dir:
         if is_windows():
@@ -202,7 +203,7 @@ def setup():
         os.putenv('CHROME_DEVEL_SANDBOX', '/usr/local/sbin/chrome-devel-sandbox')
     elif target_os == 'android':
         os.chdir(src_dir)
-        shell_source('build/android/envsetup.sh --target-arch=x86')
+        shell_source('build/android/envsetup.sh --target-arch=' + target_arch)
         os.putenv('GYP_DEFINES', 'werror= disable_nacl=1 enable_svg=0')
 
     if not args.target:
@@ -265,8 +266,7 @@ def build(args):
 
     if build_clean:
         if target_os == 'android':
-            print 'aaaa'
-            shell_source('build/android/envsetup.sh --target-arch=x86')
+            shell_source('build/android/envsetup.sh --target-arch=' + target_arch)
         cmd = 'build/gyp_chromium -Dwerror= '
         execute(cmd)
 

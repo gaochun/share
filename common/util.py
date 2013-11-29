@@ -71,9 +71,13 @@ def has_process(name):
 
     return True
 
-def shell_source(shell_cmd):
+def shell_source(shell_cmd, use_bash=False):
     import subprocess, os
-    pipe = subprocess.Popen(". %s; env" % shell_cmd, stdout=subprocess.PIPE, shell=True)
+    if use_bash:
+        command = bashify('. ' + shell_cmd + '; env')
+        pipe = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+    else:
+        pipe = subprocess.Popen('. %s; env' %shell_cmd, stdout=subprocess.PIPE, shell=True)
     output = pipe.communicate()[0]
     for line in output.splitlines():
         (key, _, value) = line.partition("=")

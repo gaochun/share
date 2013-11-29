@@ -135,7 +135,7 @@ def setup():
         os.putenv('CHROME_DEVEL_SANDBOX', '/usr/local/sbin/chrome-devel-sandbox')
     elif target_os == 'android':
         os.chdir(src_dir)
-        shell_source('build/android/envsetup.sh --target-arch=' + target_arch)
+        shell_source('build/android/envsetup.sh --target-arch=' + target_arch, use_bash=True)
         os.putenv('GYP_DEFINES', 'werror= disable_nacl=1 enable_svg=0')
 
     if not args.target:
@@ -143,6 +143,8 @@ def setup():
             target = 'chrome'
         elif target_os == 'android':
             target = 'webview'
+    else:
+        target = args.target
 
 def update(args):
     if not args.update:
@@ -211,6 +213,8 @@ def build(args):
 
     if target == 'webview':
         ninja_cmd += ' android_webview_apk libwebviewchromium'
+    elif target == 'content_shell' and target_os == 'android':
+        ninja_cmd += ' content_shell_apk'
     else:
         ninja_cmd += ' ' + target
 

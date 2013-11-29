@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import re
 import os
@@ -21,21 +22,20 @@ def error(msg):
     print "[ERROR] " + msg + "!"
     quit()
 
-def execute(command, silent=False, interactive=False):
+def execute(command, silent=False, catch=False):
     if not silent:
         _cmd(command)
 
-    if interactive:
-        if os.system(command):
-            error('Failed to execute')
-            quit()
-    else:
+    if catch:
         result = commands.getstatusoutput(command)
         if result[0] != 0:
             error('Failed to execute')
             quit()
-
         return result[1]
+    else:
+        if os.system(command):
+            error('Failed to execute')
+            quit()
 
 def bashify(command):
     return 'bash -c "' + command + '"'

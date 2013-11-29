@@ -1,52 +1,17 @@
-#! N:\Python27\python.exe
-# -*- coding: utf-8 -*-
+from util import *
 
 # Before build, download proprietary drivers from https://developers.google.com/android/nexus/drivers,
 # and put them into related directory under /workspace/topic/android/backup/vendor.
 # jdk must be 1.6 for 4.4 build.
 
-
-import re
-import os
-import datetime
-import argparse
-import platform
-import sys
-import datetime
-
 root_dir = '/workspace/project/android/'
 backup_dir = '/workspace/topic/android/backup/'
 backup_driver_dir = backup_dir + 'vendor/'
 backup_image_dir = backup_dir + 'image/'
-args = ''
 device = ''
 device_code_name = ''
 variant = ''
 version = ''
-
-def get_datetime():
-    now = datetime.datetime.now()
-    return now.strftime("%Y%m%d%H%M%S")
-
-def info(msg):
-    print "[INFO] " + msg + "."
-
-def error(msg):
-    print "[ERROR] " + msg + "!"
-
-def cmd(msg):
-    print '[COMMAND] ' + msg
-
-def execute(command):
-    cmd(command)
-    if os.system(command):
-        error('Failed to execute')
-        quit()
-
-def bashify(command):
-    return 'bash -c "' + command + '"'
-
-################################################################################
 
 def handle_option():
     global args
@@ -135,4 +100,3 @@ if __name__ == "__main__":
     sync()
     build()
     flash()
-

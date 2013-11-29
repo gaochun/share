@@ -1,58 +1,6 @@
-#!/usr/bin/env python
+from util import *
 
-import re
-import os
-import datetime
-import argparse
-import platform
-import sys
-import datetime
-import commands
-
-args = ''
 default_java_file = '/usr/lib/jvm/default-java'
-
-def get_datetime():
-    now = datetime.datetime.now()
-    return now.strftime("%Y%m%d%H%M%S")
-
-def info(msg):
-    print "[INFO] " + msg + "."
-
-def error(msg):
-    print "[ERROR] " + msg + "!"
-    quit()
-
-def cmd(msg):
-    print '[COMMAND] ' + msg
-
-def execute(command, silent=False, interactive=False):
-    if not silent:
-        cmd(command)
-
-    if interactive:
-        if os.system(command):
-            error('Failed to execute')
-            quit()
-    else:
-        result = commands.getstatusoutput(command)
-        if result[0] != 0:
-            error('Failed to execute')
-            quit()
-
-        return result[1]
-
-def execute_only(command, silent=False):
-    if not silent:
-        cmd(command)
-
-    if os.system(command):
-        error('Failed to execute')
-        quit()
-
-def bashify(command):
-    return 'bash -c "' + command + '"'
-################################################################################
 
 def handle_option():
     global args

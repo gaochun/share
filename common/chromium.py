@@ -198,9 +198,9 @@ def build(args):
 
     if build_clean:
         if target_os == 'android':
-            shell_source('build/android/envsetup.sh --target-arch=' + target_arch)
-        cmd = 'build/gyp_chromium -Dwerror= '
-        execute(cmd)
+            execute(bashify('source build/android/envsetup.sh --target-arch=' + target_arch + ' && android_gyp -Dwerror='))
+        else:
+            execute('build/gyp_chromium -Dwerror= ')
 
     ninja_cmd = 'ninja -k0 -j16'
 

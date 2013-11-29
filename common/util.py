@@ -11,6 +11,7 @@ import argparse
 
 host_os = platform.system()
 args = ''
+dir_stack = []
 
 def get_datetime():
     now = datetime.datetime.now()
@@ -81,6 +82,16 @@ def shell_source(shell_cmd):
 def get_symbolic_link_dir():
     script_path = os.getcwd() + '/' + sys.argv[0]
     return os.path.split(script_path)[0]
+
+def backup_dir(new_dir):
+    global dir_stack
+    dir_stack.append(os.getcwd())
+    os.chdir(new_dir)
+
+def restore_dir():
+    global dir_stack
+    os.chdir(dir_stack.pop())
+
 ################################################################################
 
 def _cmd(msg):

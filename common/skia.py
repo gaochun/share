@@ -1,23 +1,14 @@
-#! N:\Python27\python.exe
-# -*- coding: utf-8 -*-
-
 # TODO
 # run tasks in parallel
 # print compilation option, times
 
-import re
-import os
-import datetime
-import argparse
-import platform
-import sys
-import commands
+from util import *
+
 import time
 import urllib2
 from httplib import BadStatusLine
 
 device_to_target = {}
-system = platform.system()
 
 root_dir_default = '/workspace/project/skia/'
 log_dir_default = root_dir_default + 'log/'
@@ -30,7 +21,6 @@ gdb_server_path = ''
 gdb_client_path = ''
 
 android_sdk_root = '/workspace/topic/skia/adt-bundle-linux-x86_64/sdk'
-dir_stack = []
 log_suffix = '.txt'
 config = ['8888', '565', 'GPU', 'NULLGPU', 'NONRENDERING']
 config_concerned = [0, 0, 1, 0, 1]
@@ -46,33 +36,6 @@ SMALL_NUMBER = 0.000001
 LARGE_NUMBER = 10000
 REPEAT_TIMES = '20'
 
-def info(msg):
-    print '[INFO] ' + msg + '.'
-
-def warn(msg):
-    print '[WARNING] ' + msg + '.'
-
-def error(msg):
-    print '[ERROR] ' + msg + '!'
-
-def cmd(msg):
-    print '[COMMAND] ' + msg
-
-def backup_dir(new_dir):
-    global dir_stack
-    dir_stack.append(os.getcwd())
-    os.chdir(new_dir)
-
-def restore_dir():
-    global dir_stack
-    os.chdir(dir_stack.pop())
-
-def execute(command, ignore_return_value=False):
-    cmd(command)
-    if os.system(command) and not ignore_return_value:
-        error('Failed to execute')
-        quit()
-
 def avg(self):
         if len(self.sequence) < 1:
             return None
@@ -87,10 +50,6 @@ def get_data(name, result):
             return '%.2f' %avg
 
     return NA
-
-def get_datetime():
-    now = datetime.datetime.now()
-    return now.strftime("%Y%m%d%H%M%S")
 
 def _get_device_to_target():
     global device_to_target
@@ -126,7 +85,7 @@ def _get_device_to_target():
 
     device_to_target[HOST] = (HOST, ONLINE)
 
-def remote_debug(args):
+def remote_debug():
     if not args.remote_debug:
         return
 
@@ -134,7 +93,7 @@ def remote_debug(args):
     execute('platform_tools/android/bin/android_gdb_exe ' + args.test_type + ' ' + args.run_option)
     restore_dir()
 
-def recover(args):
+def recover():
     if not args.recover:
         return
 
@@ -163,7 +122,8 @@ def _parse_format_result(dir, log_file, results):
 
     restore_dir()
 
-def average(average_dir):
+def average():
+    average_dir = args.average
     backup_dir(log_dir)
     total_result = []
     total_number = 0
@@ -264,7 +224,7 @@ def parse_result(dir, log_file):
 
     restore_dir()
 
-def download(args):
+def download():
     if not args.download:
         return
 
@@ -327,7 +287,7 @@ def _item_in_list(item, list):
 
     return False
 
-def compare(args):
+def compare():
     if not args.compare:
         return
 
@@ -397,7 +357,7 @@ def compare(args):
             print diffs[i][j][0] + ' ' + ('%.2f' %(diffs[i][j][1] * 100)) + ' ' + diffs[i][j][2] + ' ' + diffs[i][j][3]
 
 # According to args.device, which have to be connected, and the corresponding target is known
-def run(args):
+def run():
     if not args.run:
         return
 
@@ -479,7 +439,7 @@ def _ensure_in_list(item, list):
 
 # According to targets, which are from args.target and
 # args.device (guess the target, and no need to connect)
-def build(args):
+def build():
     if not args.build:
         return
 
@@ -511,7 +471,7 @@ def build(args):
     print '== Build Environment =='
     print 'Directory of src: ' + src_dir
     print 'Build type: ' + build
-    print 'System: ' + system
+    print 'System: ' + host_os
     print 'Targets: ' + ','.join(targets)
     print '======================='
 
@@ -531,7 +491,7 @@ def build(args):
     restore_dir()
 
 # https://sites.google.com/site/skiadocs/developer-documentation/contributing-code/using-git
-def update(args):
+def update():
     if not args.update:
         return
 
@@ -544,7 +504,7 @@ def update(args):
 
     restore_dir()
 
-def setup(args):
+def setup():
     global root_dir
     global src_dir
     global platform_tools_dir
@@ -581,7 +541,7 @@ def setup(args):
     os.putenv('https_proxy', 'https://proxy-shz.intel.com:911')
     os.putenv('PATH', platform_tools_dir + 'android/bin/linux:' + os.getenv('PATH'))
 
-def replace_gdb(args):
+def replace_gdb():
     if not args.replace_gdb:
         return
 
@@ -591,7 +551,7 @@ def replace_gdb(args):
     execute('rm -f ' + gdb_client_path)
     execute('ln -s /workspace/topic/android/ndk/android-ndk-r9/toolchains/x86-4.8/prebuilt/linux-x86_64/bin/i686-linux-android-gdb ' + gdb_client_path)
 
-def restore_gdb(args):
+def restore_gdb():
     if not args.restore_gdb:
         return
 
@@ -601,7 +561,9 @@ def restore_gdb(args):
     execute('rm -f ' + gdb_client_path)
     execute('ln -s /workspace/topic/android/ndk/skia-ndk-r8e-x86-linux_v14/bin/i686-linux-android-gdb ' + gdb_client_path)
 
-if __name__ == "__main__":
+def handle_option():
+    global args
+
     parser = argparse.ArgumentParser(description = 'Script to update, build and run Skia for Android IA',
                                      formatter_class = argparse.RawTextHelpFormatter,
                                      epilog = '''
@@ -684,22 +646,23 @@ examples:
     if len(sys.argv) <= 1:
         parser.print_help()
 
-    setup(args)
-    update(args)
-    build(args)
-    run(args)
+if __name__ == "__main__":
+    handle_option()
+    setup()
+    update()
+    build()
+    run()
 
     if args.parse_result:
         parse_result(log_dir, args.parse_result)
 
-    compare(args)
-    download(args)
+    compare()
+    download()
 
     if args.average:
-        average(args.average)
+        average()
 
-    recover(args)
-    remote_debug(args)
-
-    replace_gdb(args)
-    restore_gdb(args)
+    recover()
+    remote_debug()
+    replace_gdb()
+    restore_gdb()

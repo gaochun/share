@@ -131,7 +131,7 @@ def mk64():
         os.remove(file)
 
     # Generate raw .mk files
-    command = bashify('export CHROME_ANDROID_BUILD_WEBVIEW=1 && . build/android/envsetup.sh --target-arch=' + chromium_target_arch + ' && android_gyp -Dwerror=')
+    command = bashify('export CHROME_ANDROID_BUILD_WEBVIEW=1 && . build/android/envsetup.sh --target-arch=' + chromium_target_arch + ' && android_gyp -Dwerror= ')
     execute(command)
 
     # Generate related x64 files according to raw .mk files

@@ -143,6 +143,8 @@ def setup():
             target = 'chrome'
         elif target_os == 'android':
             target = 'webview'
+    else:
+        target = args.target
 
 def update(args):
     if not args.update:
@@ -211,6 +213,8 @@ def build(args):
 
     if target == 'webview':
         ninja_cmd += ' android_webview_apk libwebviewchromium'
+    elif target == 'content_shell' and target_os == 'android':
+        ninja_cmd += ' content_shell_apk'
     else:
         ninja_cmd += ' ' + target
 

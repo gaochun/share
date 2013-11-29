@@ -3,6 +3,7 @@
 
 # Before build, download proprietary drivers from https://developers.google.com/android/nexus/drivers,
 # and put them into related directory under /workspace/topic/android/backup/vendor.
+# jdk must be 1.6 for 4.4 build.
 
 
 import re

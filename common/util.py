@@ -9,6 +9,7 @@ import datetime
 import commands
 import argparse
 
+host_os = platform.system()
 args = ''
 
 def get_datetime():
@@ -17,6 +18,9 @@ def get_datetime():
 
 def info(msg):
     print "[INFO] " + msg + "."
+
+def warning(msg):
+    print '[WARNING] ' + msg + '.'
 
 def error(msg):
     print "[ERROR] " + msg + "!"
@@ -40,6 +44,43 @@ def execute(command, silent=False, catch=False):
 def bashify(command):
     return 'bash -c "' + command + '"'
 
+def is_system(name):
+    if host_os == name:
+        return True
+    else:
+        return False
+
+def is_windows():
+    if is_system('Windows'):
+        return True
+    else:
+        return False
+
+def is_linux():
+    if is_system('Linux'):
+        return True
+    else:
+        return False
+
+def has_process(name):
+    r = os.popen('ps auxf |grep -c ' + name)
+    count = int(r.read())
+    if count == 2:
+        return False
+
+    return True
+
+def shell_source(shell_cmd):
+    import subprocess, os
+    pipe = subprocess.Popen(". %s; env" % shell_cmd, stdout=subprocess.PIPE, shell=True)
+    output = pipe.communicate()[0]
+    for line in output.splitlines():
+        (key, _, value) = line.partition("=")
+        os.environ[key] = value
+
+def get_symbolic_link_dir():
+    script_path = os.getcwd() + '/' + sys.argv[0]
+    return os.path.split(script_path)[0]
 ################################################################################
 
 def _cmd(msg):

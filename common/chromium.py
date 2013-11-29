@@ -1,75 +1,11 @@
-#/usr/bin/python
+from util import *
 
-import os
-import commands
-import argparse
-import platform
-import re
-import sys
-
-# Global variables
 root_dir = ''     # e.g., /workspace/project/chromium-linux
 src_dir = ''      # e.g., /workspace/project/chromium-linux/src
 build_dir = ''    # e.g., /workspace/project/chromium-linux/src/out/Release
-host_os = platform.system()
-args = ''
 target_os = ''
 target = ''
 target_arch = ''
-
-def is_system(name):
-    if host_os == name:
-        return True
-    else:
-        return False
-
-def is_windows():
-    if is_system('Windows'):
-        return True
-    else:
-        return False
-
-def is_linux():
-    if is_system('Linux'):
-        return True
-    else:
-        return False
-
-def info(msg):
-    print '[INFO] ' + msg + '.'
-
-def warning(msg):
-    print '[WARNING] ' + msg + '.'
-
-def error(msg):
-    print '[ERROR] ' + msg + '!'
-
-def cmd(msg):
-    print '[COMMAND] ' + msg
-
-def execute(command):
-    cmd(command)
-    if os.system(command):
-        error('Failed to execute')
-        quit()
-
-def has_process(name):
-    r = os.popen('ps auxf |grep -c ' + name)
-    count = int(r.read())
-    if count == 2:
-        return False
-
-    return True
-
-def shell_source(shell_cmd):
-    """Sometime you want to emulate the action of "source" in bash,
-    settings some environment variables. Here is a way to do it."""
-    import subprocess, os
-    pipe = subprocess.Popen(". %s; env" % shell_cmd, stdout=subprocess.PIPE, shell=True)
-    output = pipe.communicate()[0]
-    for line in output.splitlines():
-        (key, _, value) = line.partition("=")
-        os.environ[key] = value
 
 def has_build_dir():
     if not os.path.exists(build_dir):
@@ -78,10 +14,6 @@ def has_build_dir():
         return False
 
     return True
-
-def get_symbolic_link_dir():
-    script_path = os.getcwd() + '/' + sys.argv[0]
-    return os.path.split(script_path)[0]
 
 def get_target_os():
     return get_symbolic_link_dir().rsplit('-')[-1]

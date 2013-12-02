@@ -135,7 +135,11 @@ def setup():
         os.putenv('CHROME_DEVEL_SANDBOX', '/usr/local/sbin/chrome-devel-sandbox')
     elif target_os == 'android':
         os.chdir(src_dir)
+
         shell_source('build/android/envsetup.sh --target-arch=' + target_arch, use_bash=True)
+        if not os.getenv('ANDROID_SDK_ROOT'):
+            error('Environment is not well set')
+
         os.putenv('GYP_DEFINES', 'werror= disable_nacl=1 enable_svg=0')
 
     if not args.target:
@@ -200,6 +204,7 @@ def build(args):
 
     if build_clean:
         if target_os == 'android':
+            # We can't omit this step as android_gyp is a built-in command, instead of environmental variable.
             execute(bashify('source build/android/envsetup.sh --target-arch=' + target_arch + ' && android_gyp -Dwerror='))
         else:
             execute('build/gyp_chromium -Dwerror= ')

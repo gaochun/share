@@ -135,7 +135,7 @@ def setup():
         os.putenv('CHROME_DEVEL_SANDBOX', '/usr/local/sbin/chrome-devel-sandbox')
     elif target_os == 'android':
         os.chdir(src_dir)
-        shell_source('build/android/envsetup.sh --target-arch=' + target_arch)
+        shell_source('build/android/envsetup.sh --target-arch=' + target_arch, use_bash=True)
         os.putenv('GYP_DEFINES', 'werror= disable_nacl=1 enable_svg=0')
 
     if not args.target:

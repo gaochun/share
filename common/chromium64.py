@@ -62,14 +62,19 @@ def get_script_dir():
     script_path = os.getcwd() + '/' + sys.argv[0]
     return os.path.split(script_path)[0]
 
+################################################################################
+
 def handle_option():
     global args
     parser = argparse.ArgumentParser(description = 'Script to sync, build Chromium x64',
                                      formatter_class = argparse.RawTextHelpFormatter,
                                      epilog = '''
 examples:
-  python %(prog)s
+  python %(prog)s -s --sync-local
+  python %(prog)s --mk64
+  python %(prog)s -b --build-showcommands --build-onejob
 
+  python %(prog)s --dep
 ''')
     group_sync = parser.add_argument_group('sync')
     group_sync.add_argument('-s', '--sync', dest='sync', help='sync the repo', action='store_true')
@@ -87,10 +92,15 @@ examples:
     group_build.add_argument('--build-showcommands', dest='build_showcommands', help='build with detailed command', action='store_true')
     group_build.add_argument('--build-onejob', dest='build_onejob', help='build with one job, and stop once failure happens', action='store_true')
 
+
     group_other = parser.add_argument_group('other')
     group_other.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
+    group_other.add_argument('--dep', dest='dep', help='get dep for each module', action='store_true')
 
     args = parser.parse_args()
+
+    if len(sys.argv) <= 1:
+        parser.print_help()
 
 def setup():
     global root_dir, webview_dir, projects, android_target_arch, chromium_target_arch
@@ -192,10 +202,6 @@ def mk64():
     info('Number of x86 mk: ' + os.popen('find -name "*linux-x86.mk" |wc -l').read()[:-1])
     info('Number of x64 mk: ' + os.popen('find -name "*linux-' + android_target_arch + '.mk" |wc -l').read()[:-1])
 
-def check_status():
-    for project in projects:
-        execute('git status ' + project)
-
 def build():
     if not args.build:
         return
@@ -216,11 +222,71 @@ def build():
     command = bashify(command)
     execute(command)
 
+def check_status():
+    for project in projects:
+        execute('git status ' + project)
+
+def dep():
+    if not args.dep:
+        return
+
+    libraries = set()
+
+    file = open('GypAndroid.linux-' + android_target_arch + '.mk')
+    lines = file.readlines()
+    file.close()
+
+    module_prev = ''
+    for line in lines:
+        pattern = re.compile('\(LOCAL_PATH\)/(.*)')
+        match = pattern.search(line)
+        if match:
+            mk_file = match.group(1)
+
+            fields = mk_file.split('/')
+            module = fields[0]
+            if module == 'third_party':
+                module = fields[1]
+
+            if module == 'skia':
+                continue
+
+            if module_prev != module:
+                module_prev = module
+                #print '[' + module + ']'
+
+            file = open(mk_file)
+            lines = file.readlines()
+            file.close()
+
+            i = 0
+            while (i < len(lines)):
+                if re.match('LOCAL_SHARED_LIBRARIES', lines[i]):
+                    i += 1
+                    while (lines[i].strip()):
+                        library = lines[i].strip()
+                        index = library.find('\\')
+                        if index:
+                            library = library[0:index].strip()
+                        libraries.add(library)
+                        i += 1
+                else:
+                    i += 1
+
+    s = ''
+    for library in libraries:
+        if s == '':
+            s = library
+        else:
+            s += ' ' + library
+    print 'Shared libraries: ' + s
+
 if __name__ == '__main__':
     handle_option()
     setup()
     sync()
     patch()
     mk64()
-    #check_status()
     build()
+    #check_status()
+    dep()

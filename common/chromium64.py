@@ -80,6 +80,8 @@ examples:
     parser.add_argument('--build-showcommands', dest='build_showcommands', help='build with detailed command', action='store_true')
     parser.add_argument('--build-onejob', dest='build_onejob', help='build with one job, and stop once failure happens', action='store_true')
     parser.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
+    parser.add_argument('-s', '--sync', dest='sync', help='sync the repo', action='store_true')
+    parser.add_argument('--sync-local', dest='sync_local', help='only update working tree, not fetch', action='store_true')
     args = parser.parse_args()
 
 def setup():
@@ -103,6 +105,15 @@ def setup():
 
     android_target_arch = 'x86_64'
     chromium_target_arch = 'x64'
+
+def sync():
+    if not args.sync:
+        return
+
+    command = 'repo sync -j16'
+    if args.sync_local:
+        command += ' -l'
+    execute(command)
 
 def patch():
     if not args.patch:
@@ -200,6 +211,7 @@ def build():
 if __name__ == '__main__':
     handle_option()
     setup()
+    sync()
     patch()
     mk64()
     #check_status()

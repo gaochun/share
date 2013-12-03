@@ -694,7 +694,7 @@ complete () {
 hostname |grep -E "ubuntu-ygu5-02" >/dev/null
 if [ $? -eq 0 ] ; then
     cd /workspace/project/android-ia && source /workspace/project/android-ia/build/envsetup.sh >/dev/null && lunch kvm_initrd_64bit-eng >/dev/null
-    cd /workspace/project/android-ia/external/chromium_org
+    cd /workspace/project/android-ia
 else
     cd /workspace/project
 fi

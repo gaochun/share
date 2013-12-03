@@ -68,20 +68,28 @@ def handle_option():
                                      formatter_class = argparse.RawTextHelpFormatter,
                                      epilog = '''
 examples:
-
   python %(prog)s
 
 ''')
+    group_sync = parser.add_argument_group('sync')
+    group_sync.add_argument('-s', '--sync', dest='sync', help='sync the repo', action='store_true')
+    group_sync.add_argument('--sync-local', dest='sync_local', help='only update working tree, not fetch', action='store_true')
 
-    parser.add_argument('--patch', dest='patch', help='apply patch from Gerrit', action='store_true')
-    parser.add_argument('--mk64', dest='mk64', help='generate mk for x86_64', action='store_true')
-    parser.add_argument('-b', '--build', dest='build', help='build', action='store_true')
-    parser.add_argument('-c', '--build-clean', dest='build_clean', help='clean build', action='store_true')
-    parser.add_argument('--build-showcommands', dest='build_showcommands', help='build with detailed command', action='store_true')
-    parser.add_argument('--build-onejob', dest='build_onejob', help='build with one job, and stop once failure happens', action='store_true')
-    parser.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
-    parser.add_argument('-s', '--sync', dest='sync', help='sync the repo', action='store_true')
-    parser.add_argument('--sync-local', dest='sync_local', help='only update working tree, not fetch', action='store_true')
+    group_patch = parser.add_argument_group('patch')
+    group_patch.add_argument('--patch', dest='patch', help='apply patch from Gerrit', action='store_true')
+
+    group_mk64 = parser.add_argument_group('mk64')
+    group_mk64.add_argument('--mk64', dest='mk64', help='generate mk for x86_64', action='store_true')
+
+    group_build = parser.add_argument_group('build')
+    group_build.add_argument('-b', '--build', dest='build', help='build', action='store_true')
+    group_build.add_argument('-c', '--build-clean', dest='build_clean', help='clean build', action='store_true')
+    group_build.add_argument('--build-showcommands', dest='build_showcommands', help='build with detailed command', action='store_true')
+    group_build.add_argument('--build-onejob', dest='build_onejob', help='build with one job, and stop once failure happens', action='store_true')
+
+    group_other = parser.add_argument_group('other')
+    group_other.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
+
     args = parser.parse_args()
 
 def setup():

@@ -39,6 +39,7 @@ commands = [
     ('basic', r'history -r; history |grep cd', 'Test shell built-in command', TYPE_BUILTIN),
     ('basic', r'tar czf - src_dir | ssh gyagp@ubuntu-ygu5-01.sh.intel.com "cd /tmp; tar zxf -"', 'compress and copy to another machine', TYPE_NULL),
     ('basic', 'ps -p $$', 'Know current shell', TYPE_RUNNABLE),
+    ('basic', 'tar czf - /workspace/project/chromium-android | ssh gyagp@ubuntu-ygu5-02 "cd /workspace/project; tar xzf -"', 'tar and copy to another machine', TYPE_NULL),
     ('upgrade', 'do-release-upgrade', 'Upgrade system', TYPE_NULL),
     ('info', 'cat /etc/os-release', 'List distribution info', TYPE_RUNNABLE),
     ('info', 'cat /etc/lsb-release', 'List distribution info', TYPE_RUNNABLE),

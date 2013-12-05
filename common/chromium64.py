@@ -215,11 +215,12 @@ def build():
     if not args.build:
         return
 
-    backup_dir(root_dir)
-    command = '. build/envsetup.sh && lunch emu64-eng && '
+    command = '. ' + root_dir + '/build/envsetup.sh && lunch emu64-eng && '
     if args.project == 'emu':
+        backup_dir(root_dir)
         command += 'make emu -j16'
     elif args.project == 'chromium_org':
+        backup_dir(webview_dir)
         if args.build_clean:
             command += 'mma'
         else:

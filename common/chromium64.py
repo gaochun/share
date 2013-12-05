@@ -13,6 +13,7 @@ args = ''
 projects = []
 android_target_arch = ''
 chromium_target_arch = ''
+dir_stack = []
 
 patches = [
     # Patches borrowed from other groups
@@ -62,6 +63,14 @@ def get_script_dir():
     script_path = os.getcwd() + '/' + sys.argv[0]
     return os.path.split(script_path)[0]
 
+def backup_dir(new_dir):
+    global dir_stack
+    dir_stack.append(os.getcwd())
+    os.chdir(new_dir)
+
+def restore_dir():
+    global dir_stack
+    os.chdir(dir_stack.pop())
 ################################################################################
 
 def handle_option():
@@ -94,6 +103,7 @@ examples:
 
 
     group_other = parser.add_argument_group('other')
+    group_other.add_argument('-p', '--project', dest='project', help='project', choices=['chromium_org', 'emu'], default='chromium_org')
     group_other.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
     group_other.add_argument('--dep', dest='dep', help='get dep for each module', action='store_true')
 
@@ -143,10 +153,9 @@ def patch():
         project = match.group(1)
         change = match.group(2)
         command = 'git fetch ssh://aia-review.intel.com/platform/' + project + ' ' + change + ' && git cherry-pick FETCH_HEAD'
-        os.chdir(root_dir + '/' + project)
+        backup_dir(root_dir + '/' + project)
         execute(command)
-
-    os.chdir(webview_dir)
+        restore_dir()
 
 def mk64():
     if not args.mk64:
@@ -206,21 +215,26 @@ def build():
     if not args.build:
         return
 
-    command = '. ' + root_dir + '/build/envsetup.sh && lunch kvm_initrd_64bit-eng && '
+    backup_dir(root_dir)
+    command = '. build/envsetup.sh && lunch emu64-eng && '
+    if args.project == 'emu':
+        command += 'make emu -j16'
+    elif args.project == 'chromium_org':
+        if args.build_clean:
+            command += 'mma'
+        else:
+            command += 'mm'
 
-    if args.build_clean:
-        command += 'mma'
-    else:
-        command += 'mm'
+        if args.build_showcommands:
+            command += ' showcommands'
 
-    if args.build_showcommands:
-        command += ' showcommands'
-
-    if not args.build_onejob:
-        command += ' -j16 -k'
+        if not args.build_onejob:
+            command += ' -j16 -k'
 
     command = bashify(command)
     execute(command)
+
+    restore_dir()
 
 def check_status():
     for project in projects:

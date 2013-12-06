@@ -97,7 +97,7 @@ examples:
 
     group_build = parser.add_argument_group('build')
     group_build.add_argument('-b', '--build', dest='build', help='build', action='store_true')
-    group_build.add_argument('-c', '--build-clean', dest='build_clean', help='clean build', action='store_true')
+    group_build.add_argument('--build-dep', dest='build_dep', help='build with dependencies', action='store_true')
     group_build.add_argument('--build-showcommands', dest='build_showcommands', help='build with detailed command', action='store_true')
     group_build.add_argument('--build-onejob', dest='build_onejob', help='build with one job, and stop once failure happens', action='store_true')
 
@@ -221,7 +221,7 @@ def build():
         command += 'make emu -j16'
     elif args.project == 'chromium_org':
         backup_dir(webview_dir)
-        if args.build_clean:
+        if args.build_dep:
             command += 'mma'
         else:
             command += 'mm'

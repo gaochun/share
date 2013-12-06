@@ -138,7 +138,7 @@ def sync():
     if not args.sync:
         return
 
-    command = 'repo sync -j16'
+    command = 'repo sync -c -j16'
     if args.sync_local:
         command += ' -l'
     execute(command)

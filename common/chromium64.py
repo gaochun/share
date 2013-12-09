@@ -111,9 +111,21 @@ def patch():
         match = pattern.search(patch)
         project = match.group(1)
         change = match.group(2)
-        command = 'git fetch ssh://aia-review.intel.com/platform/' + project + ' ' + change + ' && git cherry-pick FETCH_HEAD'
         backup_dir(root_dir + '/' + project)
-        execute(command)
+
+        command = 'git fetch ssh://aia-review.intel.com/platform/' + project + ' ' + change
+        execute(command, silent=True, catch=True)
+        result = execute('git show FETCH_HEAD |grep Change-Id:', catch=True, silent=True)
+
+        pattern = re.compile('Change-Id: (.*)')
+        change_id = result[1]
+        match = pattern.search(change_id)
+        result = execute('git log |grep ' + match.group(1), catch=True, silent=True, abort=False)
+        if result[0]:
+            execute('git cherry-pick FETCH_HEAD')
+        else:
+            info('Patch has been cherry picked, so it will be skipped: ' + patch)
+
         restore_dir()
 
 def mk64():

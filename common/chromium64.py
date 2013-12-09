@@ -15,13 +15,14 @@ patches = [
 
     # Patches by our own
     'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/95/2395/2 && git checkout FETCH_HEAD',
+    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/26/3026/1 && git checkout FETCH_HEAD',
 
     'git fetch https://aia-review.intel.com/platform/build refs/changes/25/3025/1 && git checkout FETCH_HEAD',
-    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/26/3026/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org/third_party/icu refs/changes/27/3027/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org/third_party/openssl refs/changes/28/3028/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org/v8 refs/changes/29/3029/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/libnativehelper refs/changes/30/3030/1 && git checkout FETCH_HEAD',
+    'git fetch https://aia-review.intel.com/platform/libnativehelper refs/changes/55/3055/1 && git checkout FETCH_HEAD',
 ]
 
 ################################################################################
@@ -87,6 +88,7 @@ def setup():
 
     projects.append(root_dir + '/' + 'build')
     projects.append(root_dir + '/' + 'libnativehelper')
+    projects.append(root_dir + '/' + 'frameworks/av')
 
     android_target_arch = 'x86_64'
     chromium_target_arch = 'x64'

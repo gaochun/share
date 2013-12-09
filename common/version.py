@@ -48,7 +48,7 @@ def set_version():
 
 def get_version_java():
     java_version_result = execute('java -version', silent=True, catch=True)
-    match = re.match('java version "(.*)"', java_version_result)
+    match = re.match('java version "(.*)"', java_version_result[1])
     java_version = match.group(1)
 
     java_home_result = os.getenv('JAVA_HOME')
@@ -57,17 +57,19 @@ def get_version_java():
         if match:
             java_home = match.group(1)
         else:
-            error('JAVA_HOME is not expected')
+            error('JAVA_HOME is not expected', abort=False)
+            java_home = 'NULL'
     else:
         java_home = 'NULL'
 
     if os.path.exists(default_java_file):
         default_java_result = execute('ls -l ' + default_java_file, silent=True, catch=True)
-        match = re.match('.*jdk(.*)', default_java_result)
+        match = re.match('.*jdk(.*)', default_java_result[1])
         if match:
             default_java = match.group(1)
         else:
-            error('default-java is not expected')
+            error('default-java is not expected', abort=False)
+            default_java = 'NULL'
     else:
         default_java = 'NULL'
 
@@ -111,11 +113,12 @@ def set_version_java():
 
 def get_version_gcc():
     gcc_version_result = execute('ls -l ' + gcc_file, silent=True, catch=True)
-    match = re.match('.+gcc-(.+)', gcc_version_result)
+    match = re.match('.+gcc-(.+)', gcc_version_result[1])
     if match:
         gcc_version = match.group(1)
     else:
-        error('gcc is not expected')
+        error('gcc is not expected', abort=False)
+        gcc_version = 'NULL'
 
     info('gcc version: ' + gcc_version)
 

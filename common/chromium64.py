@@ -1,19 +1,10 @@
-#!/usr/bin/env python
-
-import os
-import commands
-import argparse
-import platform
-import re
-import sys
+from util import *
 
 root_dir = ''
 webview_dir = ''
-args = ''
 projects = []
 android_target_arch = ''
 chromium_target_arch = ''
-dir_stack = []
 
 patches = [
     # Patches borrowed from other groups
@@ -26,51 +17,6 @@ patches = [
     'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/95/2395/2 && git checkout FETCH_HEAD',
 ]
 
-def info(msg):
-    print '[INFO] ' + msg + '.'
-
-def warning(msg):
-    print '[WARNING] ' + msg + '.'
-
-def error(msg):
-    print '[ERROR] ' + msg + '!'
-
-def cmd(msg):
-    print '[COMMAND] ' + msg
-
-def execute(command, silent=False):
-    if not silent:
-        cmd(command)
-
-    if os.system(command):
-        error('Failed to execute')
-        quit()
-
-def bashify(command):
-    return 'bash -c "' + command + '"'
-
-def shell_source(shell_cmd):
-    """Sometime you want to emulate the action of "source" in bash,
-    settings some environment variables. Here is a way to do it."""
-    import subprocess, os
-    pipe = subprocess.Popen(". %s; env" % shell_cmd, stdout=subprocess.PIPE, shell=True)
-    output = pipe.communicate()[0]
-    for line in output.splitlines():
-        (key, _, value) = line.partition("=")
-        os.environ[key] = value
-
-def get_script_dir():
-    script_path = os.getcwd() + '/' + sys.argv[0]
-    return os.path.split(script_path)[0]
-
-def backup_dir(new_dir):
-    global dir_stack
-    dir_stack.append(os.getcwd())
-    os.chdir(new_dir)
-
-def restore_dir():
-    global dir_stack
-    os.chdir(dir_stack.pop())
 ################################################################################
 
 def handle_option():
@@ -106,6 +52,7 @@ examples:
     group_other.add_argument('-p', '--project', dest='project', help='project', choices=['chromium_org', 'emu'], default='chromium_org')
     group_other.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
     group_other.add_argument('--dep', dest='dep', help='get dep for each module', action='store_true')
+    group_other.add_argument('--git-status', dest='git_status', help='git status for projects', action='store_true')
 
     args = parser.parse_args()
 
@@ -129,7 +76,10 @@ def setup():
     for project in lines:
         project = project.replace('./', '')
         project = project.replace('.git', '')
-        projects.append(project)
+        projects.append(webview_dir + '/' + project)
+
+    projects.append(root_dir + '/' + 'build')
+    projects.append(root_dir + '/' + 'libnativehelper')
 
     android_target_arch = 'x86_64'
     chromium_target_arch = 'x64'
@@ -237,9 +187,26 @@ def build():
 
     restore_dir()
 
-def check_status():
+def git_status():
+    if not args.git_status:
+        return
+
+    has_change = False
+    projects_change = []
+
     for project in projects:
-        execute('git status ' + project)
+        backup_dir(project)
+        result = execute('git status |grep modified', silent=True, catch=True, abort=False)
+        if not result[0]:
+            has_change = True
+            projects_change.append(project)
+            #print result[1]
+        restore_dir()
+
+    if has_change:
+        info('The following projects have changes: ' + ','.join(projects_change))
+    else:
+        info('There is no change at all')
 
 def dep():
     if not args.dep:
@@ -303,5 +270,5 @@ if __name__ == '__main__':
     patch()
     mk64()
     build()
-    #check_status()
+    git_status()
     dep()

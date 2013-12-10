@@ -628,37 +628,52 @@ function _git_log_prettily() {
 alias glp="_git_log_prettily"
 compdef _git glp=git-log
 
-########## End of git support ##########
-
-# Parameters: project, script
-function symbolic_link() {
-  if [ -d /workspace/project/$1 -a ! -L /workspace/project/$1/$2 ]; then
-     ln -s /workspace/project/gyagp/share/python/$2 /workspace/project/$1/$2
-  fi
-}
-
 setopt prompt_subst
 PROMPT='%F{blue}%M%F{green}%/$(git_prompt_string)
 %F{cyan}%n %F{yellow}>>>$FINISH'
 
+########## End of git support ##########
 
 # ln -s /workspace/project/gyagp/share/linux/.zshrc ~/.zshrc
 
+PROJECT_DIR=/workspace/project
+SHARE_DIR=$PROJECT_DIR/gyagp/share
+PYTHON_DIR=$SHARE_DIR/python
+COMMON_DIR=$SHARE_DIR/common
+SUBLIME_DIR=$COMMON_DIR/sublime
+
+# Parameters: src_dir, src_file, dest_dir[, dest_file]
+function symbolic_link() {
+  if [ $# -lt 3 ]; then
+    return 1
+  fi
+
+  if [ $# -eq 4 ]; then
+    dest_file=$4
+  else
+    dest_file=$2
+  fi
+
+  if [ -d $3 -a ! -L $3/$dest_file ]; then
+    ln -s $1/$2 $3/$dest_file
+  fi
+}
+
 # chromium-desktop
-symbolic_link chromium-desktop chromium.py
+symbolic_link $PYTHON_DIR chromium.py $PROJECT_DIR/chromium-desktop
 export CHROME_DEVEL_SANDBOX=/usr/local/sbin/chrome-devel-sandbox
 
 # chromium-android
-symbolic_link chromium-android chromium.py
+symbolic_link $PYTHON_DIR chromium.py $PROJECT_DIR/chromium-android
 
 # Android
-symbolic_link android android.py
+symbolic_link $PYTHON_DIR android.py $PROJECT_DIR/android
 
 # Android-ia
-symbolic_link android-ia chromium64.py
+symbolic_link $PYTHON_DIR chromium64.py $PROJECT_DIR/android-ia
 
 # Skia
-symbolic_link skia skia.py
+symbolic_link $PYTHON_DIR skia.py $PROJECT_DIR/skia
 export ANDROID_SDK_ROOT=/workspace/topic/skia/adt-bundle-linux-x86_64/sdk
 
 # sublime
@@ -667,9 +682,9 @@ function sublime_text() {
     bash -c "LD_PRELOAD=/workspace/project/gyagp/share/linux/libsublime-imfix.so sublime_text $1"
 }
 alias st='sublime_text'
-if [ ! -L ~/.config/sublime-text-2/Packages/User/Preferences.sublime-settings ]; then
-   ln -s /workspace/project/gyagp/share/common/sublime/Preferences.sublime-settings ~/.config/sublime-text-2/Packages/User/Preferences.sublime-settings
-fi
+symbolic_link $SUBLIME_DIR Preferences.sublime-settings ~/.config/sublime-text-2/Packages/User
+symbolic_link $SUBLIME_DIR SublimeLinter.sublime-settings ~/.config/sublime-text-2/Packages/User
+
 
 complete () {
         emulate -L zsh

@@ -633,7 +633,7 @@ compdef _git glp=git-log
 # Parameters: project, script
 function symbolic_link() {
   if [ -d /workspace/project/$1 -a ! -L /workspace/project/$1/$2 ]; then
-     ln -s /workspace/project/gyagp/share/common/$2 /workspace/project/$1/$2
+     ln -s /workspace/project/gyagp/share/python/$2 /workspace/project/$1/$2
   fi
 }
 

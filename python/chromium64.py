@@ -28,6 +28,26 @@ patches = [
 ################################################################################
 
 
+def _ensure_projects():
+    global projects
+
+    if len(projects) > 0:
+        return
+
+    backup_dir(webview_dir)
+    r = os.popen('find -name ".git"')
+    lines = r.read().split('\n')
+    del lines[len(lines) - 1]
+    for project in lines:
+        project = project.replace('./', '')
+        project = project.replace('.git', '')
+        projects.append(webview_dir + '/' + project)
+
+    projects.append(root_dir + '/' + 'build')
+    projects.append(root_dir + '/' + 'libnativehelper')
+    projects.append(root_dir + '/' + 'frameworks/av')
+
+
 def handle_option():
     global args
     parser = argparse.ArgumentParser(description='Script to sync, build Chromium x64',
@@ -66,10 +86,11 @@ examples:
 
     if len(sys.argv) <= 1:
         parser.print_help()
+        quit()
 
 
 def setup():
-    global root_dir, webview_dir, projects, android_target_arch, chromium_target_arch
+    global root_dir, webview_dir, android_target_arch, chromium_target_arch
 
     if not args.root_dir:
         root_dir = os.path.abspath(os.getcwd())
@@ -77,20 +98,7 @@ def setup():
         root_dir = args.root_dir
 
     webview_dir = root_dir + '/external/chromium_org'
-    os.chdir(webview_dir)
-
-    r = os.popen('find -name ".git"')
-    lines = r.read().split('\n')
-    del lines[len(lines) - 1]
-    for project in lines:
-        project = project.replace('./', '')
-        project = project.replace('.git', '')
-        projects.append(webview_dir + '/' + project)
-
-    projects.append(root_dir + '/' + 'build')
-    projects.append(root_dir + '/' + 'libnativehelper')
-    projects.append(root_dir + '/' + 'frameworks/av')
-
+    os.chdir(root_dir)
     android_target_arch = 'x86_64'
     chromium_target_arch = 'x64'
 
@@ -135,6 +143,8 @@ def patch():
 def mk64():
     if not args.mk64:
         return
+
+    backup_dir(webview_dir)
 
     # Remove all the x64 mk files
     r = os.popen('find -name "*x86_64*.mk" -o -name "*x64*.mk"')
@@ -186,6 +196,8 @@ def mk64():
     info('Number of x86 mk: ' + os.popen('find -name "*linux-x86.mk" |wc -l').read()[:-1])
     info('Number of x64 mk: ' + os.popen('find -name "*linux-' + android_target_arch + '.mk" |wc -l').read()[:-1])
 
+    restore_dir()
+
 
 def build():
     if not args.build:
@@ -221,6 +233,7 @@ def git_status():
     has_change = False
     projects_change = []
 
+    _ensure_projects()
     for project in projects:
         backup_dir(project)
         result = execute('git status |grep modified', silent=True, catch=True, abort=False)
@@ -240,6 +253,7 @@ def dep():
     if not args.dep:
         return
 
+    backup_dir(webview_dir)
     libraries = set()
 
     file = open('GypAndroid.linux-' + android_target_arch + '.mk')
@@ -290,6 +304,8 @@ def dep():
         else:
             s += ' ' + library
     print 'Shared libraries: ' + s
+
+    restore_dir()
 
 
 if __name__ == '__main__':

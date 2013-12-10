@@ -15,12 +15,13 @@ device_code_name = ''
 variant = ''
 version = ''
 
+
 def handle_option():
     global args
 
-    parser = argparse.ArgumentParser(description = 'Script to sync, build Android',
-                                     formatter_class = argparse.RawTextHelpFormatter,
-                                     epilog = '''
+    parser = argparse.ArgumentParser(description='Script to sync, build Android',
+                                     formatter_class=argparse.RawTextHelpFormatter,
+                                     epilog='''
 examples:
 
   python %(prog)s -s android-4.4_r1.2
@@ -43,6 +44,7 @@ examples:
     if len(sys.argv) <= 1:
         parser.print_help()
 
+
 def setup():
     global device, device_code_name, variant, version
 
@@ -59,12 +61,14 @@ def setup():
     version = args.version
     os.chdir(root_dir)
 
+
 def sync():
     if not args.sync:
         return()
 
     execute('repo init -u https://android.googlesource.com/platform/manifest -b ' + args.sync)
     execute('repo sync')
+
 
 def build():
     if not args.build:
@@ -89,12 +93,14 @@ def build():
     os.mkdir(dest_dir)
     execute('cp ' + root_dir + 'out/target/product/' + device_code_name + '/*.img ' + dest_dir)
 
+
 def flash():
     if not args.flash:
         return()
 
     if args.flash == 'all':
         execute('bash -c ". build/envsetup.sh && lunch full_' + device_code_name + '-' + variant + ' && fastboot -w flashall"')
+
 
 if __name__ == "__main__":
     handle_option()

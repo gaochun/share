@@ -2,7 +2,9 @@ from util import *
 
 # Before build, download proprietary drivers from https://developers.google.com/android/nexus/drivers,
 # and put them into related directory under /workspace/topic/android/backup/vendor.
-# jdk must be 1.6 for 4.4 build.
+# jdk must be 1.6.0.45 for 4.4 build, and JAVA_HOME should be set correctly.
+
+# build time: 4.4 - 1 hour
 
 root_dir = '/workspace/project/android/'
 backup_dir = '/workspace/topic/android/backup/'

@@ -38,15 +38,23 @@ def cmd(msg):
     print '[COMMAND] ' + msg
 
 
-def execute(command, silent=False, catch=False, abort=True):
+def execute(command, silent=False, catch=False, abort=True, duration=False):
     if not silent:
         _cmd(command)
+
+    start_time = datetime.datetime.now().replace(microsecond=0)
 
     if catch:
         result = commands.getstatusoutput(command)
     else:
         r = os.system(command)
         result = [r, '']
+
+    end_time = datetime.datetime.now().replace(microsecond=0)
+    time_diff = end_time - start_time
+
+    if duration:
+        info(str(time_diff) + ' was spent to execute following command: ' + command)
 
     if abort and result[0]:
         error('Failed to execute')
@@ -119,7 +127,6 @@ def backup_dir(new_dir):
 def restore_dir():
     global dir_stack
     os.chdir(dir_stack.pop())
-
 ################################################################################
 
 

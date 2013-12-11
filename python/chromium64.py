@@ -222,7 +222,7 @@ def build():
             command += ' -j16 -k'
 
     command = bashify(command)
-    execute(command)
+    execute(command, duration=True)
 
     restore_dir()
 

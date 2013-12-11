@@ -291,9 +291,10 @@ def dep():
                     while (lines[i].strip()):
                         library = lines[i].strip()
                         index = library.find('\\')
-                        if index:
-                            library = library[0:index].strip()
+                        if index > 0:
+                            library = library[0:index]
                         libraries.add(library)
+                        #print library
                         i += 1
                 else:
                     i += 1

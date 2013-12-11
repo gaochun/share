@@ -18,6 +18,7 @@ patches = [
     'git fetch https://aia-review.intel.com/platform/libnativehelper refs/changes/30/3030/2 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/build refs/changes/25/3025/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/frameworks/av refs/changes/92/3192/1 && git checkout FETCH_HEAD',
+    'git fetch https://aia-review.intel.com/platform/bionic refs/changes/00/3200/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/95/2395/2 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/26/3026/3 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org/third_party/icu refs/changes/27/3027/1 && git checkout FETCH_HEAD',
@@ -46,6 +47,7 @@ def _ensure_projects():
     projects.append(root_dir + '/' + 'build')
     projects.append(root_dir + '/' + 'libnativehelper')
     projects.append(root_dir + '/' + 'frameworks/av')
+    projects.append(root_dir + '/' + 'bionic')
 
 
 def handle_option():

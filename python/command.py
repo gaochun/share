@@ -20,11 +20,11 @@ INDEX_DESCRIPTION = 2
 INDEX_TYPE = 3
 
 
-TYPE_NULL = 0 # command is not runnable
+TYPE_NULL = 0  # command is not runnable
 POS = 0
 TYPE_RUNNABLE = 2 << POS
 POS = POS + 1
-TYPE_BUILTIN = 2 << POS # command is shell built-in
+TYPE_BUILTIN = 2 << POS  # command is shell built-in
 POS = POS + 1
 
 commands = [
@@ -40,6 +40,7 @@ commands = [
     ('basic', r'tar czf - src_dir | ssh gyagp@ubuntu-ygu5-01.sh.intel.com "cd /tmp; tar zxf -"', 'compress and copy to another machine', TYPE_NULL),
     ('basic', 'ps -p $$', 'Know current shell', TYPE_RUNNABLE),
     ('basic', 'tar czf - /workspace/project/chromium-android | ssh gyagp@ubuntu-ygu5-02 "cd /workspace/project; tar xzf -"', 'tar and copy to another machine', TYPE_NULL),
+    ('basic', 'tree -L 1 -i -d', 'list directories', TYPE_RUNNABLE),
     ('upgrade', 'do-release-upgrade', 'Upgrade system', TYPE_NULL),
     ('info', 'cat /etc/os-release', 'List distribution info', TYPE_RUNNABLE),
     ('info', 'cat /etc/lsb-release', 'List distribution info', TYPE_RUNNABLE),
@@ -86,7 +87,7 @@ commands = [
     ('hardware', 'file /system/xbin/init', '32 or 64 bit system', TYPE_RUNNABLE),
     ('hardware', 'lspci |grep VGA', 'Info of display card', TYPE_RUNNABLE),
     ('tool', 'alacarte', 'menu setting', TYPE_NULL),
-	('tool', 'killall Xvnc4 && vncserver :1 -geometry 1920x1080', 'Start vnc server', TYPE_NULL),
+    ('tool', 'killall Xvnc4 && vncserver :1 -geometry 1920x1080', 'Start vnc server', TYPE_NULL),
     ('network', 'sudo iftop -i wlan0', 'Network speed. Need to install', TYPE_RUNNABLE),
     ('network', 'sudo iptraf -g', 'Network speed. Need to install', TYPE_RUNNABLE),
     ('network', 'sar -n DEV 1 100', 'Network speed. 1 means 1 time per second, and 100 means to observe 100 times. Need to install sysstat', TYPE_RUNNABLE),
@@ -114,6 +115,7 @@ options = [
     ('q', 'Quit'),
 ]
 
+
 def run_command(command, command_type):
     if not command_type & TYPE_RUNNABLE:
         print 'This is not a runnable command!'
@@ -128,6 +130,7 @@ def run_command(command, command_type):
     else:
         print command
         os.system(command)
+
 
 def search(string, index_field):
     global commands_cache

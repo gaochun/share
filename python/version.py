@@ -18,7 +18,7 @@ examples:
 
     parser.add_argument('-s', '--set-version', dest='set_version', help='set version')
     parser.add_argument('-g', '--get', dest='get_version', help='get version', action='store_true')
-    parser.add_argument('-t', '--target', dest='target', help='target to set version with', choices=['java', 'gcc'], default='gcc')
+    parser.add_argument('-t', '--target', dest='target', help='target to set version with', choices=['java', 'gcc'], default='java')
 
     args = parser.parse_args()
 
@@ -99,12 +99,14 @@ def set_version_java():
     execute('sudo update-alternatives --install /usr/bin/javap javap /usr/lib/jvm/jdk' + version + '/bin/javap 50000')
     execute('sudo update-alternatives --install /usr/bin/jar jar /usr/lib/jvm/jdk' + version + '/bin/jar 50000')
     execute('sudo update-alternatives --install /usr/bin/jarsigner jarsigner /usr/lib/jvm/jdk' + version + '/bin/jarsigner 50000')
+    execute('sudo update-alternatives --install /usr/bin/javadoc javadoc /usr/lib/jvm/jdk' + version + '/bin/javadoc 50000')
     execute('sudo update-alternatives --config javac')
     execute('sudo update-alternatives --config java')
     execute('sudo update-alternatives --config javaws')
     execute('sudo update-alternatives --config javap')
     execute('sudo update-alternatives --config jar')
     execute('sudo update-alternatives --config jarsigner')
+    execute('sudo update-alternatives --config javadoc')
 
     execute('sudo rm -f ' + default_java_file)
     execute('sudo ln -s /usr/lib/jvm/jdk' + version + ' /usr/lib/jvm/default-java')

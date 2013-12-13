@@ -41,6 +41,7 @@ commands = [
     ('basic', 'ps -p $$', 'Know current shell', TYPE_RUNNABLE),
     ('basic', 'tar czf - /workspace/project/chromium-android | ssh gyagp@ubuntu-ygu5-02 "cd /workspace/project; tar xzf -"', 'tar and copy to another machine', TYPE_NULL),
     ('basic', 'tree -L 1 -i -d', 'list directories', TYPE_RUNNABLE),
+    ('basic', 'command 2>&1 |tee log_file', 'direct stdout and stderror to both screen and file', TYPE_NULL),
     ('upgrade', 'do-release-upgrade', 'Upgrade system', TYPE_NULL),
     ('info', 'cat /etc/os-release', 'List distribution info', TYPE_RUNNABLE),
     ('info', 'cat /etc/lsb-release', 'List distribution info', TYPE_RUNNABLE),

@@ -224,6 +224,8 @@ def build():
         if not args.build_onejob:
             command += ' -j16 -k'
 
+        command += ' 2>&1 |tee ' + root_dir + '/log'
+
     command = bashify(command)
     execute(command, duration=True)
 

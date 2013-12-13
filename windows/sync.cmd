@@ -1,1 +1,1 @@
-cd /D d:/project/gyagp/share && git reset --hard && git pull
+cd /D d:/project/gyagp/share && git reset --hard && git clean -f && git pull

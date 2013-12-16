@@ -217,6 +217,7 @@ if __name__ == "__main__":
     installPackage('g++-4.7-multilib')
     installPackage('bison')
     installPackage('python-pip')
+    installPackage('module-assistant')
     #installPackage('')
 
 

@@ -22,6 +22,7 @@ patches = [
     'git fetch https://aia-review.intel.com/platform/system/core refs/changes/03/3203/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/95/2395/2 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/26/3026/3 && git checkout FETCH_HEAD',
+    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/57/3357/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org/third_party/icu refs/changes/27/3027/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org/third_party/openssl refs/changes/28/3028/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org/v8 refs/changes/29/3029/1 && git checkout FETCH_HEAD',
@@ -85,8 +86,8 @@ examples:
     group_patch = parser.add_argument_group('patch')
     group_patch.add_argument('--patch', dest='patch', help='apply patches from Gerrit', action='store_true')
 
-    group_patch = parser.add_argument_group('clean')
-    group_patch.add_argument('--clean', dest='clean', help='clean patches from Gerrit', action='store_true')
+    group_clean= parser.add_argument_group('clean')
+    group_clean.add_argument('--clean', dest='clean', help='clean patches from Gerrit', action='store_true')
 
     group_mk64 = parser.add_argument_group('mk64')
     group_mk64.add_argument('--mk64', dest='mk64', help='generate mk for x86_64', action='store_true')

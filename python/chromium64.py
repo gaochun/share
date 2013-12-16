@@ -165,7 +165,7 @@ def clean():
     if not args.clean:
         return
 
-    warning('Clean is very dangurous, your local changes will be lost')
+    warning('Clean is very dangerous, your local changes will be lost')
     sys.stdout.write('Are you sure to do the cleanup? [yes/no]: ')
     choice = raw_input().lower()
     if choice not in ['yes', 'y']:

@@ -27,6 +27,20 @@ patches = [
     'git fetch https://aia-review.intel.com/platform/external/chromium_org/v8 refs/changes/29/3029/1 && git checkout FETCH_HEAD',
 ]
 
+dirty_repos = [
+    # Repos that possible ever patched. This list is not consistent with
+    # patches, it will list all patched repos in histroy.
+    'bionic',
+    'build',
+    'external/chromium_org',
+    'external/chromium_org/third_party/icu',
+    'external/chromium_org/third_party/openssl',
+    'external/chromium_org/v8',
+    'frameworks/av',
+    'libnativehelper',
+    'system/core',
+]
+
 ################################################################################
 
 
@@ -69,7 +83,10 @@ examples:
     group_sync.add_argument('--sync-local', dest='sync_local', help='only update working tree, not fetch', action='store_true')
 
     group_patch = parser.add_argument_group('patch')
-    group_patch.add_argument('--patch', dest='patch', help='apply patch from Gerrit', action='store_true')
+    group_patch.add_argument('--patch', dest='patch', help='apply patches from Gerrit', action='store_true')
+
+    group_patch = parser.add_argument_group('clean')
+    group_patch.add_argument('--clean', dest='clean', help='clean patches from Gerrit', action='store_true')
 
     group_mk64 = parser.add_argument_group('mk64')
     group_mk64.add_argument('--mk64', dest='mk64', help='generate mk for x86_64', action='store_true')
@@ -141,6 +158,23 @@ def patch():
         else:
             info('Patch has been cherry picked, so it will be skipped: ' + patch)
 
+        restore_dir()
+
+
+def clean():
+    if not args.clean:
+        return
+
+    warning('Clean is very dangurous, your local changes will be lost')
+    sys.stdout.write('Are you sure to do the cleanup? [yes/no]: ')
+    choice = raw_input().lower()
+    if choice not in ['yes', 'y']:
+        return
+
+    for repo in dirty_repos:
+        backup_dir(root_dir + '/' + repo)
+        execute('git reset --hard aia/topic/64-bit/master', silent=True, catch=True)
+        info(repo + ' is resetted to aia/topic/64-bit/master')
         restore_dir()
 
 
@@ -320,6 +354,7 @@ if __name__ == '__main__':
     setup()
     sync()
     patch()
+    clean()
     mk64()
     build()
     git_status()

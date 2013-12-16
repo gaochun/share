@@ -711,7 +711,8 @@ if [ $? -eq 0 ] ; then
     cd /workspace/project/android-ia && source /workspace/project/android-ia/build/envsetup.sh >/dev/null && lunch emu64-eng >/dev/null
     cd /workspace/project/android-ia
 else
-    cd /workspace/project
+    cd /workspace/project/android-ia && source /workspace/project/android-ia/build/envsetup.sh >/dev/null && lunch emu64-eng >/dev/null
+    cd /workspace/project/android-ia
 fi
 
 export PATH=$PATH:$JAVA_HOME/bin

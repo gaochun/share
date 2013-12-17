@@ -2,7 +2,7 @@ from util import *
 
 root_dir = ''
 webview_dir = ''
-projects = []
+repos = []
 android_target_arch = ''
 chromium_target_arch = ''
 
@@ -41,31 +41,31 @@ dirty_repos = [
     'frameworks/av',
     'libnativehelper',
     'system/core',
+    'frameworks/native',
+    'external/chromium'
 ]
 
 ################################################################################
 
 
-def _ensure_projects():
-    global projects
+def _ensure_repos():
+    global repos
 
-    if len(projects) > 0:
+    if len(repos) > 0:
         return
 
     backup_dir(webview_dir)
     r = os.popen('find -name ".git"')
     lines = r.read().split('\n')
     del lines[len(lines) - 1]
-    for project in lines:
-        project = project.replace('./', '')
-        project = project.replace('.git', '')
-        projects.append(webview_dir + '/' + project)
+    for repo in lines:
+        repo = repo.replace('./', '')
+        repo = repo.replace('.git', '')
+        repos.append(webview_dir + '/' + repo)
 
-    projects.append(root_dir + '/' + 'build')
-    projects.append(root_dir + '/' + 'libnativehelper')
-    projects.append(root_dir + '/' + 'frameworks/av')
-    projects.append(root_dir + '/' + 'bionic')
-    projects.append(root_dir + '/' + 'system/core')
+    for repo in dirty_repos:
+        if not re.match('external/chromium_org', repo):
+            repos.append(root_dir + '/' + repo)
 
 
 def handle_option():
@@ -87,7 +87,7 @@ examples:
     group_patch = parser.add_argument_group('patch')
     group_patch.add_argument('--patch', dest='patch', help='apply patches from Gerrit', action='store_true')
 
-    group_clean= parser.add_argument_group('clean')
+    group_clean = parser.add_argument_group('clean')
     group_clean.add_argument('--clean', dest='clean', help='clean patches from Gerrit', action='store_true')
 
     group_mk64 = parser.add_argument_group('mk64')
@@ -100,10 +100,10 @@ examples:
     group_build.add_argument('--build-onejob', dest='build_onejob', help='build with one job, and stop once failure happens', action='store_true')
 
     group_other = parser.add_argument_group('other')
-    group_other.add_argument('-p', '--project', dest='project', help='project', choices=['chromium_org', 'emu'], default='chromium_org')
+    group_other.add_argument('-r', '--repo', dest='repo', help='repo', choices=['chromium_org', 'emu'], default='chromium_org')
     group_other.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
     group_other.add_argument('--dep', dest='dep', help='get dep for each module', action='store_true')
-    group_other.add_argument('--git-status', dest='git_status', help='git status for projects', action='store_true')
+    group_other.add_argument('--git-status', dest='git_status', help='git status for repos', action='store_true')
 
     args = parser.parse_args()
 
@@ -143,11 +143,11 @@ def patch():
     for patch in patches:
         pattern = re.compile('platform/(.*) (.*) &&')
         match = pattern.search(patch)
-        project = match.group(1)
+        repo = match.group(1)
         change = match.group(2)
-        backup_dir(root_dir + '/' + project)
+        backup_dir(root_dir + '/' + repo)
 
-        command = 'git fetch ssh://aia-review.intel.com/platform/' + project + ' ' + change
+        command = 'git fetch ssh://aia-review.intel.com/platform/' + repo + ' ' + change
         execute(command, silent=True, catch=True)
         result = execute('git show FETCH_HEAD |grep Change-Id:', catch=True, silent=True)
 
@@ -244,10 +244,10 @@ def build():
         return
 
     command = '. ' + root_dir + '/build/envsetup.sh && lunch emu64-eng && '
-    if args.project == 'emu':
+    if args.repo == 'emu':
         backup_dir(root_dir)
         command += 'make emu -j16'
-    elif args.project == 'chromium_org':
+    elif args.repo == 'chromium_org':
         backup_dir(webview_dir)
         if args.build_dep:
             command += 'mma'
@@ -273,20 +273,20 @@ def git_status():
         return
 
     has_change = False
-    projects_change = []
+    repos_change = []
 
-    _ensure_projects()
-    for project in projects:
-        backup_dir(project)
+    _ensure_repos()
+    for repo in repos:
+        backup_dir(repo)
         result = execute('git status |grep modified', silent=True, catch=True, abort=False)
         if not result[0]:
             has_change = True
-            projects_change.append(project)
+            repos_change.append(repo)
             #print result[1]
         restore_dir()
 
     if has_change:
-        info('The following projects have changes: ' + ','.join(projects_change))
+        info('The following repos have changes: ' + ','.join(repos_change))
     else:
         info('There is no change at all')
 
@@ -354,6 +354,7 @@ def dep():
 if __name__ == '__main__':
     handle_option()
     setup()
+    _ensure_repos()
     sync()
     patch()
     clean()

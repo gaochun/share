@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from util import *
 
 root_dir = ''

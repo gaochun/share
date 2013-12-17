@@ -125,6 +125,8 @@ def setup():
     android_target_arch = 'x86_64'
     chromium_target_arch = 'x64'
 
+    _ensure_repos()
+
 
 def sync():
     if not args.sync:
@@ -275,7 +277,6 @@ def git_status():
     has_change = False
     repos_change = []
 
-    _ensure_repos()
     for repo in repos:
         backup_dir(repo)
         result = execute('git status |grep modified', silent=True, catch=True, abort=False)
@@ -354,7 +355,6 @@ def dep():
 if __name__ == '__main__':
     handle_option()
     setup()
-    _ensure_repos()
     sync()
     patch()
     clean()

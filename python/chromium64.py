@@ -100,7 +100,7 @@ examples:
     group_build.add_argument('--build-onejob', dest='build_onejob', help='build with one job, and stop once failure happens', action='store_true')
 
     group_other = parser.add_argument_group('other')
-    group_other.add_argument('-r', '--repo', dest='repo', help='repo', choices=['chromium_org', 'emu'], default='chromium_org')
+    group_other.add_argument('-r', '--repo', dest='repo', help='repo', choices=['chromium_org', 'emu', 'bridge', 'all'], default='chromium_org')
     group_other.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
     group_other.add_argument('--dep', dest='dep', help='get dep for each module', action='store_true')
     group_other.add_argument('--git-status', dest='git_status', help='git status for repos', action='store_true')
@@ -245,28 +245,32 @@ def build():
     if not args.build:
         return
 
+    backup_dir(root_dir)
     command = '. ' + root_dir + '/build/envsetup.sh && lunch emu64-eng && '
+
     if args.repo == 'emu':
-        backup_dir(root_dir)
-        command += 'make emu -j16'
-    elif args.repo == 'chromium_org':
-        backup_dir(webview_dir)
+        command += 'make emu'
+    else:
         if args.build_dep:
-            command += 'mma'
+            command += 'mmma '
         else:
-            command += 'mm'
+            command += 'mmm '
+
+        if args.repo == 'bridge':
+            command += 'frameworks/webview'
+        elif args.repo == 'chromium_org':
+            command += 'external/chromium_org'
 
         if args.build_showcommands:
             command += ' showcommands'
 
-        if not args.build_onejob:
-            command += ' -j16 -k'
+    if not args.build_onejob:
+        command += ' -j16 -k'
 
-        command += ' 2>&1 |tee ' + root_dir + '/log'
+    command += ' 2>&1 |tee ' + root_dir + '/' + args.repo + '_log'
 
     command = bashify(command)
     execute(command, duration=True)
-
     restore_dir()
 
 

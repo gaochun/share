@@ -30,15 +30,15 @@ dirty_repos = [
     # patches, it will list all patched repos in histroy.
     'bionic',
     'build',
-    'external/chromium'
+    'external/chromium',
     'external/chromium_org',
     'external/chromium_org/third_party/icu',
     'external/chromium_org/third_party/openssl',
     'external/chromium_org/v8',
     'frameworks/av',
+    'frameworks/native',
     'libnativehelper',
     'system/core',
-    'frameworks/native',
 ]
 
 ################################################################################

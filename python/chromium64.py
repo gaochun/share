@@ -43,6 +43,8 @@ dirty_repos = [
     'system/core',
 ]
 
+buildable_repos = ['emu', 'chromium_org', 'bridge', 'browser']
+
 ################################################################################
 
 
@@ -93,12 +95,12 @@ examples:
 
     group_build = parser.add_argument_group('build')
     group_build.add_argument('-b', '--build', dest='build', help='build', action='store_true')
-    group_build.add_argument('--build-nodep', dest='build_nodep', help='build with dependencies', action='store_true')
+    group_build.add_argument('--build-nodep', dest='build_nodep', help='build without dependencies', action='store_true')
     group_build.add_argument('--build-showcommands', dest='build_showcommands', help='build with detailed command', action='store_true')
     group_build.add_argument('--build-onejob', dest='build_onejob', help='build with one job, and stop once failure happens', action='store_true')
 
     group_other = parser.add_argument_group('other')
-    group_other.add_argument('-r', '--repo', dest='repo', help='repo', choices=['chromium_org', 'emu', 'bridge', 'all'], default='chromium_org')
+    group_other.add_argument('-r', '--repo', dest='repo', help='designate repos (split with ",") to build. Choices are ' + ','.join(buildable_repos) + ",all", default='chromium_org')
     group_other.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
     group_other.add_argument('--dep', dest='dep', help='get dep for each module', action='store_true')
     group_other.add_argument('--git-status', dest='git_status', help='git status for repos', action='store_true')
@@ -243,32 +245,42 @@ def build():
     if not args.build:
         return
 
-    backup_dir(root_dir)
-    command = '. ' + root_dir + '/build/envsetup.sh && lunch emu64-eng && '
-
-    if args.repo == 'emu':
-        command += 'make emu'
+    if args.repo == 'all':
+        build_repos = buildable_repos
     else:
-        if args.build_nodep:
-            command += 'mmm '
+        build_repos = args.repo.split(',')
+
+    backup_dir(root_dir)
+
+    for repo in build_repos:
+        command = '. ' + root_dir + '/build/envsetup.sh && lunch emu64-eng && '
+
+        if repo == 'emu':
+            command += 'make emu'
         else:
-            command += 'mmma '
+            if args.build_nodep:
+                command += 'mmm '
+            else:
+                command += 'mmma '
 
-        if args.repo == 'bridge':
-            command += 'frameworks/webview'
-        elif args.repo == 'chromium_org':
-            command += 'external/chromium_org'
+            if repo == 'bridge':
+                command += 'frameworks/webview'
+            elif repo == 'chromium_org':
+                command += 'external/chromium_org'
+            elif repo == 'browser':
+                command += 'packages/apps/Browser'
 
-        if args.build_showcommands:
-            command += ' showcommands'
+            if args.build_showcommands:
+                command += ' showcommands'
 
-    if not args.build_onejob:
-        command += ' -j16 -k'
+        if not args.build_onejob:
+            command += ' -j16 -k'
 
-    command += ' 2>&1 |tee ' + root_dir + '/' + args.repo + '_log'
+        command += ' 2>&1 |tee ' + root_dir + '/' + repo + '_log'
 
-    command = bashify(command)
-    execute(command, duration=True)
+        command = bashify(command)
+        execute(command, duration=True)
+
     restore_dir()
 
 

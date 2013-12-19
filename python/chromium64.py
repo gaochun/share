@@ -13,18 +13,16 @@ patches = [
 
     # Patches by our own
     'git fetch https://aia-review.intel.com/platform/bionic refs/changes/00/3200/1 && git checkout FETCH_HEAD',
-    'git fetch https://aia-review.intel.com/platform/build refs/changes/25/3025/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/95/2395/2 && git checkout FETCH_HEAD',
-    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/26/3026/3 && git checkout FETCH_HEAD',
-    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/57/3357/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/94/3194/4 && git checkout FETCH_HEAD',
+    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/26/3026/6 && git checkout FETCH_HEAD',
+    'git fetch https://aia-review.intel.com/platform/external/chromium_org refs/changes/57/3357/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org/third_party/icu refs/changes/27/3027/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org/third_party/openssl refs/changes/28/3028/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/external/chromium_org/v8 refs/changes/29/3029/1 && git checkout FETCH_HEAD',
-    'git fetch https://aia-review.intel.com/platform/frameworks/av refs/changes/92/3192/1 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/libnativehelper refs/changes/49/3049/1 && git checkout FETCH_HEAD',
-    'git fetch https://aia-review.intel.com/platform/libnativehelper refs/changes/30/3030/2 && git checkout FETCH_HEAD',
     'git fetch https://aia-review.intel.com/platform/system/core refs/changes/03/3203/1 && git checkout FETCH_HEAD',
+    'git fetch https://aia-review.intel.com/platform/frameworks/webview refs/changes/23/3523/1 && git checkout FETCH_HEAD'
 ]
 
 dirty_repos = [
@@ -39,11 +37,12 @@ dirty_repos = [
     'external/chromium_org/v8',
     'frameworks/av',
     'frameworks/native',
+    'frameworks/webview'
     'libnativehelper',
     'system/core',
 ]
 
-modules = ['emu', 'hsb_64', 'webviewchromium', 'webview', 'browser']
+modules = []
 
 ################################################################################
 
@@ -115,7 +114,7 @@ examples:
 
 
 def setup():
-    global root_dir, webview_dir, android_target_arch, chromium_target_arch
+    global root_dir, webview_dir, android_target_arch, chromium_target_arch, modules
 
     if not args.root_dir:
         root_dir = os.path.abspath(os.getcwd())
@@ -128,6 +127,12 @@ def setup():
     chromium_target_arch = 'x64'
 
     _ensure_repos()
+
+    modules_common = ['webviewchromium', 'webview', 'browser']
+    if args.combo == 'emu64-eng':
+        modules = ['emu'] + modules_common
+    elif args.combo == 'hsb_64-eng':
+        modules = ['hsb_64'] + modules_common
 
 
 def sync():

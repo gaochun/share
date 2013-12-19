@@ -95,7 +95,6 @@ examples:
 
     group_build = parser.add_argument_group('build')
     group_build.add_argument('-b', '--build', dest='build', help='build', action='store_true')
-    group_build.add_argument('--build-nodep', dest='build_nodep', help='build without dependencies', action='store_true')
     group_build.add_argument('--build-showcommands', dest='build_showcommands', help='build with detailed command', action='store_true')
     group_build.add_argument('--build-onejob', dest='build_onejob', help='build with one job, and stop once failure happens', action='store_true')
 
@@ -256,28 +255,27 @@ def build():
         command = '. ' + root_dir + '/build/envsetup.sh && lunch emu64-eng && '
 
         if repo == 'emu':
-            command += 'make emu'
+            command += 'make emu suffix'
+        elif repo == 'chromium_org':
+            command += 'export BUILD_HOST_64bit=1 && make v8_tools_gyp_mksnapshot_x64_host_gyp suffix1 && unset BUILD_HOST_64bit && mmma external/chromium_org suffix2'
         else:
-            if args.build_nodep:
-                command += 'mmm '
-            else:
-                command += 'mmma '
+            command += 'mmma '
 
             if repo == 'bridge':
                 command += 'frameworks/webview'
-            elif repo == 'chromium_org':
-                command += 'external/chromium_org'
             elif repo == 'browser':
                 command += 'packages/apps/Browser'
 
-            if args.build_showcommands:
-                command += ' showcommands'
+            command += 'suffix'
+
+        suffix = ''
+        if args.build_showcommands:
+            suffix += ' showcommands'
 
         if not args.build_onejob:
-            command += ' -j16 -k'
-
-        command += ' 2>&1 |tee ' + root_dir + '/' + repo + '_log'
-
+            suffix += ' -j16 -k'
+        suffix += ' 2>&1 |tee ' + root_dir + '/' + repo + '_log'
+        command = command.replace('suffix', suffix)
         command = bashify(command)
         execute(command, duration=True)
 

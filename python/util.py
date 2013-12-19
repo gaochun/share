@@ -38,9 +38,12 @@ def cmd(msg):
     print '[COMMAND] ' + msg
 
 
-def execute(command, silent=False, catch=False, abort=True, duration=False):
+def execute(command, silent=False, catch=False, abort=True, duration=False, dryrun=False):
     if not silent:
         _cmd(command)
+
+    if dryrun:
+        return
 
     start_time = datetime.datetime.now().replace(microsecond=0)
 

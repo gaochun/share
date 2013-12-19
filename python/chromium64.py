@@ -43,7 +43,7 @@ dirty_repos = [
     'system/core',
 ]
 
-modules = ['emu', 'chromium_org', 'bridge', 'browser']
+modules = ['emu', 'hsb_64', 'webviewchromium', 'webview', 'browser']
 
 ################################################################################
 
@@ -101,7 +101,7 @@ examples:
     group_build.add_argument('--build-onejob', dest='build_onejob', help='build with one job, and stop once failure happens', action='store_true')
 
     group_other = parser.add_argument_group('other')
-    group_other.add_argument('-m', '--module', dest='module', help='designate modules (split with ",") to build. Choices are ' + ','.join(modules) + ",all", default='chromium_org')
+    group_other.add_argument('-m', '--module', dest='module', help='designate modules (split with ",") to build. Choices are ' + ','.join(modules) + ",all", default='webviewchromium')
     group_other.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
     group_other.add_argument('--dep', dest='dep', help='get dep for each module', action='store_true')
     group_other.add_argument('--git-status', dest='git_status', help='git status for repos', action='store_true')
@@ -261,12 +261,12 @@ def build():
             command += 'make emu suffix'
         elif module == 'hsb_64':
             command += 'make hsb_64 suffix'
-        elif module == 'chromium_org':
+        elif module == 'webviewchromium':
             command += 'export BUILD_HOST_64bit=1 && make v8_tools_gyp_mksnapshot_x64_host_gyp suffix1 && unset BUILD_HOST_64bit && mmma external/chromium_org suffix2'
         else:
             command += 'mmma '
 
-            if module == 'bridge':
+            if module == 'webview':
                 command += 'frameworks/webview'
             elif module == 'browser':
                 command += 'packages/apps/Browser'

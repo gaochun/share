@@ -263,7 +263,6 @@ def build():
             modules_build = args.module.split(',')
 
         for module in modules_build:
-            print combo + '  ' + module
             command = '. ' + root_dir + '/build/envsetup.sh && lunch ' + combo + ' && '
 
             if module == 'emu':
@@ -383,7 +382,7 @@ def test_build():
     if not args.test_build:
         return
 
-    execute('rm -rf out')
+    execute('rm -rf ' + root_dir + '/out')
     args.combo = 'all'
     args.module = 'all'
     args.build = True

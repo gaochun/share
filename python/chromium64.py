@@ -82,6 +82,8 @@ examples:
   python %(prog)s --dep
   python %(prog)s --combo emu64-eng -b
   python %(prog)s --combo hsb_64-eng -b -m hsb_64
+
+  python %(prog)s --clean -s --patch --test-build
 ''')
     group_sync = parser.add_argument_group('sync')
     group_sync.add_argument('-s', '--sync', dest='sync', help='sync the repo', action='store_true')
@@ -376,6 +378,7 @@ def dep():
 
     restore_dir()
 
+
 def test_build():
     global args
 
@@ -388,12 +391,13 @@ def test_build():
     args.build = True
     build()
 
+
 if __name__ == '__main__':
     handle_option()
     setup()
+    clean()
     sync()
     patch()
-    clean()
     mk64()
     build()
     git_status()

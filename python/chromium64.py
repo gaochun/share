@@ -379,6 +379,10 @@ def dep():
 
 def test_build():
     global args
+
+    if not args.test_build:
+        return
+
     execute('rm -rf out')
     args.combo = 'all'
     args.module = 'all'

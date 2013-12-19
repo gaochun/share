@@ -42,7 +42,9 @@ dirty_repos = [
     'system/core',
 ]
 
-modules = []
+combos = ['emu64-eng', 'hsb_64-eng']
+modules_common = ['webviewchromium', 'webview', 'browser']
+modules_system = {'emu64-eng': 'emu', 'hsb_64-eng': 'hsb_64'}
 
 ################################################################################
 
@@ -100,11 +102,11 @@ examples:
     group_build.add_argument('--build-onejob', dest='build_onejob', help='build with one job, and stop once failure happens', action='store_true')
 
     group_other = parser.add_argument_group('other')
-    group_other.add_argument('-m', '--module', dest='module', help='designate modules (split with ",") to build. Choices are ' + ','.join(modules) + ",all", default='webviewchromium')
+    group_other.add_argument('-c', '--combo', dest='combo', help='combos, split with ","', choices=combos + ['all'], default='emu64-eng')
+    group_other.add_argument('-m', '--module', dest='module', help='modules, split with ","', choices=modules_common + modules_system.values() + ['all'], default='webviewchromium')
     group_other.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
     group_other.add_argument('--dep', dest='dep', help='get dep for each module', action='store_true')
     group_other.add_argument('--git-status', dest='git_status', help='git status for repos', action='store_true')
-    group_other.add_argument('--combo', dest='combo', help='combo', default='emu64-eng')
 
     args = parser.parse_args()
 
@@ -114,7 +116,7 @@ examples:
 
 
 def setup():
-    global root_dir, webview_dir, android_target_arch, chromium_target_arch, modules
+    global root_dir, webview_dir, android_target_arch, chromium_target_arch
 
     if not args.root_dir:
         root_dir = os.path.abspath(os.getcwd())
@@ -127,12 +129,6 @@ def setup():
     chromium_target_arch = 'x64'
 
     _ensure_repos()
-
-    modules_common = ['webviewchromium', 'webview', 'browser']
-    if args.combo == 'emu64-eng':
-        modules = ['emu'] + modules_common
-    elif args.combo == 'hsb_64-eng':
-        modules = ['hsb_64'] + modules_common
 
 
 def sync():
@@ -252,42 +248,49 @@ def build():
     if not args.build:
         return
 
-    if args.module == 'all':
-        build_modules = modules
-    else:
-        build_modules = args.module.split(',')
-
     backup_dir(root_dir)
 
-    for module in build_modules:
-        command = '. ' + root_dir + '/build/envsetup.sh && lunch ' + args.combo + ' && '
+    if args.combo == 'all':
+        combos_build = combos
+    else:
+        combos_build = args.combo.split(',')
 
-        if module == 'emu':
-            command += 'make emu suffix'
-        elif module == 'hsb_64':
-            command += 'make hsb_64 suffix'
-        elif module == 'webviewchromium':
-            command += 'export BUILD_HOST_64bit=1 && make v8_tools_gyp_mksnapshot_x64_host_gyp suffix1 && unset BUILD_HOST_64bit && mmma external/chromium_org suffix2'
+    for combo in combos_build:
+        if args.module == 'all':
+            modules_build = [modules_system[combo]] + modules_common
         else:
-            command += 'mmma '
+            modules_build = args.module.split(',')
 
-            if module == 'webview':
-                command += 'frameworks/webview'
-            elif module == 'browser':
-                command += 'packages/apps/Browser'
+        for module in modules_build:
+            print combo + '  ' + module
+            command = '. ' + root_dir + '/build/envsetup.sh && lunch ' + combo + ' && '
 
-            command += 'suffix'
+            if module == 'emu':
+                command += 'make emu suffix'
+            elif module == 'hsb_64':
+                command += 'make hsb_64 suffix'
+            elif module == 'webviewchromium':
+                command += 'export BUILD_HOST_64bit=1 && make v8_tools_gyp_mksnapshot_x64_host_gyp suffix1 && unset BUILD_HOST_64bit && mmma external/chromium_org suffix2'
+            else:
+                command += 'mmma '
 
-        suffix = ''
-        if args.build_showcommands:
-            suffix += ' showcommands'
+                if module == 'webview':
+                    command += 'frameworks/webview'
+                elif module == 'browser':
+                    command += 'packages/apps/Browser'
 
-        if not args.build_onejob:
-            suffix += ' -j16 -k'
-        suffix += ' 2>&1 |tee ' + root_dir + '/' + module + '_log'
-        command = command.replace('suffix', suffix)
-        command = bashify(command)
-        execute(command, duration=True)
+                command += 'suffix'
+
+            suffix = ''
+            if args.build_showcommands:
+                suffix += ' showcommands'
+
+            if not args.build_onejob:
+                suffix += ' -j16 -k'
+            suffix += ' 2>&1 |tee ' + root_dir + '/' + combo + '_' + module + '_log'
+            command = command.replace('suffix', suffix)
+            command = bashify(command)
+            execute(command, duration=True)
 
     restore_dir()
 

@@ -43,7 +43,7 @@ dirty_repos = [
     'system/core',
 ]
 
-buildable_repos = ['emu', 'chromium_org', 'bridge', 'browser']
+modules = ['emu', 'chromium_org', 'bridge', 'browser']
 
 ################################################################################
 
@@ -80,7 +80,7 @@ examples:
 
   python %(prog)s --dep
   python %(prog)s --combo emu64-eng -b
-  python %(prog)s --combo hsb_64-eng -b
+  python %(prog)s --combo hsb_64-eng -b -m hsb_64
 ''')
     group_sync = parser.add_argument_group('sync')
     group_sync.add_argument('-s', '--sync', dest='sync', help='sync the repo', action='store_true')
@@ -101,7 +101,7 @@ examples:
     group_build.add_argument('--build-onejob', dest='build_onejob', help='build with one job, and stop once failure happens', action='store_true')
 
     group_other = parser.add_argument_group('other')
-    group_other.add_argument('-r', '--repo', dest='repo', help='designate repos (split with ",") to build. Choices are ' + ','.join(buildable_repos) + ",all", default='chromium_org')
+    group_other.add_argument('-m', '--module', dest='module', help='designate modules (split with ",") to build. Choices are ' + ','.join(modules) + ",all", default='chromium_org')
     group_other.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
     group_other.add_argument('--dep', dest='dep', help='get dep for each module', action='store_true')
     group_other.add_argument('--git-status', dest='git_status', help='git status for repos', action='store_true')
@@ -247,28 +247,28 @@ def build():
     if not args.build:
         return
 
-    if args.repo == 'all':
-        build_repos = buildable_repos
+    if args.module == 'all':
+        build_modules = modules
     else:
-        build_repos = args.repo.split(',')
+        build_modules = args.module.split(',')
 
     backup_dir(root_dir)
 
-    for repo in build_repos:
+    for module in build_modules:
         command = '. ' + root_dir + '/build/envsetup.sh && lunch ' + args.combo + ' && '
 
-        if repo == 'emu':
+        if module == 'emu':
             command += 'make emu suffix'
-        elif repo == 'hsb_64':
+        elif module == 'hsb_64':
             command += 'make hsb_64 suffix'
-        elif repo == 'chromium_org':
+        elif module == 'chromium_org':
             command += 'export BUILD_HOST_64bit=1 && make v8_tools_gyp_mksnapshot_x64_host_gyp suffix1 && unset BUILD_HOST_64bit && mmma external/chromium_org suffix2'
         else:
             command += 'mmma '
 
-            if repo == 'bridge':
+            if module == 'bridge':
                 command += 'frameworks/webview'
-            elif repo == 'browser':
+            elif module == 'browser':
                 command += 'packages/apps/Browser'
 
             command += 'suffix'
@@ -279,7 +279,7 @@ def build():
 
         if not args.build_onejob:
             suffix += ' -j16 -k'
-        suffix += ' 2>&1 |tee ' + root_dir + '/' + repo + '_log'
+        suffix += ' 2>&1 |tee ' + root_dir + '/' + module + '_log'
         command = command.replace('suffix', suffix)
         command = bashify(command)
         execute(command, duration=True)

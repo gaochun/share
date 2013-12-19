@@ -107,6 +107,7 @@ examples:
     group_other.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
     group_other.add_argument('--dep', dest='dep', help='get dep for each module', action='store_true')
     group_other.add_argument('--git-status', dest='git_status', help='git status for repos', action='store_true')
+    group_other.add_argument('--test-build', dest='test_build', help='build test with all combos and modules', action='store_true')
 
     args = parser.parse_args()
 
@@ -376,6 +377,13 @@ def dep():
 
     restore_dir()
 
+def test_build():
+    global args
+    execute('rm -rf out')
+    args.combo = 'all'
+    args.module = 'all'
+    args.build = True
+    build()
 
 if __name__ == '__main__':
     handle_option()
@@ -387,3 +395,4 @@ if __name__ == '__main__':
     build()
     git_status()
     dep()
+    test_build()

@@ -79,6 +79,8 @@ examples:
   python %(prog)s -b --build-showcommands --build-onejob
 
   python %(prog)s --dep
+  python %(prog)s --combo emu64-eng -b
+  python %(prog)s --combo hsb_64-eng -b
 ''')
     group_sync = parser.add_argument_group('sync')
     group_sync.add_argument('-s', '--sync', dest='sync', help='sync the repo', action='store_true')
@@ -103,6 +105,7 @@ examples:
     group_other.add_argument('-d', '--root-dir', dest='root_dir', help='set root directory')
     group_other.add_argument('--dep', dest='dep', help='get dep for each module', action='store_true')
     group_other.add_argument('--git-status', dest='git_status', help='git status for repos', action='store_true')
+    group_other.add_argument('--combo', dest='combo', help='combo', default='emu64-eng')
 
     args = parser.parse_args()
 
@@ -252,10 +255,12 @@ def build():
     backup_dir(root_dir)
 
     for repo in build_repos:
-        command = '. ' + root_dir + '/build/envsetup.sh && lunch emu64-eng && '
+        command = '. ' + root_dir + '/build/envsetup.sh && lunch ' + args.combo + ' && '
 
         if repo == 'emu':
             command += 'make emu suffix'
+        elif repo == 'hsb_64':
+            command += 'make hsb_64 suffix'
         elif repo == 'chromium_org':
             command += 'export BUILD_HOST_64bit=1 && make v8_tools_gyp_mksnapshot_x64_host_gyp suffix1 && unset BUILD_HOST_64bit && mmma external/chromium_org suffix2'
         else:

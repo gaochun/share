@@ -4,7 +4,6 @@ import sys
 sys.path.append(sys.path[0] + '/..')
 from util import *
 import fileinput
-import pexpect
 
 dir_root = ''
 dir_chromium = ''
@@ -317,6 +316,10 @@ def flash_image():
         file_image = args.file_image
     else:
         file_image = 'out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type)
+
+    if not os.path.exists(file_image):
+        error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
+        return
 
     dir_extract = '/tmp/' + get_datetime()
     execute('mkdir ' + dir_extract)

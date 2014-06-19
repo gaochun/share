@@ -197,6 +197,7 @@ if __name__ == "__main__":
         'postfix',  # smtp server
         'android-tools-adb', 'android-tools-adbd', 'android-tools-fastboot',
         'dos2unix',
+        'lib32z1',
     ])
 
     install_chromium()

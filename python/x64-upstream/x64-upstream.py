@@ -90,11 +90,9 @@ test_suite_filter = {
     ('baytrail', 'all'): {
         'media_unittests': [
             # Status: TODO
-            'MediaSourcePlayerTest.A_StarvationDuringEOSDecode',
-            'MediaSourcePlayerTest.AV_NoPrefetchForFinishedVideoOnAudioStarvation',
-            'AudioAndroidOutputTest.StartOutputStreamCallbacks',  # Crash the system if runs enough time
-            'MediaDrmBridgeTest.IsKeySystemSupported_Widevine',
-            'MediaDrmBridgeTest.IsSecurityLevelSupported_Widevine',
+            'MediaDrmBridgeTest.AddNewKeySystemMapping',
+            'MediaDrmBridgeTest.ShouldNotOverwriteExistingKeySystem',
+            'YUVConvertTest.YUVAtoARGB_MMX_MatchReference',
         ],
         'sandbox_linux_unittests': [
             # Status: Verified with stable image
@@ -132,7 +130,6 @@ test_suite_filter = {
             'JavaBridgeCoercionTest#testPassJavaObject',
             'ContentViewScrollingTest#testFling',
         ],
-        'ChromeShellTest': [],
         'AndroidWebViewTest': [
             # Status: TODO
             'AndroidScrollIntegrationTest#testUiScrollReflectedInJs',
@@ -155,29 +152,25 @@ test_suite_filter = {
             'CoreImplTest#testDataPipeCreation',
             'CoreImplTest#testSharedBufferCreation',
         ]
-
     },
     ('baytrail', 'x86_64'): {
+        # Status: TODO
+        # These are only for x86_64
+        'media_unittests': [
+            'MediaDrmBridgeTest.IsKeySystemSupported_Widevine',
+            'MediaDrmBridgeTest.IsSecurityLevelSupported_Widevine',
+        ]
     },
     ('baytrail', 'x86'): {
+        # status Done
         'base_unittests': [
             # This case is only needed for x86. x64 doesn't have this problem.
             'ThreadTest.StartWithOptions_StackSize',
-        ],
-        'media_unittests': [
-            # Status: TODO
-            'YUVConvertTest.YUVAtoARGB_MMX_MatchReference',
-            'MediaDrmBridgeTest.AddNewKeySystemMapping',
-            'MediaDrmBridgeTest.ShouldNotOverwriteExistingKeySystem',
         ],
         'gl_tests': [
             # Status: TODO
             'TextureStorageTest.CorrectPixels',
         ],
-        'AndroidWebViewTest': [
-            'AwSettingsTest#testLoadWithOverviewModeViewportTagWithTwoViews',
-            'AwSettingsTest#testLoadWithOverviewModeWithTwoViews',
-        ]
     },
     ('generic', 'all'): {},
     ('generic', 'x86_64'): {},

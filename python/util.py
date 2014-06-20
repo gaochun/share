@@ -358,7 +358,7 @@ def connect_device(device='192.168.42.1', mode='system'):
         return device_connected(device, mode)
 
 
-def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android', arch='x86_64', device='192.168.42.1', type='tombstone'):
+def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android-x64', arch='x86_64', device='192.168.42.1', type='tombstone'):
     if device == '192.168.42.1':
         device_type = 'baytrail'
     product = get_product(arch, device_type)

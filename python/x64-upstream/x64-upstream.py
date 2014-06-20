@@ -129,56 +129,18 @@ test_suite_filter = {
         ],
         'ContentShellTest': [
             # Status: TODO
-            # Crash
             'JavaBridgeCoercionTest#testPassJavaObject',
-
-            # Status: TODO
-            # Fail
-            'ContentViewPopupZoomerTest#testPopupZoomerShowsUp',
             'ContentViewScrollingTest#testFling',
-            'JavaBridgeBasicsTest#testSameReturnedObjectUsesSameWrapper',
-            'PhoneNumberDetectionTest#testLocalFRNumbers',
-            'PhoneNumberDetectionTest#testLocalUKNumbers',
-            'ScreenOrientationIntegrationTest#testExpectedValues',
-            'ScreenOrientationIntegrationTest#testNoChange',
-            'ScreenOrientationProviderTest#testBasicValues',
-            'ScreenOrientationProviderTest#testLandscape',
-            'ScreenOrientationProviderTest#testPortrait',
-            'InsertionHandleTest#testDragInsertionHandle',
         ],
-        # Done
-        'ChromeShellTest': [
-            # Status: Verified with stable image
-            # Context menu did not have window focus.
-            # If we manually sleep a few seconds after the context menu popup, they will pass.
-            'ContextMenuTest#testDismissContextMenuOnBack',
-            'ContextMenuTest#testDismissContextMenuOnClick',
-
-            # Status: Verified with stable image (Not important)
-            # sync-url is a required parameter for the sync tests
-            'SyncTest#testAboutSyncPageDisplaysCurrentSyncStatus',
-            'SyncTest#testDisableAndEnableSync',
-            'SyncTest#testGetAboutSyncInfoYieldsValidData',
-
-            # Status: Verified with stable image (Not important)
-            # Never Panel not opened
-            'TranslateInfoBarTest#testTranslateNeverPanel',
-        ],
+        'ChromeShellTest': [],
         'AndroidWebViewTest': [
             # Status: TODO
             'AndroidScrollIntegrationTest#testUiScrollReflectedInJs',
-            'AwContentsClientOnScaleChangedTest#testScaleUp',
-            'AwContentsRenderTest#testSetGetBackgroundColor',
             'AwContentsTest#testCreateAndGcManyTimes',
             'AwSettingsTest#testAllowMixedMode',
             'AwSettingsTest#testLoadWithOverviewModeViewportTagWithTwoViews',
             'AwSettingsTest#testLoadWithOverviewModeWithTwoViews',
             'AwSettingsTest#testUserAgentStringDefault',
-            'KeySystemTest#testSupportWidevineKeySystem',
-            'NavigationHistoryTest#testFavicon',
-            'NavigationHistoryTest#testNavigateBackToNoncacheableLoginPage',
-            'WebViewAsynchronousFindApisTest#testClearFindNext',
-            'WebViewAsynchronousFindApisTest#testFindAllDoubleNext',
 
             # Crash
             'AndroidScrollIntegrationTest#testFlingScroll',
@@ -186,6 +148,7 @@ test_suite_filter = {
             'AndroidScrollIntegrationTest#testJsScrollFromBody',
             'AndroidScrollIntegrationTest#testJsScrollReflectedInUi',
             'AndroidScrollIntegrationTest#testTouchScrollCanBeAlteredByUi',
+            'ClientOnPageFinishedTest#testOnPageFinishedCalledAfterError',
         ],
         'MojoTest': [
             # TODO
@@ -641,7 +604,7 @@ def _test_run_device(index_device, results):
                         cmd = 'src/build/android/adb_install_apk.py -d %s --apk_package %s --%s' % (device, ' '.join(apks), test_type)
                         if not args.just_out:
                             cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + '/out ' + cmd
-                        result = execute(cmd, interactive=True)
+                        result = execute(cmd, interactive=True, dryrun=False)
                         if result[0]:
                             warning('Failed to install packages for suite "' + suite + '"')
 
@@ -697,6 +660,9 @@ def _test_run_device(index_device, results):
                 else:
                     (filter_suite, count_filter_suite) = _calc_filter(device_type, target_arch, suite)
                 cmd += ' -f "' + filter_suite + '"'
+                # Below is needed to make sure our filter can work together with Google filter
+                if command == 'instrumentation':
+                    cmd += ' -A Smoke,SmallTest,MediumTest,LargeTest,EnormousTest'
                 cmd += ' -d ' + device + ' --' + test_type
                 if args.test_verbose:
                     cmd += ' -v'

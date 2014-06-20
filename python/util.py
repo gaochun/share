@@ -375,7 +375,7 @@ def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/work
     connect_device(device)
 
     count_line_max = 1000
-    count_valid_max = 20
+    count_valid_max = 40
 
     if type == 'tombstone':
         result = execute(adb(cmd='shell \ls /data/tombstones'), return_output=True)
@@ -432,6 +432,12 @@ def ensure_screen_on(device='192.168.42.1'):
     if not is_screen_on(device):
         # Bring up screen by pressing power
         execute(adb('shell input keyevent 26'), device=device)
+
+
+def get_android_info(key, device='192.168.42.1'):
+    cmd = adb(cmd='shell grep %s= system/build.prop' % key, device=device)
+    result = execute(cmd, return_output=True, show_command=False)
+    return result[1].replace(key + '=', '')
 ################################################################################
 
 

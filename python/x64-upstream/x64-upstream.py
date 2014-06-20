@@ -698,6 +698,7 @@ def _test_sendmail(index_device, html):
 def _test_gen_report(index_device, results):
     device_name = devices_name[index_device]
     device_type = devices_type[index_device]
+    device = devices[index_device]
     dir_device_name = dir_time + '-' + device_name
 
     html_start = '''
@@ -725,6 +726,7 @@ def _test_gen_report(index_device, results):
           <ul>
             <li>Chromium Revision: ''' + chromium_info[CHROMIUM_INFO_INDEX_REV] + '''</li>
             <li>Target Device: ''' + device_name + '''</li>
+            <li>Target Image: ''' + get_android_info(key='ro.build.display.id', device=device) + '''</li>
             <li>Build Duration: ''' + timer_diff('build') + '''</li>
             <li>Test Build Duration: ''' + timer_diff('test_build') + '''</li>
             <li>Test Run Duration: ''' + timer_diff('test_run_' + str(index_device)) + '''</li>

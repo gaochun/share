@@ -652,7 +652,8 @@ def _test_run_device(index_device, results):
                     filter_suite = args.test_filter
                 else:
                     (filter_suite, count_filter_suite) = _calc_filter(device_type, target_arch, suite)
-                cmd += ' -f "' + filter_suite + '"'
+                if not filter_suite == '*':
+                    cmd += ' -f "' + filter_suite + '"'
                 # Below is needed to make sure our filter can work together with Google filter
                 if command == 'instrumentation':
                     cmd += ' -A Smoke,SmallTest,MediumTest,LargeTest,EnormousTest'

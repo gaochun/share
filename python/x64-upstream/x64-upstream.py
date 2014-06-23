@@ -773,12 +773,12 @@ def _test_gen_report(index_device, results):
         for index, suite in enumerate(test_suite[command]):
             bs = results[command][index]
             file_log = dir_device_name + '/' + suite + '.log'
-            ut_all = ''
-            ut_pass = ''
-            ut_fail = ''
-            ut_crash = ''
-            ut_timeout = ''
-            ut_unknow = ''
+            ut_all = '0'
+            ut_pass = '0'
+            ut_fail = '0'
+            ut_crash = '0'
+            ut_timeout = '0'
+            ut_unknow = '0'
 
             if bs == 'FAIL' or not os.path.exists(file_log):
                 rs = 'FAIL'
@@ -799,17 +799,16 @@ def _test_gen_report(index_device, results):
                     if 'Main  UNKNOWN (' in line:
                         ut_unknow = line.split('(')[1].split(' ')[0]
 
-                if ut_all != '' and ut_pass != '' and int(ut_all) == int(ut_pass):
-                    rs = 'PASS'
-                else:
-                    rs = 'FAIL'
-
             (filter_suite, count_skip) = _calc_filter(device_type, target_arch, suite)
-
             if count_skip > 0:
                 ut_all = str(int(ut_all) + count_skip)
 
             ut_skip = str(count_skip)
+
+            if int(ut_all) == int(ut_pass):
+                rs = 'PASS'
+            else:
+                rs = 'FAIL'
 
             # Generate the html
             ut_tr_start = '''<tr>'''

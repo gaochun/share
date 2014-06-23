@@ -764,9 +764,6 @@ def _test_gen_report(index_device, results):
             <td> <strong>Pass</strong> </td>
             <td> <strong>Skip</strong> </td>
             <td> <strong>Fail</strong> </td>
-            <td> <strong>Crash</strong> </td>
-            <td> <strong>Timeout</strong> </td>
-            <td> <strong>Unknown</strong> </td>
           </tr>
         '''
 
@@ -776,28 +773,36 @@ def _test_gen_report(index_device, results):
             ut_all = '0'
             ut_pass = '0'
             ut_fail = '0'
-            ut_crash = '0'
-            ut_timeout = '0'
-            ut_unknow = '0'
 
             if bs == 'FAIL' or not os.path.exists(file_log):
                 rs = 'FAIL'
             else:
                 ut_result = open(dir_device_name + '/' + suite + '.log', 'r')
                 lines = ut_result.readlines()
+                pattern_all = '\[==========\] (\d*) test'
+                pattern_pass = '\[  PASSED  \] (\d*) test'
+                pattern_fail = '\[  FAILED  \] (\d*) test'
+                need_skip = True
                 for line in lines:
-                    if 'Main  ALL (' in line:
-                        ut_all = line.split('(')[1].split(' ')[0]
-                    if 'Main  PASS (' in line:
-                        ut_pass = line.split('(')[1].split(' ')[0]
-                    if 'Main  FAIL (' in line:
-                        ut_fail = line.split('(')[1].split(' ')[0]
-                    if 'Main  CRASH (' in line:
-                        ut_crash = line.split('(')[1].split(' ')[0]
-                    if 'Main  TIMEOUT (' in line:
-                        ut_timeout = line.split('(')[1].split(' ')[0]
-                    if 'Main  UNKNOWN (' in line:
-                        ut_unknow = line.split('(')[1].split(' ')[0]
+                    if need_skip and re.search('Main  Summary', line):
+                        need_skip = False
+                    if need_skip:
+                        continue
+
+                    match = re.search(pattern_all, line)
+                    if match:
+                        ut_all = match.group(1)
+                        continue
+
+                    match = re.search(pattern_pass, line)
+                    if match:
+                        ut_pass = match.group(1)
+                        continue
+
+                    match = re.search(pattern_fail, line)
+                    if match:
+                        ut_fail = match.group(1)
+                        continue
 
             (filter_suite, count_skip) = _calc_filter(device_type, target_arch, suite)
             if count_skip > 0:
@@ -830,10 +835,7 @@ def _test_gen_report(index_device, results):
                          <td>''' + ut_all + '''</td>
                          <td>''' + ut_pass + '''</td>
                          <td>''' + ut_skip + '''</td>
-                         <td>''' + ut_fail + '''</td>
-                         <td>''' + ut_crash + '''</td>
-                         <td>''' + ut_timeout + '''</td>
-                         <td>''' + ut_unknow + '''</td></tr>'''
+                         <td>''' + ut_fail + '''</td></tr>'''
             html += ut_row
         html += '''
         </tbody>

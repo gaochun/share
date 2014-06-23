@@ -417,7 +417,7 @@ def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/work
 
 
 def set_screen_lock_none():
-    execute_adb_shell(cmd='am start -n com.android.settings/.SecuritySettings && sleep 5 && input tap 200 150 && sleep 5 && input tap 200 100')
+    execute_adb_shell(cmd='am start -n com.android.settings/.SecuritySettings && sleep 5 && input tap 200 150 && sleep 5 && input tap 200 100 && am force-stop com.android.settings')
 
 
 def is_screen_on(device='192.168.42.1'):

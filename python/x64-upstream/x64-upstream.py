@@ -804,16 +804,16 @@ def _test_gen_report(index_device, results):
                         ut_fail = match.group(1)
                         continue
 
+            if int(ut_all) == int(ut_pass):
+                rs = 'PASS'
+            else:
+                rs = 'FAIL'
+
             (filter_suite, count_skip) = _calc_filter(device_type, target_arch, suite)
             if count_skip > 0:
                 ut_all = str(int(ut_all) + count_skip)
 
             ut_skip = str(count_skip)
-
-            if int(ut_all) == int(ut_pass):
-                rs = 'PASS'
-            else:
-                rs = 'FAIL'
 
             # Generate the html
             ut_tr_start = '''<tr>'''

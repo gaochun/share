@@ -21,6 +21,9 @@ ip = '192.168.42.1'
 timestamp = ''
 use_upstream_chromium = False
 
+repo_provider = ''
+repo_branch = ''
+
 patches_init = {
     '.repo/manifests': ['0001-Replace-webview-and-chromium_org.patch'],
 }
@@ -94,7 +97,7 @@ examples:
 
 
 def setup():
-    global dir_root, dir_chromium, dir_out, target_archs, target_devices_type, target_modules, chromium_version, devices, devices_name, devices_type, timestamp, use_upstream_chromium, patches_build
+    global dir_root, dir_chromium, dir_out, target_archs, target_devices_type, target_modules, chromium_version, devices, devices_name, devices_type, timestamp, use_upstream_chromium, patches_build, repo_provider, repo_branch
 
     if args.time_fixed:
         timestamp = get_datetime(format='%Y%m%d')
@@ -150,6 +153,8 @@ def setup():
     (devices, devices_name, devices_type) = setup_device()
 
     os.chdir(dir_root)
+
+    (repo_provider, repo_branch) = _get_repo_info()
 
     if os.path.exists('external/chromium_org/src'):
         use_upstream_chromium = True
@@ -639,9 +644,9 @@ def _ensure_nonexist(file):
 # path_patch: Full path of patch
 # count: Recent commit count to check
 def _patch_applied(dir_repo, path_patch, count=30):
-    file = open(path_patch)
-    lines = file.readlines()
-    file.close()
+    f = open(path_patch)
+    lines = f.readlines()
+    f.close()
 
     pattern = re.compile('Subject: \[PATCH.*\] (.*)')
     match = pattern.search(lines[3])
@@ -676,6 +681,35 @@ def _patch_remove(patches):
     execute('git reset --hard HEAD^')
     restore_dir()
 
+
+# Now support:
+# google, master
+# intel, aosp_stable
+# intel, mcg
+def _get_repo_info():
+    f = open('.repo/manifests.git/config')
+    lines = f.readlines()
+    f.close()
+
+    for line in lines:
+        if re.search('url =', line):
+            if re.search('intel', line):
+                repo_provider = 'intel'
+            elif re.search('google', line):
+                repo_provider = 'google'
+            else:
+                error('Could not find repo provider')
+        elif re.search('merge =', line):
+            if re.search('aosp_stable', line):
+                repo_branch = 'aosp_stable'
+            elif re.search('merge = master', line):
+                repo_branch = 'master'
+            elif re.search('platform/android/r44c-stable', line):
+                repo_branch = 'mcg'
+            else:
+                error('Could not find repo branch')
+
+    return (repo_provider, repo_branch)
 
 if __name__ == "__main__":
     handle_option()

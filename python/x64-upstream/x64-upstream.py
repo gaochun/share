@@ -93,6 +93,8 @@ test_suite_filter = {
             'MediaDrmBridgeTest.AddNewKeySystemMapping',
             'MediaDrmBridgeTest.ShouldNotOverwriteExistingKeySystem',
             'YUVConvertTest.YUVAtoARGB_MMX_MatchReference',
+            'MediaDrmBridgeTest.IsKeySystemSupported_Widevine',
+            'MediaDrmBridgeTest.IsSecurityLevelSupported_Widevine',
         ],
         'sandbox_linux_unittests': [
             # Status: Verified with stable image
@@ -153,14 +155,7 @@ test_suite_filter = {
             'CoreImplTest#testSharedBufferCreation',
         ]
     },
-    ('baytrail', 'x86_64'): {
-        # Status: TODO
-        # These are only for x86_64
-        'media_unittests': [
-            'MediaDrmBridgeTest.IsKeySystemSupported_Widevine',
-            'MediaDrmBridgeTest.IsSecurityLevelSupported_Widevine',
-        ]
-    },
+    ('baytrail', 'x86_64'): {},
     ('baytrail', 'x86'): {
         # status Done
         'base_unittests': [

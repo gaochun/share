@@ -318,14 +318,19 @@ def execute_adb_shell(cmd, device='192.168.42.1'):
         return True
 
 
-def get_product(arch, device_type):
+def get_product(arch, device_type, ver=20140101):
     if device_type == 'generic':
         product = device_type + '_' + arch
     elif device_type == 'baytrail':
+        if ver >= 20140624:
+            product_prefix = 'asus_t100'
+        else:
+            product_prefix = device_type
+
         if arch == 'x86_64':
-            product = device_type + '_64p'
+            product = product_prefix + '_64p'
         elif arch == 'x86':
-            product = device_type
+            product = product_prefix
 
     return product
 
@@ -358,10 +363,10 @@ def connect_device(device='192.168.42.1', mode='system'):
         return device_connected(device, mode)
 
 
-def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android-x64', arch='x86_64', device='192.168.42.1', type='tombstone'):
+def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android-x64', arch='x86_64', device='192.168.42.1', type='tombstone', ver=20140101):
     if device == '192.168.42.1':
         device_type = 'baytrail'
-    product = get_product(arch, device_type)
+    product = get_product(arch, device_type, ver)
     if arch == 'x86_64':
         arch_str = '64'
     else:

@@ -21,8 +21,14 @@ ip = '192.168.42.1'
 timestamp = ''
 use_upstream_chromium = False
 
+
+# variable product: out/target/product/asus_t100_64p|baytrail_64p
+# variable combo: lunch asus_t100_64p-userdebug|aosp_baytrail_64p-eng
+# out/dist asus_t100_64p-bootloader-eng.gyagp|aosp_baytrail_64p-bootloader-userdebug.gyagp
 repo_provider = ''
 repo_branch = ''
+# aosp_stable from 20140624, combo changed to asus_t100-userdebug, etc.
+repo_ver = ''
 
 patches_init = {
     '.repo/manifests': ['0001-Replace-webview-and-chromium_org.patch'],
@@ -97,7 +103,8 @@ examples:
 
 
 def setup():
-    global dir_root, dir_chromium, dir_out, target_archs, target_devices_type, target_modules, chromium_version, devices, devices_name, devices_type, timestamp, use_upstream_chromium, patches_build, repo_provider, repo_branch
+    global dir_root, dir_chromium, dir_out, target_archs, target_devices_type, target_modules, chromium_version, devices, devices_name, devices_type, timestamp, use_upstream_chromium, patches_build
+    global repo_provider, repo_branch, repo_ver
 
     if args.time_fixed:
         timestamp = get_datetime(format='%Y%m%d')
@@ -154,7 +161,7 @@ def setup():
 
     os.chdir(dir_root)
 
-    (repo_provider, repo_branch) = _get_repo_info()
+    (repo_provider, repo_branch, repo_ver) = _get_repo_info()
 
     if os.path.exists('external/chromium_org/src'):
         use_upstream_chromium = True
@@ -289,7 +296,7 @@ def burn_image():
 
     arch = target_archs[0]
     device_type = target_devices_type[0]
-    img = dir_out + '/target/product/' + get_product(arch, device_type) + '/live.img'
+    img = dir_out + '/target/product/' + get_product(arch, device_type, ver=repo_ver) + '/live.img'
     if not os.path.exists(img):
         error('Could not find the live image to burn')
 
@@ -320,7 +327,10 @@ def flash_image():
     if args.file_image:
         file_image = args.file_image
     else:
-        file_image = 'out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type)
+        if repo_ver >= 20140624:
+            file_image = 'out/dist/%s-om-factory.tgz' % get_product(arch, device_type, ver=repo_ver)
+        else:
+            file_image = 'out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type, ver=repo_ver)
 
     if not os.path.exists(file_image):
         error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
@@ -342,7 +352,10 @@ def flash_image():
     fileinput.close()
 
     # Hack gpt.ini for fast userdata erasion
-    file_gpt = 'aosp_%s-OM-gpt.ini' % get_product(arch, device_type)
+    if repo_ver >= 20140624:
+        file_gpt = '%s-OM-gpt.ini' % get_product(arch, device_type, ver=repo_ver)
+    else:
+        file_gpt = 'aosp_%s-OM-gpt.ini' % get_product(arch, device_type, ver=repo_ver)
     for line in fileinput.input(file_gpt, inplace=1):
         if re.search('len = -1', line):
             line = line.replace('-1', '2000')
@@ -388,7 +401,7 @@ def start_emu():
         return
 
     for arch in target_archs:
-        product = get_product(arch, 'generic')
+        product = get_product(arch, 'generic', ver=repo_ver)
         if args.dir_emu:
             dir_backup = args.dir_emu
         else:
@@ -441,7 +454,7 @@ def analyze():
 
     arch = target_archs[0]
     connect_device()
-    analyze_issue(dir_aosp=dir_root, arch=arch, type=args.analyze)
+    analyze_issue(dir_aosp=dir_root, arch=arch, type=args.analyze, ver=repo_ver)
 
 
 def push():
@@ -464,7 +477,7 @@ def push():
     else:
         modules = args.target_module.split(',')
 
-    cmd = adb(cmd='root') + ' && ' + adb(cmd='remount') + ' && ' + adb(cmd='push out/target/product/%s' % get_product(arch, device_type))
+    cmd = adb(cmd='root') + ' && ' + adb(cmd='remount') + ' && ' + adb(cmd='push out/target/product/%s' % get_product(arch, device_type, ver=repo_ver))
 
     for module in modules:
         if module == 'browser':
@@ -538,16 +551,26 @@ def _sync_repo(dir, cmd):
 
 
 def _get_combo(arch, device_type):
-    combo_prefix = 'aosp_'
-    combo_suffix = '-eng'
-
     if device_type == 'generic':
+        combo_prefix = 'aosp_'
+        combo_suffix = '-eng'
         combo = combo_prefix + arch + combo_suffix
     elif device_type == 'baytrail':
-        if arch == 'x86_64':
-            combo = combo_prefix + device_type + '_64p' + combo_suffix
-        elif arch == 'x86':
-            combo = combo_prefix + device_type + combo_suffix
+        if repo_provider == 'intel' and repo_branch == 'aosp_stable' and repo_ver >= 20140624:
+            combo_prefix = 'asus_t100'
+            combo_suffix = '-userdebug'
+
+            if arch == 'x86_64':
+                combo = combo_prefix + '_64p' + combo_suffix
+            elif arch == 'x86':
+                combo = combo_prefix + combo_suffix
+        else:
+            combo_prefix = 'aosp_'
+            combo_suffix = '-eng'
+            if arch == 'x86_64':
+                combo = combo_prefix + device_type + '_64p' + combo_suffix
+            elif arch == 'x86':
+                combo = combo_prefix + device_type + combo_suffix
 
     return combo
 
@@ -563,7 +586,7 @@ def _get_combo(arch, device_type):
 # (x86, generic, webview) is included in 1
 
 def _backup_one(arch, device_type, module):
-    product = get_product(arch, device_type)
+    product = get_product(arch, device_type, ver=repo_ver)
 
     if module == 'webview':
         if arch == 'x86_64':
@@ -584,9 +607,13 @@ def _backup_one(arch, device_type, module):
 
     else:  # module == 'system'
         if device_type == 'baytrail':
+            if repo_ver >= 20140624:
+                prefix = ''
+            else:
+                prefix = 'aosp_'
             backup_files = {
                 '.': [
-                    'out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type),
+                    'out/dist/%s%s-om-factory.tgz' % (prefix, get_product(arch, device_type, ver=repo_ver)),
                 ],
             }
         elif device_type == 'generic':
@@ -619,6 +646,8 @@ def _backup_one(arch, device_type, module):
             files = backup_files[dir_dest]
 
         for file in files:
+            if not os.path.exists(dir_root + '/' + file):
+                warning(dir_root + '/' + file + ' could not be found')
             execute('cp -rf ' + dir_root + '/' + file + ' ' + dir_dest)
     restore_dir()
 
@@ -709,7 +738,12 @@ def _get_repo_info():
             else:
                 error('Could not find repo branch')
 
-    return (repo_provider, repo_branch)
+    if repo_provider == 'intel' and repo_branch == 'aosp_stable' and os.path.exists('device/intel/baytrail/asus_t100'):
+        repo_ver = 20140624
+    else:
+        repo_ver = 20140101
+
+    return (repo_provider, repo_branch, repo_ver)
 
 if __name__ == "__main__":
     handle_option()

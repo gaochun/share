@@ -519,7 +519,7 @@ def analyze():
     if not args.analyze:
         return
 
-    analyze_issue(dir_chromium=dir_root, arch='x86_64')
+    analyze_issue(dir_chromium=dir_root, arch='x86_64', ver='20140624')
 
 
 def batch_build(force=False):

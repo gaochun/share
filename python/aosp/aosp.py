@@ -563,7 +563,7 @@ def _get_combo(arch, device_type):
     elif device_type == 'baytrail':
         if repo_provider == 'intel' and repo_branch == 'aosp_stable' and repo_ver >= 20140624:
             combo_prefix = 'asus_t100'
-            combo_suffix = '-userdebug'
+            combo_suffix = '-eng'
 
             if arch == 'x86_64':
                 combo = combo_prefix + '_64p' + combo_suffix

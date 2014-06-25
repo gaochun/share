@@ -32,6 +32,7 @@ target_arch = ''
 target_module = ''
 report_name = ''
 name_file = sys._getframe().f_code.co_filename
+file_log = ''
 
 cpu_count = str(multiprocessing.cpu_count() * 2)
 devices = []
@@ -241,6 +242,7 @@ examples:
 
 def setup():
     global dir_root, dir_src, test_type, dir_out_test_type, dir_test, dir_time, devices, devices_name, devices_type, target_arch, target_module, report_name, test_suite, time_stamp
+    global file_log
 
     if args.time_fixed:
         time_stamp = get_datetime(format='%Y%m%d')
@@ -258,16 +260,7 @@ def setup():
         if result[0]:
             error('Could not find ' + cmd + ', and you may use --extra-path to designate it')
 
-    # Set proxy
-    if os.path.exists('/usr/sbin/privoxy'):
-        http_proxy = '127.0.0.1:8118'
-        https_proxy = '127.0.0.1:8118'
-    else:
-        http_proxy = 'proxy-shz.intel.com:911'
-        https_proxy = 'proxy-shz.intel.com:911'
-    setenv('http_proxy', http_proxy)
-    setenv('https_proxy', https_proxy)
-    setenv('no_proxy', 'intel.com,.intel.com,10.0.0.0/8,192.168.0.0/16,localhost,127.0.0.0/8,134.134.0.0/16,172.16.0.0/20,192.168.42.0/16')
+    set_proxy()
 
     target_arch = args.target_arch
 
@@ -302,6 +295,8 @@ def setup():
     _hack_app_process()
 
     target_module = args.target_module
+
+    file_log = dir_root + '/log.txt'
 
     print '''
 ========== Configuration Begin ==========
@@ -437,7 +432,7 @@ def build(force=False):
     else:
         ninja_cmd += ' ' + target_module
 
-    ninja_cmd += ' 2>&1 |tee ' + dir_root + '/build.log'
+    ninja_cmd += ' 2>&1 |tee -a ' + file_log
     result = execute(ninja_cmd, show_progress=True)
     if result[0]:
         error('Failed to execute command: ' + ninja_cmd, error_code=result[0])
@@ -764,12 +759,12 @@ def _test_gen_report(index_device, results):
 
         for index, suite in enumerate(test_suite[command]):
             bs = results[command][index]
-            file_log = dir_device_name + '/' + suite + '.log'
+            suite_log = dir_device_name + '/' + suite + '.log'
             ut_all = '0'
             ut_pass = '0'
             ut_fail = '0'
 
-            if bs == 'FAIL' or not os.path.exists(file_log):
+            if bs == 'FAIL' or not os.path.exists(suite_log):
                 rs = 'FAIL'
             else:
                 ut_result = open(dir_device_name + '/' + suite + '.log', 'r')

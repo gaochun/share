@@ -223,8 +223,8 @@ def send_mail(sender, to, subject, content, type='plain'):
 
 
 # upload file to specified samba server
-def backup_smb(server, dir_server, file_local):
-    result = execute('smbclient %s -N -c "prompt; recurse; cd %s; mput %s"' % (server, dir_server, file_local), interactive=True)
+def backup_smb(server, dir_server, file_local, dryrun=False):
+    result = execute('smbclient %s -N -c "prompt; recurse; cd %s; mput %s"' % (server, dir_server, file_local), interactive=True, dryrun=dryrun)
     if result[0]:
         warning('Failed to upload: ' + file_local)
     else:
@@ -238,6 +238,20 @@ def unsetenv(env):
 
 def setenv(env, value):
     os.environ[env] = value
+
+
+def set_proxy():
+    if os.path.exists('/usr/sbin/privoxy'):
+        http_proxy = '127.0.0.1:8118'
+        https_proxy = '127.0.0.1:8118'
+        if not has_process('privoxy'):
+            execute('sudo privoxy /etc/privoxy/config')
+    else:
+        http_proxy = 'proxy-shz.intel.com:911'
+        https_proxy = 'proxy-shz.intel.com:911'
+    setenv('http_proxy', http_proxy)
+    setenv('https_proxy', https_proxy)
+    setenv('no_proxy', 'intel.com,.intel.com,10.0.0.0/8,192.168.0.0/16,localhost,127.0.0.0/8,134.134.0.0/16,172.16.0.0/20,192.168.42.0/16')
 
 
 # Setup devices and their names

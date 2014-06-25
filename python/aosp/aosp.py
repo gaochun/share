@@ -20,6 +20,7 @@ chromium_version = ''
 ip = '192.168.42.1'
 timestamp = ''
 use_upstream_chromium = False
+file_log = ''
 
 
 # variable product: out/target/product/asus_t100_64p|baytrail_64p
@@ -65,7 +66,7 @@ examples:
   python %(prog)s -s all -b --disable-2nd-arch --patch
   python %(prog)s -b --build-skip-mk --disable-2nd-arch
   python %(prog)s -b --disable-2nd-arch  --build-skip-mk --target-module libwebviewchromium --build-no-dep
-  python %(prog)s --target-device generic --backup --backup-skip-server --time-fixed
+  python %(prog)s --target-device-type generic --backup --backup-skip-server --time-fixed
 ''')
 
     parser.add_argument('--init', dest='init', help='init', action='store_true')
@@ -104,7 +105,7 @@ examples:
 
 def setup():
     global dir_root, dir_chromium, dir_out, target_archs, target_devices_type, target_modules, chromium_version, devices, devices_name, devices_type, timestamp, use_upstream_chromium, patches_build
-    global repo_provider, repo_branch, repo_ver
+    global repo_provider, repo_branch, repo_ver, file_log
 
     if args.time_fixed:
         timestamp = get_datetime(format='%Y%m%d')
@@ -122,17 +123,7 @@ def setup():
         if result[0]:
             error('Could not find ' + cmd + ', and you may use --extra-path to designate it')
 
-    # Set proxy
-    if os.path.exists('/usr/sbin/privoxy'):
-        http_proxy = '127.0.0.1:8118'
-        https_proxy = '127.0.0.1:8118'
-    else:
-        http_proxy = 'proxy-shz.intel.com:911'
-        https_proxy = 'proxy-shz.intel.com:911'
-    setenv('http_proxy', http_proxy)
-    setenv('https_proxy', https_proxy)
-    setenv('no_proxy', 'intel.com,.intel.com,10.0.0.0/8,192.168.0.0/16,localhost,127.0.0.0/8,134.134.0.0/16,172.16.0.0/20,192.168.42.0/16')
-
+    set_proxy()
     dir_root = os.path.abspath(os.getcwd())
     dir_chromium = dir_root + '/external/chromium_org'
     dir_out = dir_root + '/out'
@@ -170,6 +161,8 @@ def setup():
         patches_build = dict(patches_build_common, **patches_build_upstream_chromium)
     else:
         patches_build = dict(patches_build_common, **patches_build_aosp_chromium)
+
+    file_log = dir_root + '/log.txt'
 
 
 def init():
@@ -228,7 +221,7 @@ def build():
         return
 
     if args.remove_out:
-        execute('rm -rf out')
+        execute('rm -rf out', dryrun=False)
 
     for arch, device_type, module in [(arch, device_type, module) for arch in target_archs for device_type in target_devices_type for module in target_modules]:
         combo = _get_combo(arch, device_type)
@@ -261,9 +254,9 @@ def build():
 
         if args.build_showcommands:
             cmd += ' showcommands'
-        cmd += ' -j16 2>&1 |tee log.txt'
+        cmd += ' -j16 2>&1 |tee -a ' + file_log
         cmd = bashify(cmd)
-        result = execute(cmd, interactive=True)
+        result = execute(cmd, interactive=True, dryrun=False)
         if result[0]:
             error('Failed to build %s %s %s' % (arch, device_type, module))
 
@@ -339,9 +332,9 @@ def flash_image():
             file_image = args.file_image
     else:
         if repo_ver >= 20140624:
-            file_image = 'out/dist/%s-om-factory.tgz' % get_product(arch, device_type, ver=repo_ver)
+            file_image = dir_root + '/out/dist/%s-om-factory.tgz' % get_product(arch, device_type, ver=repo_ver)
         else:
-            file_image = 'out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type, ver=repo_ver)
+            file_image = dir_root + '/out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type, ver=repo_ver)
 
     if not os.path.exists(file_image):
         error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
@@ -382,7 +375,7 @@ def flash_image():
 
     execute('./flash-all.sh -t ' + ip, interactive=True, dryrun=False)
     restore_dir()
-    execute('rm -rf ' + dir_extract)
+    execute('rm -rf ' + dir_extract, dryrun=False)
 
     # This command would not return so we have to use timeout here
     cmd = 'timeout 10s %s -t %s reboot' % (path_fastboot, ip)
@@ -556,7 +549,7 @@ def cts_run():
 
 def _sync_repo(dir, cmd):
     backup_dir(dir)
-    result = execute(cmd, interactive=True)
+    result = execute(cmd + ' 2>&1 |tee -a ' + file_log, interactive=True)
     if result[0]:
         error('Failed to sync ' + dir)
     restore_dir()
@@ -667,7 +660,7 @@ def _backup_one(arch, device_type, module):
         backup_dir(dir_backup)
         name_tar = name + '-' + host_name + '.tar.gz'
         execute('tar zcf ' + name_tar + ' ' + name)
-        backup_smb('//ubuntu-ygu5-02.sh.intel.com/aosp-stable', 'temp', name_tar)
+        backup_smb('//ubuntu-ygu5-02.sh.intel.com/aosp-stable', 'temp', name_tar, dryrun=False)
         restore_dir()
 
 

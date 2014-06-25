@@ -324,8 +324,19 @@ def flash_image():
     device_type = target_devices_type[0]
     path_fastboot = dir_linux + '/fastboot'
 
+    dir_extract = '/tmp/' + timestamp
+    execute('mkdir ' + dir_extract)
+    backup_dir(dir_extract)
+
     if args.file_image:
-        file_image = args.file_image
+        if re.match('http', args.file_image):
+            execute('wget ' + args.file_image, dryrun=False)
+            execute('tar zxf ' + args.file_image.split('/')[-1])
+            execute('mv */* ./')
+            result = execute('ls *.tgz', return_output=True)
+            file_image = dir_extract + '/' + result[1].rstrip('\n')
+        else:
+            file_image = args.file_image
     else:
         if repo_ver >= 20140624:
             file_image = 'out/dist/%s-om-factory.tgz' % get_product(arch, device_type, ver=repo_ver)
@@ -336,10 +347,7 @@ def flash_image():
         error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
         return
 
-    dir_extract = '/tmp/' + get_datetime()
-    execute('mkdir ' + dir_extract)
-    execute('tar xvf ' + file_image + ' -C ' + dir_extract, interactive=True)
-    backup_dir(dir_extract)
+    execute('tar xvf ' + file_image, interactive=True)
 
     # Hack flash-all.sh to skip sleep and use our own fastboot
     for line in fileinput.input('flash-all.sh', inplace=1):
@@ -352,10 +360,8 @@ def flash_image():
     fileinput.close()
 
     # Hack gpt.ini for fast userdata erasion
-    if repo_ver >= 20140624:
-        file_gpt = '%s-OM-gpt.ini' % get_product(arch, device_type, ver=repo_ver)
-    else:
-        file_gpt = 'aosp_%s-OM-gpt.ini' % get_product(arch, device_type, ver=repo_ver)
+    result = execute('ls *.ini', return_output=True)
+    file_gpt = result[1].rstrip('\n')
     for line in fileinput.input(file_gpt, inplace=1):
         if re.search('len = -1', line):
             line = line.replace('-1', '2000')
@@ -391,6 +397,12 @@ def flash_image():
     # It will take about 45s to boot to GUI
     info('Sleeping 60 seconds until system fully boots up..')
     time.sleep(60)
+
+    # Ensure screen stays on
+    execute(adb(cmd='shell svc power stayon usb'))
+
+    # Try to unlock the screen if needed
+    execute(adb(cmd='shell input keyevent 82'))
 
     # After system boots up, it will show guide screen and never lock or turn off screen.
     set_screen_lock_none()

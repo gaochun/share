@@ -79,7 +79,7 @@ def test():
     if not os.path.exists('x64-upstream.py'):
         execute('ln -s %s/share/python/x64-upstream/x64-upstream.py .' % dir_root)
     for arch, device_type in [(arch, device_type) for arch in target_archs for device_type in target_devices_type]:
-        execute('python x64-upstream.py --extra-path=/workspace/project/depot_tools --target-arch %s --target-device-type %s --batch-test --test-formal' % (args.target_arch, args.target_device_type), dryrun=False)
+        execute('python x64-upstream.py --extra-path=/workspace/project/depot_tools --target-arch %s --batch-test --test-formal' % args.target_arch, interactive=True, dryrun=False)
     restore_dir()
 
 

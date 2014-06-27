@@ -21,8 +21,6 @@
 	postBuffer = 524288000
 [https]
 	proxy = socks5://proxy.jf.intel.com:1080
-[remote "origin"]
-	#proxy = ""
 
 # x64
 [review "aia-review.intel.com"]
@@ -33,12 +31,3 @@
 ### archive ###
 #[url "http://"]
 #	insteadOf = "https://"
-
-#[giggle]
-#	main-window-maximized = true
-#	main-window-geometry = 430x282+3+24
-#	history-view-vpane-position = 549
-#	main-window-view = HistoryView
-#	file-view-vpane-position = 953
-#	show-graph = true
-#	file-view-hpane-position = 307

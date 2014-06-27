@@ -35,6 +35,7 @@ while not os.path.exists(dir_temp + '/.git'):
 dir_share = dir_temp
 dir_python = dir_share + '/python'
 dir_linux = dir_share + '/linux'
+dir_home = os.getenv('HOME')
 
 target_os_all = ['android', 'linux']
 target_arch_all = ['x86', 'arm']
@@ -43,6 +44,13 @@ target_module_all = ['webview', 'chrome', 'content_shell', 'chrome_stable', 'chr
 
 def get_datetime(format='%Y%m%d%H%M%S'):
     return time.strftime(format, time.localtime())
+
+
+def has_recent_change(file):
+    if time.time() - os.path.getmtime(file) < 24 * 3600:  # One day
+        return True
+    else:
+        return False
 
 
 def info(msg):
@@ -231,13 +239,17 @@ def backup_smb(server, dir_server, file_local, dryrun=False):
         info('Succeeded to upload: ' + file_local)
 
 
-def unsetenv(env):
-    if env in os.environ:
-        del os.environ[env]
+def getenv(env):
+    return os.getenv(env)
 
 
 def setenv(env, value):
     os.environ[env] = value
+
+
+def unsetenv(env):
+    if env in os.environ:
+        del os.environ[env]
 
 
 def set_proxy():
@@ -457,6 +469,41 @@ def get_android_info(key, device='192.168.42.1'):
     cmd = adb(cmd='shell grep %s= system/build.prop' % key, device=device)
     result = execute(cmd, return_output=True, show_command=False)
     return result[1].replace(key + '=', '')
+
+
+# is_sylk: If true, just copy as a symbolic link
+def copy_file(file_src, dir_dest, is_sylk=False):
+    if not os.path.exists(file_src):
+        warning(file_src + ' does not exist')
+        return
+
+    if dir_dest == dir_home:
+        need_sudo = False
+    else:
+        need_sudo = True
+
+    file_name = file_src.split('/')[-1]
+    file_dest = dir_dest + '/' + file_name
+    file_dest_bk = file_dest + '.bk'
+    if os.path.exists(file_dest) and not os.path.exists(file_dest_bk):
+        cmd = 'mv ' + file_dest + ' ' + file_dest_bk
+        if need_sudo:
+            cmd = 'sudo ' + cmd
+        execute(cmd)
+
+    if not os.path.exists(dir_dest):
+        execute('mkdir -p ' + dir_dest)
+
+    backup_dir(dir_dest)
+    if is_sylk:
+        cmd = 'ln -s ' + file_src + ' .'
+    else:
+        cmd = 'cp -f ' + file_src + ' ' + dir_dest
+
+    if need_sudo:
+        cmd = 'sudo ' + cmd
+    execute(cmd)
+    restore_dir()
 ################################################################################
 
 

@@ -25,6 +25,7 @@ def upgrade():
     elif args.type == 'chrome':
         setup_socks()
         execute('sudo tsocks apt-get update && sudo tsocks apt-get -y dist-upgrade', interactive=True)
+        setup_http()
     elif args.type == 'system':
         setup_http()
         execute('sudo update-manager -d', interactive=True)

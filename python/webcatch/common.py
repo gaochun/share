@@ -1,10 +1,14 @@
-dir_root = '/workspace/project/gyagp/webcatch'
-dir_python = '/workspace/project/gyagp/share/python'
+dir_root = '/workspace/project/webcatch'
 dir_out = dir_root + '/out'
 dir_project = dir_root + '/project'
 dir_log = dir_root + '/log'
 
-server = 'ubuntu-ygu5-02'
+servers = [
+    'wp-02',
+    'wp-03',
+    'ubuntu-ygu5-02',
+]
+server_main = servers[0]
 dir_out_server = '/workspace/service/webcatch/out'
 
 # comb: [binary_format, rev_min_built, rev_max_built]

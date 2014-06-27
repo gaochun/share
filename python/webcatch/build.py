@@ -106,9 +106,10 @@ def setup():
     global target_os_info, build_every, fail_number_max, rev_expectfail
 
     if not args.slave_only:
-        result = execute(remotify_cmd('ls ' + dir_out_server), show_command=True)
-        if result[0]:
-            error('Can not connect to build server')
+        for server in servers:
+            result = execute(remotify_cmd('ls ' + dir_out_server, server=server), show_command=True)
+            if result[0]:
+                error('Can not connect to build server')
 
     if args.fail_number_max:
         fail_number_max = args.fail_number_max
@@ -175,7 +176,6 @@ def setup():
             if not os.path.exists(dir_comb_slave):
                 os.mkdir(dir_comb_slave)
             # Make dir_comb for server
-
             result = execute(remotify_cmd('ls ' + dir_comb_server))
             if result[0]:
                 execute(remotify_cmd('mkdir -p ' + dir_comb_server))
@@ -377,7 +377,11 @@ def patch_before_build(target_os, target_arch, target_module, rev):
 
 def move_to_server(file, target_os, target_arch, target_module):
     dir_comb_server = dir_out_server + '/' + get_comb_name(target_os, target_arch, target_module)
-    result = execute('scp ' + file + ' gyagp@' + server + ':' + dir_comb_server)
+    if re.match('ubuntu', server_main):
+        username = 'gyagp'
+    else:
+        username = 'wp'
+    result = execute('scp %s %s@%s:%s' % (file, username, server_main, dir_comb_server))
     if result[0]:
         # If the failure is caused by network issue of slave machine, most likely it could not send mail too.
         send_mail('webcatch@intel.com', 'yang.gu@intel.com', '[webcatch] Failed to upload files at ' + host_name, '')
@@ -506,6 +510,21 @@ def build_one(build_next):
     return result[0]
 
 
+def _rev_is_built_one(cmd):
+    if args.slave_only:
+        result = execute(cmd, show_command=True)
+        if result[0] == 0:
+            return True
+        return False
+    else:
+        for server in servers:
+            cmd_server = remotify_cmd(cmd, server=server)
+            result = execute(cmd_server, show_command=True)
+            if result[0] == 0:
+                return True
+        return False
+
+
 def rev_is_built(target_os, target_arch, target_module, rev):
     # Skip the revision marked as built
     if not args.slave_only:
@@ -518,18 +537,17 @@ def rev_is_built(target_os, target_arch, target_module, rev):
     if args.slave_only:
         cmd = 'ls ' + dir_out + '/' + get_comb_name(target_os, target_arch, target_module) + '/' + str(rev) + '*'
     else:
-        cmd = remotify_cmd('ls ' + dir_out_server + '/' + get_comb_name(target_os, target_arch, target_module) + '/' + str(rev) + '*')
+        cmd = 'ls ' + dir_out_server + '/' + get_comb_name(target_os, target_arch, target_module) + '/' + str(rev) + '*'
 
-    result = execute(cmd, show_command=True)
-    if result[0] == 0:
+    if _rev_is_built_one(cmd):
         return True
 
     # Check again to avoid conflict among parallel build machines
     second = random.randint(1, 10)
     info('sleep ' + str(second) + ' seconds and check again')
     time.sleep(second)
-    result = execute(cmd, show_command=False)
-    if result[0] == 0:
+
+    if _rev_is_built_one(cmd):
         return True
 
     return False
@@ -652,11 +670,6 @@ def update_git_info(fetch=True):
         update_git_info_one(target_os)
 
 
-# Patch command if it needs to run on build server
-def remotify_cmd(cmd):
-    return 'ssh gyagp@' + server + ' ' + cmd
-
-
 def clean_lock():
     if not args.clean_lock:
         return
@@ -674,6 +687,14 @@ def clean_lock():
             execute(cmd)
 
 
+# Patch command if it needs to run on build server
+def remotify_cmd(cmd, server=server_main):
+    if re.match('ubuntu', server):
+        username = 'gyagp'
+    else:
+        username = 'wp'
+
+    return 'ssh %s@%s %s' % (username, server, cmd)
 ################################################################################
 
 

@@ -11,11 +11,11 @@ from util import *
 
 username = getenv('USER')
 
-pkgs = [
+pkgs_common = [
     'tsocks', 'privoxy',
     'apt-file',
     'zsh',
-    'git', 'git-svn',
+    'git', 'git-svn', 'subversion',
     'gparted',
     'gnome-shell',
     'vim',
@@ -31,7 +31,7 @@ pkgs = [
     'libicu-dev',
     # required by Chromium build
     'libspeechd-dev', 'libgdk-pixbuf2.0-dev', 'libgtk2.0-dev', 'libdrm-dev', 'libgnome-keyring-dev', 'libgconf2-dev', 'libudev-dev',
-    'libpci-dev', 'linux-tools', 'binutils-dev', 'libelf-dev', 'gperf', 'gcc-4.7-multilib', 'g++-4.7-multilib', 'bison', 'python-pip',
+    'libpci-dev', 'linux-tools-generic', 'binutils-dev', 'libelf-dev', 'gperf', 'gcc-4.7-multilib', 'g++-4.7-multilib', 'bison', 'python-pip',
     'module-assistant', 'autoconf', 'automake', 'libnss3-dev', 'ant', 'libcups2-dev', 'libasound2-dev', 'libxss-dev', 'libxtst-dev',
     'libpulse-dev',
     'postfix',  # smtp server
@@ -43,6 +43,7 @@ pkgs = [
     # Package used at home
     'openconnect',
     'python-zsi',
+    'openssh-server',
 ]
 
 
@@ -86,7 +87,7 @@ def upgrade():
         execute('python upgrade.py -t basic', interactive=True)
 
 
-def install_pkg():
+def install_pkg(pkgs):
     for pkg in pkgs:
         if package_installed(pkg):
             info('Package ' + pkg + ' was already installed')
@@ -101,7 +102,7 @@ def install_chromium():
     if package_installed('google-chrome-unstable'):
         return
 
-    execute('python upgrade.py -t chrome', show_progress=True)
+    execute('python upgrade.py -t chrome', interactive=True)
     install_pkg(['google-chrome-unstable'])
 
     # Install Chrome, which needs to use tsocks
@@ -123,8 +124,8 @@ if __name__ == '__main__':
     setup()
     patch_sudo()  # This should be done first
     upgrade()
-    install_chromium()
-    install_pkg()
+    install_pkg(pkgs_common)
+
     if username == 'gyagp':
         # This takes quite a long time
         #execute('sudo apt-file update', interactive=True)
@@ -141,6 +142,8 @@ if __name__ == '__main__':
     copy_file(dir_linux + '/subversion/servers', '/etc/subversion', is_sylk=is_sylk)
     copy_file(dir_linux + '/privoxy/config', '/etc/privoxy', is_sylk=is_sylk)
     copy_file(dir_linux + '/tsocks.conf', '/etc', is_sylk=is_sylk)
+
+    #install_chromium() # This requires tsocks
 
     # Chromium build
     copy_file('/usr/include/x86_64-linux-gnu/asm', '/usr/include', is_sylk=True)

@@ -438,7 +438,7 @@ def build_one(build_next):
     # Retry here
     if result[0]:
         if target_os == 'android':
-            execute('sudo ' + dir_repo + '/src/build/install-build-deps-android.sh', dryrun=DRYRUN)
+            execute('sudo ' + dir_repo + '/src/build/install-build-deps-android.sh', interactive=True, dryrun=DRYRUN)
         if result[0] and not args.keep_out:
             execute('rm -rf ' + dir_repo + '/src/out', dryrun=DRYRUN)
 

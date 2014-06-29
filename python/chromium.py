@@ -177,21 +177,6 @@ def update():
     if not args.update:
         return()
 
-    # 'third_party/skia/src' is not on master
-    repos = ['./', 'third_party/WebKit']
-    for repo in repos:
-        is_master = False
-        backup_dir(src_dir + '/' + repo)
-        branches = commands.getoutput('git branch').split('\n')
-        for branch in branches:
-            if branch == '* master':
-                is_master = True
-
-        if not is_master:
-            error('Repo ' + repo + ' is not on master')
-
-        restore_dir()
-
     backup_dir(root_dir)
 
     if host_os == 'Linux' and not has_process('privoxy'):

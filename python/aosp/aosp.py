@@ -216,12 +216,16 @@ def patch(patches, force=False):
                     error('Fail to apply patch ' + patch, error_code=result[0])
 
 
+def remove_out():
+    if not args.remove_out:
+        return
+
+    execute('rm -rf out', dryrun=False)
+
+
 def build():
     if not args.build:
         return
-
-    if args.remove_out:
-        execute('rm -rf out', dryrun=False)
 
     for arch, device_type, module in [(arch, device_type, module) for arch in target_archs for device_type in target_devices_type for module in target_modules]:
         combo = _get_combo(arch, device_type)
@@ -750,12 +754,14 @@ def _get_repo_info():
 
     return (repo_provider, repo_branch, repo_ver)
 
+
 if __name__ == "__main__":
     handle_option()
     setup()
     init()
     sync()
     patch(patches_build)
+    remove_out()
     build()
     backup()
     burn_image()

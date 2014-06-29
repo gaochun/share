@@ -88,7 +88,7 @@ def test():
     restore_dir()
 
     backup_dir(args.dir_aosp)
-    cmd = 'python aosp.py --remove-out -s aosp --patch'
+    cmd = 'python aosp.py -s aosp --patch --remove-out'
     execute(cmd, interactive=True, dryrun=dryrun)
     restore_dir()
 

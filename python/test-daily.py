@@ -5,6 +5,7 @@ from util import *
 dir_root = '/workspace/project'
 target_archs = ''
 target_devices_type = ''
+dryrun = False
 
 
 def handle_option():
@@ -16,6 +17,7 @@ examples:
   python %(prog)s --target-arch x86
   python %(prog)s --target-arch x86_64
   python %(prog)s --target-arch x86,x86_64
+  python %(prog)s --target-arch x86,x86_64 --dir-aosp aosp-stable-daily --last-phase 1
 
   crontab -e
   0 1 * * * cd /workspace/project/share/python && python %(prog)s --target-arch x86_64
@@ -23,6 +25,12 @@ examples:
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch, such as x86, x86_64', default='x86_64')
     parser.add_argument('--target-device-type', dest='target_device_type', help='target device type, such as baytrail, generic', default='baytrail')
+    parser.add_argument('--dir-aosp', dest='dir_aosp', help='dir for aosp', default='aosp-stable')
+    parser.add_argument('--dir-chromium', dest='dir_chromium', help='dir for chromium', default='chromium-android-test')
+    # phase 1: aosp build, backup
+    # phase 2: aosp flash
+    # phase 3: chromium run test
+    parser.add_argument('--last-phase', dest='last_phase', help='last phase to execute', type=int, default=3)
 
     args = parser.parse_args()
     args_dict = vars(args)
@@ -63,24 +71,45 @@ def setup():
     else:
         target_devices_type = args.target_device_type.split(',')
 
+    backup_dir(args.dir_aosp)
+    if not os.path.exists('aosp.py'):
+        execute('ln -s %s/share/python/aosp/aosp.py .' % dir_root)
+    restore_dir()
+
+    backup_dir(args.dir_chromium)
+    if not os.path.exists('x64-upstream.py'):
+        execute('ln -s %s/share/python/x64-upstream/x64-upstream.py .' % dir_root)
+    restore_dir()
+
 
 def test():
     backup_dir('share')
-    execute('git pull', interactive=True)
+    execute('git pull', interactive=True, dryrun=dryrun)
     restore_dir()
 
-    backup_dir('aosp-stable')
-    if not os.path.exists('aosp.py'):
-        execute('ln -s %s/share/python/aosp/aosp.py .' % dir_root)
-    execute('python aosp.py --extra-path=/workspace/project/depot_tools --target-arch %s --target-device-type %s -s aosp --patch --remove-out --build --backup --flash-image' % (args.target_arch, args.target_device_type), interactive=True, dryrun=False)
+    backup_dir(args.dir_aosp)
+    cmd = 'python aosp.py --remove-out -s aosp --patch'
+    execute(cmd, dryrun=dryrun)
     restore_dir()
 
-    backup_dir('chromium-android-test')
-    if not os.path.exists('x64-upstream.py'):
-        execute('ln -s %s/share/python/x64-upstream/x64-upstream.py .' % dir_root)
-    for arch, device_type in [(arch, device_type) for arch in target_archs for device_type in target_devices_type]:
-        execute('python x64-upstream.py --extra-path=/workspace/project/depot_tools --target-arch %s --batch-test --test-formal' % args.target_arch, interactive=True, dryrun=False)
-    restore_dir()
+    for arch in target_archs:
+        backup_dir(args.dir_aosp)
+
+        # build aosp
+        cmd = 'python aosp.py --extra-path=/workspace/project/depot_tools --target-arch %s --target-device-type %s --build --backup' % (arch, args.target_device_type)
+        execute(cmd, interactive=True, dryrun=dryrun)
+
+        # flash image
+        if args.last_phase >= 2:
+            cmd = 'python aosp.py --extra-path=/workspace/project/depot_tools --target-arch %s --target-device-type %s --flash-image' % (arch, args.target_device_type)
+            execute(cmd, interactive=True, dryrun=dryrun)
+
+        restore_dir()
+
+        if args.last_phase >= 3:
+            backup_dir(args.dir_chromium)
+            execute('python x64-upstream.py --extra-path=/workspace/project/depot_tools --target-arch %s --batch-test --test-formal' % arch, interactive=True, dryrun=dryrun)
+            restore_dir()
 
 
 if __name__ == '__main__':

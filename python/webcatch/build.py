@@ -5,6 +5,7 @@
 # Before running this script:
 # sudo /workspace/project/webcatch/project/chromium-android/src/build/install-build-deps-android.sh
 # Make sure /usr/lib/jvm/jdk1.6.0_45
+# run gclient sync without -n once
 
 # Build speed
 # android_content_shell: 25/hour

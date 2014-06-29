@@ -2,6 +2,10 @@
 # Update rev_commit once all builds are finished for a rev, which would free some memory.
 # From 245002, may need to manually execute "gclient sync -f" with hook to check out gn related code.
 
+# Before running this script:
+# sudo /workspace/project/webcatch/project/chromium-android/src/build/install-build-deps-android.sh
+# Make sure /usr/lib/jvm/jdk1.6.0_45
+
 # Build speed
 # android_content_shell: 25/hour
 # linux_chrome: 30/hour

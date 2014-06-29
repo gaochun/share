@@ -89,7 +89,7 @@ def test():
 
     backup_dir(args.dir_aosp)
     cmd = 'python aosp.py --remove-out -s aosp --patch'
-    execute(cmd, dryrun=dryrun)
+    execute(cmd, interactive=True, dryrun=dryrun)
     restore_dir()
 
     for arch in target_archs:

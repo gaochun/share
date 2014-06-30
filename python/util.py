@@ -22,6 +22,7 @@ import commands
 formatter = logging.Formatter('[%(asctime)s - %(levelname)s] %(message)s', "%Y-%m-%d %H:%M:%S")
 host_os = platform.system()
 host_name = socket.gethostname()
+username = os.getenv('USER')
 args = argparse.Namespace()
 dir_stack = []
 timer = {}

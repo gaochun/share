@@ -9,8 +9,6 @@
 
 from util import *
 
-username = getenv('USER')
-
 pkgs_common = [
     'tsocks', 'privoxy',
     'apt-file',

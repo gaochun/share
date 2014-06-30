@@ -68,6 +68,9 @@ rev_expectfail = []
 
 run_chromium_script = 'python ' + dir_python + '/chromium.py'
 
+dir_webcatch = dir_python + '/webcatch'
+dir_patch = dir_webcatch + '/patch'
+
 ################################################################################
 
 
@@ -341,6 +344,52 @@ def patch_src_sampling():
     restore_dir()
 
 
+def patch_regs_struct():
+    backup_dir('src/sandbox/linux/seccomp-bpf')
+
+    file = 'linux_seccomp.h'
+    old = 'typedef user_regs_struct regs_struct;'
+    new = '''
+
+#if defined(__BIONIC__)
+// Old Bionic versions don't have sys/user.h, so we just define regs_struct
+// directly.  This can be removed once we no longer need to support these old
+// Bionic versions.
+struct regs_struct {
+  long int ebx;
+  long int ecx;
+  long int edx;
+  long int esi;
+  long int edi;
+  long int ebp;
+  long int eax;
+  long int xds;
+  long int xes;
+  long int xfs;
+  long int xgs;
+  long int orig_eax;
+  long int eip;
+  long int xcs;
+  long int eflags;
+  long int esp;
+  long int xss;
+};
+#else
+typedef user_regs_struct regs_struct;
+#endif
+
+    '''
+    need_change = True
+    for line in fileinput.input(file, inplace=1):
+        if need_change and re.search(old, line):
+            line = line.replace(old, new)
+            need_change = False
+        # We can not use print here as it will generate blank line
+        sys.stdout.write(line)
+    fileinput.close()
+    restore_dir()
+
+
 # Patch the code to solve some build error problem in upstream
 def patch_after_sync(target_os, target_arch, target_module, rev):
     dir_repo = dir_project + '/chromium-' + target_os
@@ -369,6 +418,9 @@ def patch_after_sync(target_os, target_arch, target_module, rev):
 
     if rev >= 247840 and rev < 248040:
         patch_func('libvpx_neon')
+
+    if rev >= 276595 and rev < 277148:
+        patch_func('regs_struct')
 
     restore_dir()
 

@@ -1,7 +1,7 @@
 #/usr/bin/python
 
 # Post-execution steps for a development machine:
-# sudo /workspace/project/chromium/git_upstream/src/build/install-build-deps.sh.
+# Set vnc connection
 # Install display card driver, slickedit, sublime text.
 # Set keyboard shortcut: 'nautilus /workspace' -> ctrl+alt+E
 # Set input method: gnome-session-properties

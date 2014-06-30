@@ -37,6 +37,7 @@ pkgs_common = [
     'dos2unix',
     'lib32z1',
     'openjdk-7-jdk',
+    'dconf-editor',
 
     # Package used at home
     'openconnect',

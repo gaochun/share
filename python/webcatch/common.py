@@ -25,6 +25,8 @@ COMB_VALID_INDEX_REV_MAX = 2
 # major -> svn rev, git commit, build. major commit is after build commit.
 # To get this, search 'The atomic number' in 'git log origin master chrome/VERSION'
 ver_info = {
+    38: [278979, '85c11da0bf7aad87c0a563c7093cb52ee58e4666', 2063],
+    37: [269579, '47c9991b3153128d79eac26ad0e8ecb3d7e21128', 1986],
     36: [260368, 'b1f8bdb570beade2a212e69bee1ea7340d80838e', 1917],
     35: [252136, '6d5ba2122914c53d753e5fb960a601b43cb79c60', 1848],
     34: [241271, '3824512f1312ec4260ad0b8bf372619c7168ef6b', 1751],

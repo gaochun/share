@@ -7,7 +7,7 @@ import sys
 sys.path.append(sys.path[0] + '/..')
 from util import *
 
-chromium_info = ['cab17fde859dc34cbe354baf1a46b950300a5eba', '278633']
+chromium_info = ['228d3989c82f2a07279063966e4e7b946b7be099', '280559']
 CHROMIUM_INFO_INDEX_HASH = 0
 CHROMIUM_INFO_INDEX_REV = 1
 
@@ -15,9 +15,6 @@ patches = {
     'src': [
         '0001-Enlarge-kThreadLocalStorageSize-to-satisfy-test.patch',
     ],
-    'src/third_party/android_tools': [
-        '0001-ndk-Remove-bcopy-and-bzero.patch',
-    ]
 }
 
 dir_script = sys.path[0]

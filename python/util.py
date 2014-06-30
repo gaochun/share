@@ -263,7 +263,7 @@ def set_proxy():
         https_proxy = 'proxy-shz.intel.com:911'
     setenv('http_proxy', http_proxy)
     setenv('https_proxy', https_proxy)
-    setenv('no_proxy', 'intel.com,.intel.com,10.0.0.0/8,192.168.0.0/16,localhost,127.0.0.0/8,134.134.0.0/16,172.16.0.0/20,192.168.42.0/16')
+    setenv('no_proxy', 'intel.com,.intel.com,10.0.0.0/8,192.168.0.0/16,localhost,127.0.0.0/8,134.134.0.0/16,172.16.0.0/20,192.168.42.0/16,10.239.*.*,ubuntu-ygu5-*,wp-*')
 
 
 # Setup devices and their names

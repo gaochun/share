@@ -33,7 +33,7 @@ pkgs_common = [
     'libspeechd-dev', 'libgdk-pixbuf2.0-dev', 'libgtk2.0-dev', 'libdrm-dev', 'libgnome-keyring-dev', 'libgconf2-dev', 'libudev-dev',
     'libpci-dev', 'linux-tools-generic', 'binutils-dev', 'libelf-dev', 'gperf', 'gcc-4.7-multilib', 'g++-4.7-multilib', 'bison', 'python-pip',
     'module-assistant', 'autoconf', 'automake', 'libnss3-dev', 'ant', 'libcups2-dev', 'libasound2-dev', 'libxss-dev', 'libxtst-dev',
-    'libpulse-dev', 'libexif-dev',
+    'libpulse-dev', 'libexif-dev', 'libkrb5-dev', 'libcap-dev',
     'postfix',  # smtp server
     'android-tools-adb',
     'dos2unix',

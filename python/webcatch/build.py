@@ -2,11 +2,6 @@
 # Update rev_commit once all builds are finished for a rev, which would free some memory.
 # From 245002, may need to manually execute "gclient sync -f" with hook to check out gn related code.
 
-# Before running this script:
-# sudo /workspace/project/webcatch/project/chromium-android/src/build/install-build-deps-android.sh
-# Make sure /usr/lib/jvm/jdk1.6.0_45
-# run gclient sync without -n once
-
 # Build speed
 # android_content_shell: 25/hour
 # linux_chrome: 30/hour
@@ -109,6 +104,12 @@ examples:
 
 def setup():
     global target_os_info, build_every, fail_number_max, rev_expectfail
+
+    if not has_process('privoxy'):
+        execute('sudo privoxy /etc/privoxy/config')
+
+    os.putenv('http_proxy', '127.0.0.1:8118')
+    os.putenv('https_proxy', '127.0.0.1:8118')
 
     if not args.slave_only:
         for server in servers:
@@ -700,6 +701,37 @@ def remotify_cmd(cmd, server=server_main):
         username = 'wp'
 
     return 'ssh %s@%s %s' % (username, server, cmd)
+
+
+def init():
+    dir_chromium_android = dir_root + '/project/chromium-android'
+    if os.path.exists(dir_chromium_android):
+        backup_dir(dir_chromium_android)
+        cmd = 'src/build/install-build-deps-android.sh'
+        execute(cmd, interactive=True)
+        cmd = 'GYP_DEFINES="werror= disable_nacl=1 component=shared_library enable_svg=0" gclient sync -f -j16'
+        execute(cmd, interactive=True)
+        restore_dir()
+
+    dir_chromium_linux = dir_root + '/project/chromium-linux'
+    if os.path.exists(dir_chromium_linux):
+        backup_dir(dir_chromium_linux)
+        cmd = 'src/build/install-build-deps.sh'
+        execute(cmd, interactive=True)
+        cmd = 'GYP_DEFINES="werror= disable_nacl=1 component=shared_library enable_svg=0" gclient sync -f -j16'
+        execute(cmd, interactive=True)
+        restore_dir()
+
+    if not os.path.exists('/usr/lib/jvm/jdk1.6.0_45'):
+        warning('Sun jdk 1.6 does not exist')
+
+    if not os.path.exists('java-7-openjdk-amd64'):
+        warning('Open jdk 1.7 does not exist')
+
+
+def teardown():
+    execute('sudo killall privoxy')
+
 ################################################################################
 
 
@@ -708,3 +740,4 @@ if __name__ == '__main__':
     setup()
     clean_lock()
     build()
+    teardown()

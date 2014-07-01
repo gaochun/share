@@ -382,6 +382,11 @@ if [ $profile == "PROXY" ] ; then
     export no_proxy=intel.com,.intel.com,10.0.0.0/8,192.168.0.0/16,localhost,127.0.0.0/8,134.134.0.0/16,172.16.0.0/20,192.168.42.0/16
 fi
 
+alias add="adb disconnect 192.168.42.1"
+alias adc="adb connect 192.168.42.1"
+alias adr="adb root && adb remount"
+alias ads="adb shell"
+
 export PATH=$PATH:/workspace/project/depot_tools
 
 # ccache related

@@ -87,8 +87,10 @@ def test():
     execute('git pull', interactive=True, dryrun=dryrun)
     restore_dir()
 
+    cmd_aosp = 'python aosp.py --extra-path=/workspace/project/depot_tools '
+
     backup_dir(args.dir_aosp)
-    cmd = 'python aosp.py -s aosp --patch --remove-out'
+    cmd = cmd_aosp + '-s aosp --patch --remove-out'
     execute(cmd, interactive=True, dryrun=dryrun)
     restore_dir()
 
@@ -96,12 +98,12 @@ def test():
         backup_dir(args.dir_aosp)
 
         # build aosp
-        cmd = 'python aosp.py --extra-path=/workspace/project/depot_tools --target-arch %s --target-device-type %s --build --backup' % (arch, args.target_device_type)
+        cmd = cmd_aosp + '--target-arch %s --target-device-type %s --build --backup' % (arch, args.target_device_type)
         execute(cmd, interactive=True, dryrun=dryrun)
 
         # flash image
         if args.last_phase >= 2:
-            cmd = 'python aosp.py --extra-path=/workspace/project/depot_tools --target-arch %s --target-device-type %s --flash-image' % (arch, args.target_device_type)
+            cmd = cmd_aosp + '--target-arch %s --target-device-type %s --flash-image' % (arch, args.target_device_type)
             execute(cmd, interactive=True, dryrun=dryrun)
 
         restore_dir()

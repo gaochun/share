@@ -107,6 +107,16 @@ def setup():
     global dir_root, dir_chromium, dir_out, target_archs, target_devices_type, target_modules, chromium_version, devices, devices_name, devices_type, timestamp, use_upstream_chromium, patches_build
     global repo_provider, repo_branch, repo_ver, file_log
 
+    dir_root = os.path.abspath(os.getcwd())
+    dir_chromium = dir_root + '/external/chromium_org'
+    dir_out = dir_root + '/out'
+
+    (devices, devices_name, devices_type) = setup_device()
+
+    os.chdir(dir_root)
+
+    (repo_provider, repo_branch, repo_ver) = _get_repo_info()
+
     if args.time_fixed:
         timestamp = get_datetime(format='%Y%m%d')
     else:
@@ -117,16 +127,16 @@ def setup():
     path += ':/usr/bin:/usr/sbin'
     if args.extra_path:
         path += ':' + args.extra_path
+    if repo_branch == 'gmin':
+        path = '/workspace/software/make-3.81:' + path
     setenv('PATH', path)
+
     for cmd in ['adb', 'git', 'gclient']:
         result = execute('which ' + cmd, show_command=False)
         if result[0]:
             error('Could not find ' + cmd + ', and you may use --extra-path to designate it')
 
     set_proxy()
-    dir_root = os.path.abspath(os.getcwd())
-    dir_chromium = dir_root + '/external/chromium_org'
-    dir_out = dir_root + '/out'
 
     if args.target_arch == 'all':
         target_archs = ['x86_64', 'x86']
@@ -148,12 +158,6 @@ def setup():
     else:
         chromium_version = 'cr30'
 
-    (devices, devices_name, devices_type) = setup_device()
-
-    os.chdir(dir_root)
-
-    (repo_provider, repo_branch, repo_ver) = _get_repo_info()
-
     if os.path.exists('external/chromium_org/src'):
         use_upstream_chromium = True
 
@@ -163,6 +167,14 @@ def setup():
         patches_build = dict(patches_build_common, **patches_build_aosp_chromium)
 
     file_log = dir_root + '/log.txt'
+
+    # Set up JDK
+    backup_dir(dir_python)
+    if repo_branch == 'gmin':
+        execute('python version.py -t java -s jdk1.6.0_45')
+    else:
+        execute('python version.py -t java -s java-7-openjdk-amd64')
+    restore_dir()
 
 
 def init():
@@ -309,63 +321,65 @@ def flash_image():
     if not args.flash_image:
         return
 
-    connect_device()
-
     if len(target_archs) > 1:
         error('You need to specify the target arch')
 
     if len(target_devices_type) > 1 or target_devices_type[0] != 'baytrail':
         error('Only baytrail can burn the image')
 
+    connect_device()
     arch = target_archs[0]
     device_type = target_devices_type[0]
     path_fastboot = dir_linux + '/fastboot'
 
-    dir_extract = '/tmp/' + timestamp
-    execute('mkdir ' + dir_extract)
-    backup_dir(dir_extract)
+    # Prepare image
+    if repo_branch == 'aosp_stable':
+        dir_extract = '/tmp/' + timestamp
+        execute('mkdir ' + dir_extract)
+        backup_dir(dir_extract)
 
-    if args.file_image:
-        if re.match('http', args.file_image):
-            execute('wget ' + args.file_image, dryrun=False)
-            execute('tar zxf ' + args.file_image.split('/')[-1])
-            execute('mv */* ./')
-            result = execute('ls *.tgz', return_output=True)
-            file_image = dir_extract + '/' + result[1].rstrip('\n')
+        if args.file_image:
+            if re.match('http', args.file_image):
+                execute('wget ' + args.file_image, dryrun=False)
+                execute('tar zxf ' + args.file_image.split('/')[-1])
+                execute('mv */* ./')
+                result = execute('ls *.tgz', return_output=True)
+                file_image = dir_extract + '/' + result[1].rstrip('\n')
+            else:
+                file_image = args.file_image
         else:
-            file_image = args.file_image
-    else:
-        if repo_ver >= 20140624:
-            file_image = dir_root + '/out/dist/%s-om-factory.tgz' % get_product(arch, device_type, ver=repo_ver)
-        else:
-            file_image = dir_root + '/out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type, ver=repo_ver)
+            if repo_ver >= 20140624:
+                file_image = dir_root + '/out/dist/%s-om-factory.tgz' % get_product(arch, device_type, ver=repo_ver)
+            else:
+                file_image = dir_root + '/out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type, ver=repo_ver)
 
-    if not os.path.exists(file_image):
-        error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
-        return
+        if not os.path.exists(file_image):
+            error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
+            return
 
-    execute('tar xvf ' + file_image, interactive=True)
+        execute('tar xvf ' + file_image, interactive=True)
 
-    # Hack flash-all.sh to skip sleep and use our own fastboot
-    for line in fileinput.input('flash-all.sh', inplace=1):
-        if re.search('sleep', line):
-            line = line.replace('sleep', '#sleep')
-        elif re.match('fastboot', line):
-            line = dir_linux + '/' + line
-        # We can not use print here as it will generate blank line
-        sys.stdout.write(line)
-    fileinput.close()
+        # Hack flash-all.sh to skip sleep and use our own fastboot
+        for line in fileinput.input('flash-all.sh', inplace=1):
+            if re.search('sleep', line):
+                line = line.replace('sleep', '#sleep')
+            elif re.match('fastboot', line):
+                line = dir_linux + '/' + line
+            # We can not use print here as it will generate blank line
+            sys.stdout.write(line)
+        fileinput.close()
 
-    # Hack gpt.ini for fast userdata erasion
-    result = execute('ls *.ini', return_output=True)
-    file_gpt = result[1].rstrip('\n')
-    for line in fileinput.input(file_gpt, inplace=1):
-        if re.search('len = -1', line):
-            line = line.replace('-1', '2000')
-        # We can not use print here as it will generate blank line
-        sys.stdout.write(line)
-    fileinput.close()
+        # Hack gpt.ini for fast userdata erasion
+        result = execute('ls *.ini', return_output=True)
+        file_gpt = result[1].rstrip('\n')
+        for line in fileinput.input(file_gpt, inplace=1):
+            if re.search('len = -1', line):
+                line = line.replace('-1', '2000')
+            # We can not use print here as it will generate blank line
+            sys.stdout.write(line)
+        fileinput.close()
 
+    # Flash image
     # This command would not return so we have to use timeout here
     execute('timeout 5s ' + adb(cmd='reboot bootloader'))
     sleep_sec = 3
@@ -377,13 +391,20 @@ def flash_image():
         else:
             break
 
-    execute('./flash-all.sh -t ' + ip, interactive=True, dryrun=False)
-    restore_dir()
-    execute('rm -rf ' + dir_extract, dryrun=False)
+    if repo_branch == 'gmin':
+        combo = _get_combo(arch, device_type)
+        cmd = bashify('. build/envsetup.sh && lunch ' + combo + ' && fastboot -t 192.168.42.1 -w flashall')
+        execute(cmd, interactive=True)
+    else:
 
-    # This command would not return so we have to use timeout here
-    cmd = 'timeout 10s %s -t %s reboot' % (path_fastboot, ip)
-    execute(cmd)
+        execute('./flash-all.sh -t ' + ip, interactive=True, dryrun=False)
+        execute('rm -rf ' + dir_extract, dryrun=False)
+
+        # This command would not return so we have to use timeout here
+        cmd = 'timeout 10s %s -t %s reboot' % (path_fastboot, ip)
+        execute(cmd)
+
+        restore_dir()
 
     # Wait until system is up
     while not device_connected():
@@ -395,14 +416,15 @@ def flash_image():
     info('Sleeping 60 seconds until system fully boots up..')
     time.sleep(60)
 
-    # Ensure screen stays on
-    execute(adb(cmd='shell svc power stayon usb'))
+    if repo_branch == 'aosp_stable':
+        # Ensure screen stays on
+        execute(adb(cmd='shell svc power stayon usb'))
 
-    # Try to unlock the screen if needed
-    execute(adb(cmd='shell input keyevent 82'))
+        # Try to unlock the screen if needed
+        execute(adb(cmd='shell input keyevent 82'))
 
-    # After system boots up, it will show guide screen and never lock or turn off screen.
-    set_screen_lock_none()
+        # After system boots up, it will show guide screen and never lock or turn off screen.
+        set_screen_lock_none()
 
 
 def start_emu():
@@ -565,7 +587,7 @@ def _get_combo(arch, device_type):
         combo_suffix = '-eng'
         combo = combo_prefix + arch + combo_suffix
     elif device_type == 'baytrail':
-        if repo_provider == 'intel' and repo_branch == 'aosp_stable' and repo_ver >= 20140624:
+        if repo_branch == 'aosp_stable' and repo_ver >= 20140624 or repo_branch == 'gmin':
             combo_prefix = 'asus_t100'
             combo_suffix = '-eng'
 
@@ -744,6 +766,8 @@ def _get_repo_info():
                 repo_branch = 'master'
             elif re.search('platform/android/r44c-stable', line):
                 repo_branch = 'mcg'
+            elif re.search('gmin', line):
+                repo_branch = 'gmin'
             else:
                 error('Could not find repo branch')
 

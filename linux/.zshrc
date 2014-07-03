@@ -651,13 +651,15 @@ PROMPT='%F{blue}%M%F{green}%/
 
 ########## End of git support ##########
 
-# ln -s /workspace/project/gyagp/share/linux/.zshrc ~/.zshrc
 
-PROJECT_DIR=/workspace/project
-SHARE_DIR=$PROJECT_DIR/gyagp/share
-PYTHON_DIR=$SHARE_DIR/python
-COMMON_DIR=$SHARE_DIR/common
-SUBLIME_DIR=$COMMON_DIR/sublime
+
+DIR_PROJECT=/workspace/project
+DIR_SHARE=$DIR_PROJECT/share
+DIR_PYTHON=$DIR_SHARE/python
+DIR_COMMON=$DIR_SHARE/common
+DIR_SUBLIME=$DIR_COMMON/sublime
+
+# ln -s $DIR_SHARE/linux/.zshrc ~/.zshrc
 
 # Parameters: src_dir, src_file, dest_dir[, dest_file]
 function symbolic_link() {
@@ -677,29 +679,29 @@ function symbolic_link() {
 }
 
 # chromium-desktop
-symbolic_link $PYTHON_DIR chromium.py $PROJECT_DIR/chromium-linux
+symbolic_link $DIR_PYTHON chromium.py $DIR_PROJECT/chromium-linux
 export CHROME_DEVEL_SANDBOX=/usr/local/sbin/chrome-devel-sandbox
 
 # chromium-android
-symbolic_link $PYTHON_DIR chromium.py $PROJECT_DIR/chromium-android
+symbolic_link $DIR_PYTHON chromium.py $DIR_PROJECT/chromium-android
 
 # Android
-symbolic_link $PYTHON_DIR android.py $PROJECT_DIR/android
+symbolic_link $DIR_PYTHON android.py $DIR_PROJECT/android
 
 # Android-ia
-symbolic_link $PYTHON_DIR chromium64.py $PROJECT_DIR/android-ia
+symbolic_link $DIR_PYTHON chromium64.py $DIR_PROJECT/android-ia
 
 # Skia
-symbolic_link $PYTHON_DIR skia.py $PROJECT_DIR/skia
+symbolic_link $DIR_PYTHON skia.py $DIR_PROJECT/skia
 
 # sublime
 export PATH=$PATH:/workspace/software/sublime
 function sublime_text() {
-    bash -c "LD_PRELOAD=/workspace/project/gyagp/share/linux/libsublime-imfix.so sublime_text $1"
+    bash -c "LD_PRELOAD=/workspace/project/share/linux/libsublime-imfix.so sublime_text $1"
 }
 alias st='sublime_text'
-symbolic_link $SUBLIME_DIR Preferences.sublime-settings ~/.config/sublime-text-2/Packages/User
-symbolic_link $SUBLIME_DIR SublimeLinter.sublime-settings ~/.config/sublime-text-2/Packages/User
+symbolic_link $DIR_SUBLIME Preferences.sublime-settings ~/.config/sublime-text-2/Packages/User
+symbolic_link $DIR_SUBLIME SublimeLinter.sublime-settings ~/.config/sublime-text-2/Packages/User
 
 
 complete () {
@@ -727,7 +729,7 @@ hostname=$(hostname)
 if [ $hostname == "ubuntu-ygu5-01" -o $hostname == "ubuntu-ygu5-02" ] ; then
     cd /workspace/project
 elif [ $hostname == "ubuntu-y560d" ] ; then
-    cd /workspace/project/gyagp/share
+    cd $DIR_SHARE
 else
     cd /workspace/project
 fi

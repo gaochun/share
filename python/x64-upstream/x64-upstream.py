@@ -64,7 +64,6 @@ gtest_suite_default = [
     'sync_unit_tests',
     'ui_unittests',
     'unit_tests',  # Need breakpad
-    'webkit_compositor_bindings_unittests',
     'webkit_unit_tests',
     'content_gl_tests',  # experimental suite
     #'content_browsertests',  # webrtc
@@ -430,7 +429,7 @@ def build(force=False):
         ninja_cmd += ' ' + target_module
 
     ninja_cmd += ' 2>&1 |tee -a ' + file_log
-    result = execute(ninja_cmd, show_progress=True)
+    result = execute(ninja_cmd, interactive=True)
     if result[0]:
         error('Failed to execute command: ' + ninja_cmd, error_code=result[0])
 

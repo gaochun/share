@@ -562,7 +562,7 @@ def _test_run_device(index_device, results):
         execute(adb(cmd='shell input keyevent 82', device=device))
 
         # Fake /storage/emulated/0
-        cmd = adb(cmd='root', device=device) + ' && ' + adb(cmd='remount', device=device) + ' && ' + adb(cmd='shell "mount -o rw,remount rootfs / && cd /storage/emulated && ln -s legacy 0"', device=device)
+        cmd = adb(cmd='root', device=device) + ' && ' + adb(cmd='remount', device=device) + ' && ' + adb(cmd='shell "mount -o rw,remount rootfs / && chmod 777 /mnt/sdcard && cd /storage/emulated && ln -s legacy 0"', device=device)
         result = execute(cmd)
         if result[0]:
             error('Failed to fake /storage/emulated/0, which is critical for test')

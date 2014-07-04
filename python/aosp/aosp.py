@@ -166,7 +166,7 @@ def setup():
     else:
         patches_build = dict(patches_build_common, **patches_build_aosp_chromium)
 
-    file_log = dir_root + '/log.txt'
+    file_log = dir_root + '/log-' + timestamp + '.txt'
 
     # Set up JDK
     backup_dir(dir_python)

@@ -21,7 +21,7 @@ dir_script = sys.path[0]
 dir_root = ''
 dir_src = ''
 dir_test = ''
-time_stamp = ''
+timestamp = ''
 test_type = ''
 dir_out_test_type = ''
 dir_time = ''
@@ -237,13 +237,13 @@ examples:
 
 
 def setup():
-    global dir_root, dir_src, test_type, dir_out_test_type, dir_test, dir_time, devices, devices_name, devices_type, target_arch, target_module, report_name, test_suite, time_stamp
-    global file_log
+    global dir_root, dir_src, test_type, dir_out_test_type, dir_test, dir_time, devices, devices_name, devices_type, target_arch, target_module, report_name, test_suite, timestamp
+    global file_log, timestamp
 
     if args.time_fixed:
-        time_stamp = get_datetime(format='%Y%m%d')
+        timestamp = get_datetime(format='%Y%m%d')
     else:
-        time_stamp = get_datetime()
+        timestamp = get_datetime()
 
     # Set path
     path = os.getenv('PATH')
@@ -272,7 +272,7 @@ def setup():
     else:
         dir_out_test_type = dir_src + '/out-' + target_arch + '/out/' + test_type.capitalize()
     dir_test = dir_root + '/test'
-    dir_time = dir_test + '/' + time_stamp
+    dir_time = dir_test + '/' + timestamp
 
     report_name = 'Chromium Tests Report'
 
@@ -292,7 +292,7 @@ def setup():
 
     target_module = args.target_module
 
-    file_log = dir_root + '/log.txt'
+    file_log = dir_root + '/log-' + timestamp + '.txt'
 
     print '''
 ========== Configuration Begin ==========
@@ -666,7 +666,7 @@ def _test_run_device(index_device, results):
     if args.test_formal:
         # Backup
         backup_dir(dir_test)
-        backup_smb('//ubuntu-ygu5-02.sh.intel.com/chromium64', 'test', time_stamp + '-' + device_name)
+        backup_smb('//ubuntu-ygu5-02.sh.intel.com/chromium64', 'test', timestamp + '-' + device_name)
         restore_dir()
 
         # Send mail
@@ -680,7 +680,7 @@ def _test_sendmail(index_device, html):
     else:
         to = 'webperf@intel.com'
 
-    send_mail('x64-noreply@intel.com', to, report_name + '-' + time_stamp + '-' + device_name, html, type='html')
+    send_mail('x64-noreply@intel.com', to, report_name + '-' + timestamp + '-' + device_name, html, type='html')
 
 
 def _test_gen_report(index_device, results):
@@ -726,7 +726,7 @@ def _test_gen_report(index_device, results):
     html_end = '''
           <h2>Log</h2>
           <ul>
-            <li>http://ubuntu-ygu5-02.sh.intel.com/chromium64/test/''' + time_stamp + '-' + device_name + '''</li>
+            <li>http://ubuntu-ygu5-02.sh.intel.com/chromium64/test/''' + timestamp + '-' + device_name + '''</li>
           </ul>
         </div>
       </div>

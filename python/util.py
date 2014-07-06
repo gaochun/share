@@ -36,6 +36,7 @@ while not os.path.exists(dir_temp + '/.git'):
 dir_share = dir_temp
 dir_python = dir_share + '/python'
 dir_linux = dir_share + '/linux'
+dir_common = dir_share + '/common'
 dir_home = os.getenv('HOME')
 
 target_os_all = ['android', 'linux']

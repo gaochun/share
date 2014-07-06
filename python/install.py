@@ -147,3 +147,8 @@ if __name__ == '__main__':
 
     # Chromium build
     copy_file('/usr/include/x86_64-linux-gnu/asm', '/usr/include', is_sylk=True)
+
+    # sublime
+    if os.path.exists(dir_home + '/.config/sublime-text-2'):
+        copy_file(dir_common + '/sublime/Preferences.sublime-settings', dir_home + '/.config/sublime-text-2/Packages/User', is_sylk=is_sylk)
+        copy_file(dir_common + '/sublime/SublimeLinter.sublime-settings', dir_home + '/.config/sublime-text-2/Packages/User', is_sylk=is_sylk)

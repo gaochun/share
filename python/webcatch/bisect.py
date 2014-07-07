@@ -6,8 +6,7 @@ from common import *
 
 # Define result for good rev
 benchmarks = {
-    'cocos': ['>20'],
-    'galacticmobile': ['>50'],
+    'browsermark': ['>2300'],
 }
 
 target_os = ''
@@ -16,6 +15,7 @@ target_module = ''
 benchmark = ''
 rev_list = []
 comb_name = ''
+dir_out = '/workspace/gytemp/webcatch/out'
 
 ################################################################################
 
@@ -34,6 +34,7 @@ examples:
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=target_arch_all, default='x86')
     parser.add_argument('--target-module', dest='target_module', help='target module', choices=target_module_all, default='content_shell')
     parser.add_argument('--benchmark', dest='benchmark', help='benchmark', required=True)
+    parser.add_argument('--benchmark-config', dest='benchmark_config', help='benchmark config')
     parser.add_argument('-g', '--good-rev', dest='good_rev', type=int, help='small revision, which is good')
     parser.add_argument('-b', '--bad-rev', dest='bad_rev', type=int, help='big revision, which is bad')
 
@@ -83,7 +84,10 @@ def parse_result(benchmark, output):
 
 def is_good(rev):
     backup_dir('../webmark')
-    r = execute('python webmark.py --target-os ' + target_os + ' --target-arch ' + target_arch + ' --target-module ' + target_module + ' --target-module-path ' + dir_out_server + '/' + get_comb_name(target_os, target_arch, target_module) + '/' + str(rev) + '.apk' + ' --benchmark ' + benchmark, return_output=True)
+    cmd = 'python webmark.py --target-os ' + target_os + ' --target-arch ' + target_arch + ' --target-module ' + target_module + ' --target-module-path ' + dir_out + '/' + get_comb_name(target_os, target_arch, target_module) + '/' + str(rev) + '.apk' + ' --benchmark ' + benchmark
+    if args.benchmark_config:
+        cmd += ' --benchmark-config ' + '\'' + args.benchmark_config + '\''
+    r = execute(cmd, return_output=True, interactive=True)
     restore_dir()
 
     if r[0]:
@@ -175,7 +179,7 @@ def bisect(index_good, index_bad, check_boundry=False):
 
 def get_rev_list(rev_min, rev_max):
     global rev_list
-    for file in os.listdir(dir_out_server + '/' + comb_name):
+    for file in os.listdir(dir_out + '/' + comb_name):
         pattern = re.compile(comb_valid[target_os, target_arch, target_module][0])
         match = pattern.search(file)
         if match:

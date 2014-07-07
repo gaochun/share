@@ -42,6 +42,8 @@ mmma:    Builds all of the modules in the supplied directories, and their depend
 
 <cts>
 http://static.googleusercontent.com/media/source.android.com/en/us/compatibility/android-cts-manual.pdf
+
+switch to english
 security->screen lock->None
 developer options->usb debugging
 developer options->stay awake

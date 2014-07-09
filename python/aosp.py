@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 
+# Build:
+# Check tag info from http://source.android.com/source/build-numbers.html
+# Download proprietary drivers from https://developers.google.com/android/nexus/drivers, and put them into related directory under /workspace/topic/android/backup/vendor.
+# jdk must be 1.6.0.45 for 4.4 build, and JAVA_HOME should be set correctly.
+
+# Build time:
+# upstream 4.4: 1 hour
+
 import sys
 sys.path.append(sys.path[0] + '/..')
 from util import *
@@ -21,42 +29,23 @@ ip = '192.168.42.1'
 timestamp = ''
 use_upstream_chromium = False
 file_log = ''
-
+variant = ''
 
 # variable product: out/target/product/asus_t100_64p|baytrail_64p
 # variable combo: lunch asus_t100_64p-userdebug|aosp_baytrail_64p-eng
 # out/dist asus_t100_64p-bootloader-eng.gyagp|aosp_baytrail_64p-bootloader-userdebug.gyagp
-repo_provider = ''
+repo_type = ''  # upstream, stable, mcg, gmin
 repo_branch = ''
-# aosp_stable from 20140624, combo changed to asus_t100-userdebug, etc.
+# stable from 20140624, combo changed to asus_t100-userdebug, etc.
 repo_ver = ''
 
-patches_init = {
-    '.repo/manifests': ['0001-Replace-webview-and-chromium_org.patch'],
-}
-patches_init2 = {
-    'manifests': ['0001-Replace-webview-and-chromium_org.patch'],
-}
-
-patches_build = {}
-
-patches_build_common = {
-    # Emulator
-    #'build/core': ['0001-Emulator-Remove-opengl-from-blacklist-to-enable-gpu.patch'],
-    #'device/generic/goldfish': ['0001-Emulator-Make-the-size-of-cb_handle_t-same-for-32-64.patch'],
-    #'frameworks/base': ['0001-Emulator-Enable-HWUI.patch'],
-}
-
-patches_build_upstream_chromium = {
-    'frameworks/webview': ['0001-Change-drawGLFunctor-to-64-bit.patch'],
-    'external/chromium-libpac': ['0001-libpac-Change-v8-path-and-v8-tools-module-name.patch'],
-}
-
-patches_build_aosp_chromium = {
+codename = {
+    'nexus4': 'mako',
+    'nexus5': 'hammerhead',
 }
 
 
-def handle_option():
+def parse_arg():
     global args
 
     parser = argparse.ArgumentParser(description='Script to sync, build Android',
@@ -70,9 +59,11 @@ examples:
 ''')
 
     parser.add_argument('--init', dest='init', help='init', action='store_true')
-    parser.add_argument('-s', '--sync', dest='sync', help='sync code for android, chromium and intel', choices=['all', 'aosp', 'chromium'])
+    parser.add_argument('--repo-type', dest='repo_type', help='repo type')
+    parser.add_argument('--repo-branch', dest='repo_branch', help='repo branch', default='master')
+    parser.add_argument('--sync', dest='sync', help='sync code for android, chromium and intel', choices=['all', 'aosp', 'chromium'])
     parser.add_argument('--patch', dest='patch', help='patch', action='store_true')
-    parser.add_argument('-b', '--build', dest='build', help='build', action='store_true')
+    parser.add_argument('--build', dest='build', help='build', action='store_true')
     parser.add_argument('--build-showcommands', dest='build_showcommands', help='build with detailed command', action='store_true')
     parser.add_argument('--build-skip-mk', dest='build_skip_mk', help='skip the generation of makefile', action='store_true')
     parser.add_argument('--build-no-dep', dest='build_no_dep', help='use mmma or mmm', action='store_true')
@@ -94,8 +85,9 @@ examples:
     parser.add_argument('--cts-run', dest='cts_run', help='package to run with cts, such as android.webkit, com.android.cts.browserbench')
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'all'], default='x86_64')
-    parser.add_argument('--target-device-type', dest='target_device_type', help='target device', choices=['baytrail', 'generic', 'all'], default='baytrail')
+    parser.add_argument('--target-device-type', dest='target_device_type', help='target device, can be t100, generic, mrd7, nexus4, nexus5, nexus7', choices=['baytrail', 'generic'], default='baytrail')
     parser.add_argument('--target-module', dest='target_module', help='target module', choices=['libwebviewchromium', 'webview', 'browser', 'cts', 'system', 'all'], default='system')
+    parser.add_argument('--variant', dest='variant', help='variant', choices=['user', 'userdebug', 'eng'])
 
     args = parser.parse_args()
 
@@ -105,7 +97,7 @@ examples:
 
 def setup():
     global dir_root, dir_chromium, dir_out, target_archs, target_devices_type, target_modules, chromium_version, devices, devices_name, devices_type, timestamp, use_upstream_chromium, patches_build
-    global repo_provider, repo_branch, repo_ver, file_log
+    global repo_type, repo_ver, file_log, variant
 
     dir_root = os.path.abspath(os.getcwd())
     dir_chromium = dir_root + '/external/chromium_org'
@@ -115,7 +107,12 @@ def setup():
 
     os.chdir(dir_root)
 
-    (repo_provider, repo_branch, repo_ver) = _get_repo_info()
+    if not os.path.exists('.repo'):
+        if not args.repo_type:
+            error('Please designate repo type')
+        repo_type = args.repo_type
+    else:
+        (repo_type, repo_ver) = _get_repo_info()
 
     if args.time_fixed:
         timestamp = get_datetime(format='%Y%m%d')
@@ -127,7 +124,7 @@ def setup():
     path += ':/usr/bin:/usr/sbin'
     if args.extra_path:
         path += ':' + args.extra_path
-    if repo_branch == 'gmin':
+    if repo_type == 'gmin':
         path = '/workspace/software/make-3.81:' + path
     setenv('PATH', path)
 
@@ -170,28 +167,41 @@ def setup():
 
     # Set up JDK
     backup_dir(dir_python)
-    if repo_branch == 'gmin':
+    if repo_type == 'gmin':
         execute('python version.py -t java -s jdk1.6.0_45')
     else:
         execute('python version.py -t java -s java-7-openjdk-amd64')
     restore_dir()
+
+    if args.variant:
+        variant = args.variant
+    else:
+        if repo_type == 'upstream':
+            variant = 'userdebug'
+        else:
+            variant = 'eng'
 
 
 def init():
     if not args.init:
         return()
 
-    execute('curl --noproxy intel.com http://android.intel.com/repo >./repo')
-    execute('chmod +x ./repo')
-    execute('./repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/private/topic/aosp_stable/master')
-    patch(patches_init, force=True)
-    execute('./repo sync -c -j16')
-    patch(patches_init2, force=True)
-    execute('./repo start x64 --all')
+    if repo_type == 'stable':
+        file_repo = 'http://android.intel.com/repo'
+    elif repo_type == 'upstream':
+        file_repo = 'https://storage.googleapis.com/git-repo-downloads/repo'
 
-    upstream_chromium = 'external/chromium_org/src'
-    if not os.path.exists(upstream_chromium):
-        info('Please put upstream Chromium under ' + upstream_chromium)
+    execute('curl --noproxy intel.com %s >./repo' % file_repo, interactive=True)
+    execute('chmod +x ./repo')
+
+    if repo_type == 'stable':
+        cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/private/topic/aosp_stable/master'
+    elif repo_type == 'upstream':
+        cmd = './repo init -u https://android.googlesource.com/platform/manifest -b ' + args.repo_branch
+
+    execute(cmd, interactive=True)
+    execute('./repo sync -c -j16')
+    execute('./repo start temp --all')
 
 
 def sync():
@@ -241,12 +251,16 @@ def build():
 
     for arch, device_type, module in [(arch, device_type, module) for arch in target_archs for device_type in target_devices_type for module in target_modules]:
         combo = _get_combo(arch, device_type)
-        if not args.build_skip_mk and os.path.exists(dir_root + '/external/chromium_org/src'):
-            cmd = '. build/envsetup.sh && lunch ' + combo + ' && ' + dir_root + '/external/chromium_org/src/android_webview/tools/gyp_webview linux-x86'
-            if arch == 'x86_64':
-                cmd += ' && ' + dir_root + '/external/chromium_org/src/android_webview/tools/gyp_webview linux-x86_64'
-            cmd = bashify(cmd)
-            execute(cmd, interactive=True)
+        if repo_type == 'upstream':
+            dir_backup = '/workspace/topic/android/backup'
+            dir_backup_driver = dir_backup + '/vendor'
+            # Check proprietary binaries.
+            dir_backup_spec_driver = dir_backup_driver + '/' + device + '/' + version + '/vendor'
+            if not os.path.exists(dir_backup_spec_driver):
+                error('Proprietary binaries dont exist')
+                quit()
+            execute('rm -rf vendor')
+            execute('cp -rf ' + dir_backup_spec_driver + ' ./')
 
         if module == 'system' or module == 'cts':
             cmd = '. build/envsetup.sh && lunch ' + combo + ' && make '
@@ -333,7 +347,7 @@ def flash_image():
     path_fastboot = dir_linux + '/fastboot'
 
     # Prepare image
-    if repo_branch == 'aosp_stable':
+    if repo_type == 'stable':
         dir_extract = '/tmp/' + timestamp
         execute('mkdir ' + dir_extract)
         backup_dir(dir_extract)
@@ -391,7 +405,7 @@ def flash_image():
         else:
             break
 
-    if repo_branch == 'gmin':
+    if repo_type == 'gmin' or repo_type == 'upstream':
         combo = _get_combo(arch, device_type)
         cmd = bashify('. build/envsetup.sh && lunch ' + combo + ' && fastboot -t 192.168.42.1 -w flashall')
         execute(cmd, interactive=True)
@@ -416,7 +430,7 @@ def flash_image():
     info('Sleeping 60 seconds until system fully boots up..')
     time.sleep(60)
 
-    if repo_branch == 'aosp_stable':
+    if repo_type == 'stable':
         # Ensure screen stays on
         execute(adb(cmd='shell svc power stayon usb'))
 
@@ -582,14 +596,16 @@ def _sync_repo(dir, cmd):
 
 
 def _get_combo(arch, device_type):
-    if device_type == 'generic':
+    if repo_type == 'upstream':
+        combo = 'full_' + codename[device_type] + '-' + variant
+    elif device_type == 'generic':
         combo_prefix = 'aosp_'
-        combo_suffix = '-eng'
+        combo_suffix = '-' + variant
         combo = combo_prefix + arch + combo_suffix
     elif device_type == 'baytrail':
-        if repo_branch == 'aosp_stable' and repo_ver >= 20140624 or repo_branch == 'gmin':
+        if repo_type == 'stable' and repo_ver >= 20140624 or repo_type == 'gmin':
             combo_prefix = 'asus_t100'
-            combo_suffix = '-eng'
+            combo_suffix = '-' + variant
 
             if arch == 'x86_64':
                 combo = combo_prefix + '_64p' + combo_suffix
@@ -597,7 +613,7 @@ def _get_combo(arch, device_type):
                 combo = combo_prefix + combo_suffix
         else:
             combo_prefix = 'aosp_'
-            combo_suffix = '-eng'
+            combo_suffix = '-' + variant
             if arch == 'x86_64':
                 combo = combo_prefix + device_type + '_64p' + combo_suffix
             elif arch == 'x86':
@@ -661,6 +677,11 @@ def _backup_one(arch, device_type, module):
                 ],
             }
 
+        # TODO: Backup image for upstream
+        #dest_dir = dir_backup_img + get_datetime() + '-' + device + '-' + variant + '/'
+        #os.mkdir(dest_dir)
+        #execute('cp ' + root_dir + 'out/target/product/' + device_code_name + '/*.img ' + dest_dir)
+
     name = timestamp + '-' + arch + '-' + device_type + '-' + module + '-' + chromium_version
     dir_backup_one = dir_backup + '/' + name
     if not os.path.exists(dir_backup_one):
@@ -700,26 +721,6 @@ def _ensure_nonexist(file):
         execute('mv -f %s %s.bk' % (file, file))
 
 
-# repo: repo path
-# path_patch: Full path of patch
-# count: Recent commit count to check
-def _patch_applied(dir_repo, path_patch, count=30):
-    f = open(path_patch)
-    lines = f.readlines()
-    f.close()
-
-    pattern = re.compile('Subject: \[PATCH.*\] (.*)')
-    match = pattern.search(lines[3])
-    title = match.group(1)
-    backup_dir(dir_repo)
-    result = execute('git show -s --pretty="format:%s" --max-count=' + str(count) + ' |grep "%s"' % title.replace('"', '\\"'), show_command=False)
-    restore_dir()
-    if result[0]:
-        return False
-    else:
-        return True
-
-
 def _patch_cond(cond_true, patches):
     if cond_true:
         patch(patches, force=True)
@@ -743,8 +744,8 @@ def _patch_remove(patches):
 
 
 # Now support:
-# google, master
-# intel, aosp_stable
+# google, upstream
+# intel, stable
 # intel, mcg
 def _get_repo_info():
     f = open('.repo/manifests.git/config')
@@ -752,35 +753,28 @@ def _get_repo_info():
     f.close()
 
     for line in lines:
-        if re.search('url =', line):
-            if re.search('intel', line):
-                repo_provider = 'intel'
-            elif re.search('google', line):
-                repo_provider = 'google'
-            else:
-                error('Could not find repo provider')
-        elif re.search('merge =', line):
+        if re.search('merge =', line):
             if re.search('aosp_stable', line):
-                repo_branch = 'aosp_stable'
+                repo_type = 'stable'
             elif re.search('merge = master', line):
-                repo_branch = 'master'
+                repo_type = 'upstream'
             elif re.search('platform/android/r44c-stable', line):
-                repo_branch = 'mcg'
+                repo_type = 'mcg'
             elif re.search('gmin', line):
-                repo_branch = 'gmin'
+                repo_type = 'gmin'
             else:
                 error('Could not find repo branch')
 
-    if repo_provider == 'intel' and repo_branch == 'aosp_stable' and os.path.exists('device/intel/baytrail/asus_t100'):
+    if repo_type == 'stable' and os.path.exists('device/intel/baytrail/asus_t100'):
         repo_ver = 20140624
     else:
         repo_ver = 20140101
 
-    return (repo_provider, repo_branch, repo_ver)
+    return (repo_type, repo_ver)
 
 
 if __name__ == "__main__":
-    handle_option()
+    parse_arg()
     setup()
     init()
     sync()

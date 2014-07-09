@@ -35,9 +35,9 @@ ver_info = {
     31: [217377, 'c95dd877deb939ec7b064831c2d20d92e93a4775', 1600],
     30: [208581, '88367e9bf6a10b9e024ec99f12755b6f626bbe0c', 1548],
 }
-VERSION_INFO_INDEX_REV = 0
+VER_INFO_INDEX_REV = 0
 # revision range to care about
-rev_default = [ver_info[31][VERSION_INFO_INDEX_REV], 999999]
+rev_default = [ver_info[31][VER_INFO_INDEX_REV], 999999]
 
 
 def get_comb_name(os, arch, module):

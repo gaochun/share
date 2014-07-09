@@ -15,14 +15,15 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import socket
 import inspect
-
+import multiprocessing
 import re
 import commands
 
 formatter = logging.Formatter('[%(asctime)s - %(levelname)s] %(message)s', "%Y-%m-%d %H:%M:%S")
-host_os = platform.system()
+host_os = platform.system().lower()
 host_name = socket.gethostname()
 username = os.getenv('USER')
+number_cpu = str(multiprocessing.cpu_count() * 2)
 args = argparse.Namespace()
 dir_stack = []
 timer = {}
@@ -135,27 +136,6 @@ def bashify(command):
     return 'bash -c "' + command + '"'
 
 
-def is_system(name):
-    if host_os == name:
-        return True
-    else:
-        return False
-
-
-def is_windows():
-    if is_system('Windows'):
-        return True
-    else:
-        return False
-
-
-def is_linux():
-    if is_system('Linux'):
-        return True
-    else:
-        return False
-
-
 def has_process(name):
     r = os.popen('ps auxf |grep -c ' + name)
     count = int(r.read())
@@ -241,6 +221,22 @@ def backup_smb(server, dir_server, file_local, dryrun=False):
         info('Succeeded to upload: ' + file_local)
 
 
+def set_path(path_extra):
+    path = os.getenv('PATH')
+    if host_os == 'windows':
+        splitter = ';'
+    elif host_os == 'linux':
+        splitter = ':'
+
+    paths = [path]
+    if host_os == 'linux':
+        paths.extend(['/usr/bin', '/usr/sbin'])
+    if path_extra:
+        paths.append(path_extra)
+
+    setenv('PATH', splitter.join(paths))
+
+
 def getenv(env):
     return os.getenv(env)
 
@@ -255,17 +251,34 @@ def unsetenv(env):
 
 
 def set_proxy():
-    if os.path.exists('/usr/sbin/privoxy'):
+    if start_privoxy():
         http_proxy = '127.0.0.1:8118'
         https_proxy = '127.0.0.1:8118'
-        if not has_process('privoxy'):
-            execute('sudo privoxy /etc/privoxy/config')
     else:
         http_proxy = 'proxy-shz.intel.com:911'
         https_proxy = 'proxy-shz.intel.com:911'
     setenv('http_proxy', http_proxy)
     setenv('https_proxy', https_proxy)
     setenv('no_proxy', 'intel.com,.intel.com,10.0.0.0/8,192.168.0.0/16,localhost,127.0.0.0/8,134.134.0.0/16,172.16.0.0/20,192.168.42.0/16,10.239.*.*,ubuntu-ygu5-*,wp-*')
+
+
+def start_privoxy():
+    if has_process('privoxy'):
+        return True
+
+    if os.path.exists('/usr/sbin/privoxy'):
+        result = execute('sudo privoxy /etc/privoxy/config')
+        if result[0]:
+            return False
+        else:
+            return True
+    else:
+        return False
+
+
+def stop_prixoxy():
+    if has_process('privoxy'):
+        execute('sudo killall privoxy')
 
 
 # Setup devices and their names
@@ -506,6 +519,44 @@ def copy_file(file_src, dir_dest, is_sylk=False):
         cmd = 'sudo ' + cmd
     execute(cmd)
     restore_dir()
+
+
+def apply_patch(patches, dir_patches):
+    for dir_repo in patches:
+        if not os.path.exists(dir_repo):
+            error(dir_repo + 'does not exist')
+
+        for patch in patches[dir_repo]:
+            path_patch = dir_patches + '/' + patch
+            if _patch_applied(dir_repo, path_patch):
+                info('Patch ' + patch + ' was applied before, so is just skipped here')
+            else:
+                backup_dir(dir_repo)
+                cmd = 'git am ' + path_patch
+                result = execute(cmd, show_progress=True)
+                restore_dir()
+                if result[0]:
+                    error('Fail to apply patch ' + patch)
+
+
+# dir_repo: repo dir
+# path_patch: Full path of patch
+# count: Recent commit count to check
+def _patch_applied(dir_repo, path_patch, count=30):
+    f = open(path_patch)
+    lines = f.readlines()
+    f.close()
+
+    pattern = re.compile('Subject: \[PATCH.*\] (.*)')
+    match = pattern.search(lines[3])
+    title = match.group(1)
+    backup_dir(dir_repo)
+    result = execute('git show -s --pretty="format:%s" --max-count=' + str(count) + ' |grep "%s"' % title.replace('"', '\\"'), show_command=False)
+    restore_dir()
+    if result[0]:
+        return False
+    else:
+        return True
 ################################################################################
 
 

@@ -1,5 +1,5 @@
 # TODO:
-# Update rev_commit once all builds are finished for a rev, which would free some memory.
+# Update revs once all builds are finished for a rev, which would free some memory.
 # From 245002, may need to manually execute "gclient sync -f" with hook to check out gn related code.
 
 # Build speed
@@ -25,7 +25,7 @@ import fileinput
 import random
 import select
 
-rev_commit = {}
+revs = []
 
 # target_os -> [build, fetch_time, rev_min, rev_max, rev_git_max]
 # build -> [[target_arch, target_module, rev_next], [target_arch, target_module, rev_next]]
@@ -51,7 +51,7 @@ BUILD_NEXT_INDEX_INDEX_NEXT = 4
 
 DRYRUN = False
 
-fail_number_max = 3
+build_fail_max = 3
 
 build_every = 1
 
@@ -95,7 +95,7 @@ examples:
     parser.add_argument('--build-every', dest='build_every', help='build every number')
     parser.add_argument('--keep-out', dest='keep_out', help='do not remove out dir after failure', action='store_true')
     parser.add_argument('--slave-only', dest='slave_only', help='only do things at slave machine, for sake of test', action='store_true')
-    parser.add_argument('--fail-number-max', dest='fail_number_max', help='maximum failure number', type=int)
+    parser.add_argument('--build-fail-max', dest='build_fail_max', help='maximum failure number of build', type=int)
 
     parser.add_argument('-b', '--build', dest='build', help='build', action='store_true')
     parser.add_argument('--clean-lock', dest='clean_lock', help='clean all lock files', action='store_true')
@@ -107,7 +107,7 @@ examples:
 
 
 def setup():
-    global target_os_info, build_every, fail_number_max, rev_expectfail
+    global target_os_info, build_every, build_fail_max, rev_expectfail
 
     if not has_process('privoxy'):
         execute('sudo privoxy /etc/privoxy/config')
@@ -121,8 +121,8 @@ def setup():
             if result[0]:
                 error('Can not connect to build server')
 
-    if args.fail_number_max:
-        fail_number_max = args.fail_number_max
+    if args.build_fail_max:
+        build_fail_max = args.build_fail_max
 
     backup_dir(get_symbolic_link_dir())
     # Packages is split by white space so that you may easily install them all
@@ -152,13 +152,13 @@ def setup():
         if not target_os in target_os_info:
             target_os_info[target_os] = [[], 0, 0, 0, 0]
             if args.rev:
-                revs = [int(x) for x in args.rev.split('-')]
-                if len(revs) > 1:
-                    rev_min = revs[0]
-                    rev_max = revs[1]
+                revs_temp = [int(x) for x in args.rev.split('-')]
+                if len(revs_temp) > 1:
+                    rev_min = revs_temp[0]
+                    rev_max = revs_temp[1]
                 else:
-                    rev_min = revs[0]
-                    rev_max = revs[0]
+                    rev_min = revs_temp[0]
+                    rev_max = revs_temp[0]
 
                 target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_MIN] = rev_min
                 target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_MAX] = rev_max
@@ -214,12 +214,12 @@ def build():
         target_os_next = build_next[BUILD_NEXT_INDEX_OS]
         rev_next = build_next[BUILD_NEXT_INDEX_REV_NEXT]
         index_next = build_next[BUILD_NEXT_INDEX_INDEX_NEXT]
-        if rev_next in rev_commit:
+        if rev_next in revs:
             target_os_info[target_os_next][TARGET_OS_INFO_INDEX_BUILD][index_next][TARGET_OS_INFO_INDEX_BUILD_REV_NEXT] = rev_next + 1
             result = build_one(build_next)
             if result:
                 fail_number += 1
-                if fail_number >= fail_number_max:
+                if fail_number >= build_fail_max:
                     error('You have reached maximum failure number')
             else:
                 fail_number = 0
@@ -465,10 +465,9 @@ def build_one(build_next):
         file_lock = dir_out_server + '/' + get_comb_name(target_os, target_arch, target_module) + '/' + str(rev) + '.LOCK'
         execute(remotify_cmd('touch ' + file_lock))
 
-    commit = rev_commit[rev]
     dir_repo = dir_project + '/chromium-' + target_os
 
-    cmd_sync = run_chromium_script + ' -u "sync -f -n -j16 --revision src@' + commit + '"' + ' -d ' + dir_repo + ' --rev ' + str(rev)
+    cmd_sync = run_chromium_script + ' --sync --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_sync, dryrun=DRYRUN, interactive=True)
     if result[0]:
         execute(remotify_cmd('rm -f ' + file_lock))
@@ -477,7 +476,7 @@ def build_one(build_next):
 
     patch_after_sync(target_os, target_arch, target_module, rev)
 
-    cmd_gen_mk = run_chromium_script + ' --gen-mk --target-arch ' + target_arch + ' --target-module ' + target_module + ' -d ' + dir_repo + ' --rev ' + str(rev)
+    cmd_gen_mk = run_chromium_script + ' --gen-mk --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_gen_mk, dryrun=DRYRUN, show_progress=True)
     if result[0]:
         # Run hook to retry. E.g., for revision >=252065, we have to run with hook to update gn tool.
@@ -491,7 +490,7 @@ def build_one(build_next):
 
     patch_before_build(target_os, target_arch, target_module, rev)
 
-    cmd_build = run_chromium_script + ' -b --target-arch ' + target_arch + ' --target-module ' + target_module + ' -d ' + dir_repo + ' --rev ' + str(rev)
+    cmd_build = run_chromium_script + ' --build --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_build, dryrun=DRYRUN, show_progress=True)
 
     # Retry here
@@ -632,7 +631,7 @@ def get_rev_next(target_os, index):
 
         # Does not exist from here
 
-        if rev in rev_commit:
+        if rev in revs:
             return rev
 
         # Handle invalid revision number here. TODO: Need to handle other comb.
@@ -681,7 +680,7 @@ def get_time():
 
 
 def update_git_info_one(target_os):
-    global rev_commit
+    global revs
     backup_dir(dir_root + '/project/chromium-' + target_os + '/src')
     execute('git log origin master >git_log')
     file = open('git_log')
@@ -689,12 +688,12 @@ def update_git_info_one(target_os):
     file.close()
 
     is_max_rev = True
-    pattern_commit = re.compile('^commit (.*)')
+    pattern_hash = re.compile('^commit (.*)')
     pattern_rev = re.compile('git-svn-id: .*@(.*) (.*)')
     for line in lines:
-        match = pattern_commit.search(line)
+        match = pattern_hash.search(line)
         if match:
-            commit = match.group(1)
+            hash = match.group(1)
 
         match = pattern_rev.search(line)
         if match:
@@ -715,7 +714,7 @@ def update_git_info_one(target_os):
             elif rev > target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_MAX]:
                 continue
             else:
-                rev_commit[rev] = commit
+                revs.append(rev)
 
     restore_dir()
 
@@ -724,7 +723,7 @@ def update_git_info(fetch=True):
     for target_os in target_os_info:
         if fetch:
             dir_repo = dir_project + '/chromium-' + target_os
-            execute(run_chromium_script + ' -u "fetch" --root-dir ' + dir_repo, dryrun=DRYRUN)
+            execute(run_chromium_script + ' --fetch --root-dir ' + dir_repo, dryrun=DRYRUN)
             target_os_info[target_os][TARGET_OS_INFO_INDEX_TIME] = get_time()
         update_git_info_one(target_os)
 

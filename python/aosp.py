@@ -44,6 +44,20 @@ codename = {
     'nexus5': 'hammerhead',
 }
 
+patches_build_common = {
+    # Emulator
+    #'build/core': ['0001-Emulator-Remove-opengl-from-blacklist-to-enable-gpu.patch'],
+    #'device/generic/goldfish': ['0001-Emulator-Make-the-size-of-cb_handle_t-same-for-32-64.patch'],
+    #'frameworks/base': ['0001-Emulator-Enable-HWUI.patch'],
+}
+
+patches_build_upstream_chromium = {
+    'frameworks/webview': ['0001-Change-drawGLFunctor-to-64-bit.patch'],
+    'external/chromium-libpac': ['0001-libpac-Change-v8-path-and-v8-tools-module-name.patch'],
+}
+
+patches_build_aosp_chromium = {}
+
 
 def parse_arg():
     global args
@@ -355,6 +369,10 @@ def flash_image():
         if args.file_image:
             if re.match('http', args.file_image):
                 execute('wget ' + args.file_image, dryrun=False)
+            else:
+                execute('mv ' + args.file_image + ' ./')
+
+            if args.file_image[-6:] == 'tar.gz':
                 execute('tar zxf ' + args.file_image.split('/')[-1])
                 execute('mv */* ./')
                 result = execute('ls *.tgz', return_output=True)

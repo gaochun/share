@@ -1,3 +1,8 @@
+<todo>
+set up http server on android
+am start content shell
+</todo>
+
 <general>
 * adb shell su -- <cmd>
 * can not connect
@@ -132,11 +137,20 @@ am instrument -w com.android.browser.tests/android.test.InstrumentationTestRunne
 am start -a android.intent.action.VIEW -n com.android.browser/.BrowserActivity -d http://www.baidu.com
 am start -a android.intent.action.VIEW -n com.android.browser/.BrowserActivity -d file:///data/local/tmp/index.html
 
+* chrome stable
+adb shell am start -n com.android.chrome/com.android.chrome.Main -d "chrome://version"
+
+* content shell
+adb shell am start -n org.chromium.content_shell/.ContentShellApplication -d "about:version"
+
 * security setting
 am start -n com.android.settings/.SecuritySettings
 
 * calculator
 am start -n com.android.calculator2/.Calculator
+
+* developer options
+adb shell am start -n com.android.settings/.DevelopmentSettings
 </am>
 
 <pm>

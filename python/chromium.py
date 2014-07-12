@@ -6,6 +6,7 @@ from util import *
 
 args = ''
 args_dict = []
+repo_type = ''
 
 target_os = ''
 target_arch = ''
@@ -103,7 +104,7 @@ instrumentation_suite_default = [
 
 test_suite = {}
 
-tag_info = {
+repo_type_info = {
     'default': {
         'rev': REV_MAX,
         'dir_patches': dir_python,
@@ -237,8 +238,8 @@ examples:
   python %(prog)s --revert
   python %(prog)s --fetch
   python %(prog)s --sync --rev 270000
-  python %(prog)s --sync --tag x64
-  python %(prog)s --sync --tag x64 --sync-upstream
+  python %(prog)s --sync --repo_type x64
+  python %(prog)s --sync --repo_type x64 --sync-upstream
   python %(prog)s --runhooks
 
   build:
@@ -261,12 +262,13 @@ examples:
   0 1 * * * cd /workspace/project/chromium64-android && python %(prog)s -s --extra-path=/workspace/project/depot_tools
 ''')
     group_common = parser.add_argument_group('common')
-    group_common.add_argument('--tag', dest='tag', help='tag to indicate its usage', default='')
+    group_common.add_argument('--repo-type', dest='repo_type', help='repo type to indicate its usage', default='default')
     #dir: <arch>-<target-os>/out/<build_type>, example: x86-linux/out/Release
+    group_common.add_argument('--target-os', dest='target_os', help='target os', choices=['android', 'linux'])
     group_common.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'arm', 'arm64'], default='x86')
     group_common.add_argument('--target-module', dest='target_module', help='target module to build', choices=['chrome', 'webview', 'content_shell'], default='webview')
     group_common.add_argument('--devices', dest='devices', help='device id list separated by ","', default='')
-    group_common.add_argument('--dir_root', dest='dir_root', help='set root directory')
+    group_common.add_argument('--dir-root', dest='dir_root', help='set root directory')
     group_common.add_argument('--just-out', dest='just_out', help='stick to out, instead of out-x86_64/out', action='store_true')
     group_common.add_argument('--extra-path', dest='extra_path', help='extra path for execution, such as path for depot_tools')
     group_common.add_argument('--time-fixed', dest='time_fixed', help='fix the time for test sake. We may run multiple tests and results are in same dir', action='store_true')
@@ -281,6 +283,7 @@ examples:
     group_gclient.add_argument('--runhooks', dest='runhooks', help='runhooks', action='store_true')
 
     group_basic = parser.add_argument_group('basic')
+    group_basic.add_argument('--init', dest='init', help='init', action='store_true')
     group_basic.add_argument('--patch', dest='patch', help='apply patches', action='store_true')
     group_basic.add_argument('--gen-mk', dest='gen_mk', help='generate makefile', action='store_true')
     group_basic.add_argument('--build', dest='build', help='build', action='store_true')
@@ -324,19 +327,15 @@ def setup():
     global dir_root, dir_src, dir_out_build_type, dir_test, dir_test_timestamp
     global target_os, target_arch, target_module
     global devices, devices_name, devices_type
-    global file_log, timestamp, test_suite, build_type, rev, dir_patches, patches, test_filter
+    global file_log, timestamp, test_suite, build_type, rev, dir_patches, patches, test_filter, repo_type
 
-    # set tag related global variables
-    if args.tag:
-        tag = args.tag
-        for key in tag_info['default']:
-            if key in tag_info[tag]:
-                globals()[key] = tag_info[tag][key]
-            else:
-                globals()[key] = tag_info['default'][key]
-    else:
-        for key in tag_info['default']:
-            globals()[key] = tag_info['default'][key]
+    repo_type = args.repo_type
+    # set repo_type related global variables
+    for key in repo_type_info['default']:
+        if repo_type == 'default' or not repo_type in repo_type_info or not key in repo_type_info[repo_type]:
+            globals()[key] = repo_type_info['default'][key]
+        else:
+            globals()[key] = repo_type_info[repo_type][key]
 
     if args.sync_upstream:
         rev = REV_MAX
@@ -358,18 +357,21 @@ def setup():
             error('Could not find ' + cmd + ', and you may use --extra-path to designate it')
 
     # set target_os
-    found = False
-    f = open('.gclient')
-    lines = f.readlines()
-    f.close()
-    for line in lines:
-        if re.match("target_os = \['android'\]", line):
-            found = True
-            break
-    if found:
-        target_os = 'android'
+    if args.target_os:
+        target_os = args.target_os
     else:
-        target_os = 'linux'
+        found = False
+        f = open('.gclient')
+        lines = f.readlines()
+        f.close()
+        for line in lines:
+            if re.match("target_os = \['android'\]", line):
+                found = True
+                break
+        if found:
+            target_os = 'android'
+        else:
+            target_os = 'linux'
 
     target_arch = args.target_arch
     if not args.target_module:
@@ -385,6 +387,9 @@ def setup():
     else:
         dir_root = get_symbolic_link_dir()
 
+    if not os.path.exists(dir_root):
+        os.makedirs(dir_root)
+
     dir_src = dir_root + '/src'
     build_type = args.build_type
     if args.just_out:
@@ -397,8 +402,6 @@ def setup():
     setenv('GYP_DEFINES', 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os)
     setenv('GYP_GENERATORS', 'ninja')
     backup_dir(dir_root)
-    if not os.path.exists(dir_test):
-        os.mkdir(dir_test)
 
     if _need_device():
         if args.devices:
@@ -452,6 +455,18 @@ no_proxy=%(no_proxy)s
         test_suite[command] = []
         for suite in _setup_list(command + '_suite'):
             test_suite[command].append(suite)
+
+
+def init(force=False):
+    if not args.init and not force:
+        return
+
+    if repo_type == 'chrome-android':
+        ver = dir_root.split('/')[-1]
+        cmd = 'gclient config https://src.chromium.org/chrome/releases/' + ver
+        execute(cmd)
+        cmd = 'echo "target_os = [\'android\']" >> .gclient'
+        execute(cmd)
 
 
 def revert(force=False):
@@ -529,20 +544,25 @@ def gen_mk(force=False):
         else:
             target_arch_temp = target_arch
 
-        # We can't omit this step as android_gyp is a built-in command, instead of environmental variable.
-        if rev < rev_envsetup:
-            cmd = 'source build/android/envsetup.sh --target-arch=' + target_arch + ' && android_gyp -Dwerror= -Duse_goma=0'
-        elif rev < rev_no_android_gyp:
-            cmd = 'source build/android/envsetup.sh && android_gyp -Dwerror= -Duse_goma=0 -Dtarget_arch=' + target_arch_temp
+        if repo_type == 'chrome-android':
+            # gyp file must be in src dir, and contained in one level of directory
+            cmd = 'GYP_DEFINES="$GYP_DEFINES libpeer_target_type=loadable_module OS=android host_os=linux" CHROMIUM_GYP_FILE="prebuilt-%s/chrome_target.gyp"' % target_arch + ' build/gyp_chromium -Dtarget_arch=' + target_arch_temp
         else:
-            cmd = 'source build/android/envsetup.sh && build/gyp_chromium -Dwerror= -Duse_goma=0 -Dtarget_arch=' + target_arch_temp
+            # We can't omit this step as android_gyp is a built-in command, instead of environmental variable.
+            if rev < rev_envsetup:
+                cmd = 'source build/android/envsetup.sh --target-arch=' + target_arch + ' && android_gyp -Dwerror= -Duse_goma=0'
+            elif rev < rev_no_android_gyp:
+                cmd = 'source build/android/envsetup.sh && android_gyp -Dwerror= -Duse_goma=0 -Dtarget_arch=' + target_arch_temp
+            else:
+                cmd = 'build/gyp_chromium -Dwerror= -Duse_goma=0 -Dtarget_arch=' + target_arch_temp
     else:
         cmd = 'build/gyp_chromium -Dwerror='
 
     if not args.just_out:
         cmd += ' --generator-output out-' + target_arch
 
-    cmd = bashify(cmd)
+    if re.search('source', cmd):
+        cmd = bashify(cmd)
     result = execute(cmd, interactive=True)
     restore_dir()
     if result[0]:
@@ -749,7 +769,7 @@ def analyze():
     if not args.analyze:
         return
 
-    analyze_issue(dir_chromium=dir_root, arch='x86_64', ver=20140624)
+    analyze_issue(dir_chromium=dir_root, arch='x86_64', date=20140624)
 
 
 ########## Internal function begin ##########
@@ -1181,6 +1201,7 @@ def _get_hash():
 if __name__ == '__main__':
     parse_arg()
     setup()
+    init()
     # gclient
     revert()
     fetch()

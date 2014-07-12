@@ -39,6 +39,10 @@ dir_python = dir_share + '/python'
 dir_linux = dir_share + '/linux'
 dir_common = dir_share + '/common'
 dir_home = os.getenv('HOME')
+dir_service = '/workspace/service'
+dir_service_chromium = dir_service + '/chromium'
+
+python_chromium = 'python ' + dir_python + '/chromium.py'
 
 target_os_all = ['android', 'linux']
 target_arch_all = ['x86', 'arm']
@@ -166,15 +170,18 @@ def get_symbolic_link_dir():
     return os.path.split(script_path)[0]
 
 
-def backup_dir(new_dir):
+def backup_dir(dir_new):
     global dir_stack
     dir_stack.append(os.getcwd())
-    os.chdir(new_dir)
+    os.chdir(dir_new)
+    info('Switched to ' + dir_new)
 
 
 def restore_dir():
     global dir_stack
-    os.chdir(dir_stack.pop())
+    dir_old = dir_stack.pop()
+    os.chdir(dir_old)
+    info('Switched to ' + dir_old)
 
 
 def package_installed(pkg):
@@ -359,11 +366,11 @@ def execute_adb_shell(cmd, device='192.168.42.1'):
         return True
 
 
-def get_product(arch, device_type, ver=20140101):
+def get_product(arch, device_type, date=20140101):
     if device_type == 'generic':
         product = device_type + '_' + arch
     elif device_type == 'baytrail':
-        if ver >= 20140624:
+        if date >= 20140624:
             product_prefix = 'asus_t100'
         else:
             product_prefix = device_type
@@ -404,10 +411,10 @@ def connect_device(device='192.168.42.1', mode='system'):
         return device_connected(device, mode)
 
 
-def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android-x64', arch='x86_64', device='192.168.42.1', type='tombstone', ver=20140101):
+def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android', arch='x86_64', device='192.168.42.1', type='tombstone', date=20140101):
     if device == '192.168.42.1':
         device_type = 'baytrail'
-    product = get_product(arch, device_type, ver)
+    product = get_product(arch, device_type, date)
     if arch == 'x86_64':
         arch_str = '64'
     else:
@@ -557,6 +564,27 @@ def _patch_applied(dir_repo, path_patch, count=30):
         return False
     else:
         return True
+
+
+def ensure_dir(dir):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+
+
+# return True if ver_a is greater or equal to ver_b
+# ver is in format a.b.c.d
+def ver_ge(ver_a, ver_b):
+    vers_a = [int(x) for x in ver_a.split('.')]
+    vers_b = [int(x) for x in ver_b.split('.')]
+
+    index = 0
+    while index < len(vers_a):
+        if vers_a[index] > vers_b[index]:
+            return True
+        elif vers_a[index] < vers_b[index]:
+            return False
+
+    return True
 ################################################################################
 
 

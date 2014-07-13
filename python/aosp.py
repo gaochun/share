@@ -37,7 +37,7 @@ variant = ''
 repo_type = ''  # upstream, stable, mcg, gmin
 repo_branch = ''
 # stable from 20140624, combo changed to asus_t100-userdebug, etc.
-repo_ver = ''
+repo_date = 0
 
 codename = {
     'nexus4': 'mako',
@@ -75,6 +75,7 @@ examples:
     parser.add_argument('--init', dest='init', help='init', action='store_true')
     parser.add_argument('--repo-type', dest='repo_type', help='repo type')
     parser.add_argument('--repo-branch', dest='repo_branch', help='repo branch', default='master')
+    parser.add_argument('--revert', dest='revert', help='revert', action='store_true')
     parser.add_argument('--sync', dest='sync', help='sync code for android, chromium and intel', choices=['all', 'aosp', 'chromium'])
     parser.add_argument('--patch', dest='patch', help='patch', action='store_true')
     parser.add_argument('--build', dest='build', help='build', action='store_true')
@@ -111,7 +112,7 @@ examples:
 
 def setup():
     global dir_root, dir_chromium, dir_out, target_archs, target_devices_type, target_modules, chromium_version, devices, devices_name, devices_type, timestamp, use_upstream_chromium, patches_build
-    global repo_type, repo_ver, file_log, variant
+    global repo_type, repo_date, file_log, variant
 
     dir_root = os.path.abspath(os.getcwd())
     dir_chromium = dir_root + '/external/chromium_org'
@@ -126,7 +127,7 @@ def setup():
             error('Please designate repo type')
         repo_type = args.repo_type
     else:
-        (repo_type, repo_ver) = _get_repo_info()
+        (repo_type, repo_date) = _get_repo_info()
 
     if args.time_fixed:
         timestamp = get_datetime(format='%Y%m%d')
@@ -231,6 +232,13 @@ def sync():
         _sync_repo(dir_chromium, 'GYP_DEFINES="OS=android werror= disable_nacl=1 enable_svg=0" gclient sync -f -n -j16')
 
 
+def revert():
+    if not args.revert:
+        return()
+
+    execute('./repo forall -vc "git reset --hard"', interactive=True)
+
+
 def patch(patches, force=False):
     if not args.patch and not force:
         return
@@ -333,7 +341,7 @@ def burn_image():
 
     arch = target_archs[0]
     device_type = target_devices_type[0]
-    img = dir_out + '/target/product/' + get_product(arch, device_type, ver=repo_ver) + '/live.img'
+    img = dir_out + '/target/product/' + get_product(arch, device_type, date=repo_date) + '/live.img'
     if not os.path.exists(img):
         error('Could not find the live image to burn')
 
@@ -380,10 +388,10 @@ def flash_image():
             else:
                 file_image = args.file_image
         else:
-            if repo_ver >= 20140624:
-                file_image = dir_root + '/out/dist/%s-om-factory.tgz' % get_product(arch, device_type, ver=repo_ver)
+            if repo_date >= 20140624:
+                file_image = dir_root + '/out/dist/%s-om-factory.tgz' % get_product(arch, device_type, date=repo_date)
             else:
-                file_image = dir_root + '/out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type, ver=repo_ver)
+                file_image = dir_root + '/out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type, date=repo_date)
 
         if not os.path.exists(file_image):
             error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
@@ -464,7 +472,7 @@ def start_emu():
         return
 
     for arch in target_archs:
-        product = get_product(arch, 'generic', ver=repo_ver)
+        product = get_product(arch, 'generic', date=repo_date)
         if args.dir_emu:
             dir_backup = args.dir_emu
         else:
@@ -517,7 +525,7 @@ def analyze():
 
     arch = target_archs[0]
     connect_device()
-    analyze_issue(dir_aosp=dir_root, arch=arch, type=args.analyze, ver=repo_ver)
+    analyze_issue(dir_aosp=dir_root, arch=arch, type=args.analyze, date=repo_date)
 
 
 def push():
@@ -540,7 +548,7 @@ def push():
     else:
         modules = args.target_module.split(',')
 
-    cmd = adb(cmd='root') + ' && ' + adb(cmd='remount') + ' && ' + adb(cmd='push out/target/product/%s' % get_product(arch, device_type, ver=repo_ver))
+    cmd = adb(cmd='root') + ' && ' + adb(cmd='remount') + ' && ' + adb(cmd='push out/target/product/%s' % get_product(arch, device_type, date=repo_date))
 
     for module in modules:
         if module == 'browser':
@@ -621,7 +629,7 @@ def _get_combo(arch, device_type):
         combo_suffix = '-' + variant
         combo = combo_prefix + arch + combo_suffix
     elif device_type == 'baytrail':
-        if repo_type == 'stable' and repo_ver >= 20140624 or repo_type == 'gmin':
+        if repo_type == 'stable' and repo_date >= 20140624 or repo_type == 'gmin':
             combo_prefix = 'asus_t100'
             combo_suffix = '-' + variant
 
@@ -651,7 +659,7 @@ def _get_combo(arch, device_type):
 # (x86, generic, webview) is included in 1
 
 def _backup_one(arch, device_type, module):
-    product = get_product(arch, device_type, ver=repo_ver)
+    product = get_product(arch, device_type, date=repo_date)
 
     if module == 'webview':
         if arch == 'x86_64':
@@ -672,13 +680,13 @@ def _backup_one(arch, device_type, module):
 
     else:  # module == 'system'
         if device_type == 'baytrail':
-            if repo_ver >= 20140624:
+            if repo_date >= 20140624:
                 prefix = ''
             else:
                 prefix = 'aosp_'
             backup_files = {
                 '.': [
-                    'out/dist/%s%s-om-factory.tgz' % (prefix, get_product(arch, device_type, ver=repo_ver)),
+                    'out/dist/%s%s-om-factory.tgz' % (prefix, get_product(arch, device_type, date=repo_date)),
                 ],
             }
         elif device_type == 'generic':
@@ -784,17 +792,18 @@ def _get_repo_info():
                 error('Could not find repo branch')
 
     if repo_type == 'stable' and os.path.exists('device/intel/baytrail/asus_t100'):
-        repo_ver = 20140624
+        repo_date = 20140624
     else:
-        repo_ver = 20140101
+        repo_date = 20140101
 
-    return (repo_type, repo_ver)
+    return (repo_type, repo_date)
 
 
 if __name__ == "__main__":
     parse_arg()
     setup()
     init()
+    revert()
     sync()
     patch(patches_build)
     remove_out()

@@ -2,7 +2,6 @@
 
 from util import *
 
-dir_root = '/workspace/project'
 target_archs = ''
 target_devices_type = ''
 dryrun = False
@@ -43,7 +42,7 @@ examples:
 def setup():
     global target_archs, target_devices_type
 
-    backup_dir(dir_root)
+    backup_dir(dir_project)
 
     pkgs = ['android-tools-adb']
     for pkg in pkgs:
@@ -53,7 +52,7 @@ def setup():
     projects = ['aosp-stable', 'chromium-android-test', 'depot_tools', 'share']
     for project in projects:
         if not os.path.exists(project):
-            error('You need to put project ' + project + ' into ' + dir_root)
+            error('You need to put project ' + project + ' into ' + dir_project)
 
     path = os.getenv('PATH')
     path += ':/usr/bin:/usr/sbin'
@@ -71,15 +70,8 @@ def setup():
     else:
         target_devices_type = args.target_device_type.split(',')
 
-    backup_dir(args.dir_aosp)
-    if not os.path.exists('aosp.py'):
-        execute('ln -s %s/share/python/aosp/aosp.py .' % dir_root)
-    restore_dir()
-
-    backup_dir(args.dir_chromium)
-    if not os.path.exists('x64-upstream.py'):
-        execute('ln -s %s/share/python/x64-upstream/x64-upstream.py .' % dir_root)
-    restore_dir()
+    copy_file(file_aosp, args.dir_aosp, is_sylk=True)
+    copy_file(file_chromium, args.dir_chromium, is_sylk=True)
 
 
 def test():
@@ -87,11 +79,11 @@ def test():
     execute('git pull', interactive=True, dryrun=dryrun)
     restore_dir()
 
-    cmd_aosp = 'python aosp.py --extra-path=/workspace/project/depot_tools '
+    cmd_aosp = python_aosp + ' --extra-path=/workspace/project/depot_tools '
 
     backup_dir(args.dir_aosp)
-    cmd = cmd_aosp + '-s aosp --patch --remove-out'
-    execute(cmd, interactive=True, dryrun=dryrun)
+    cmd = cmd_aosp + '--sync aosp --patch --remove-out'
+    execute(cmd, interactive=True, abort=True, dryrun=dryrun)
     restore_dir()
 
     for arch in target_archs:
@@ -99,18 +91,18 @@ def test():
 
         # build aosp
         cmd = cmd_aosp + '--target-arch %s --target-device-type %s --build --backup' % (arch, args.target_device_type)
-        execute(cmd, interactive=True, dryrun=dryrun)
+        execute(cmd, abort=True, interactive=True, dryrun=dryrun)
 
         # flash image
         if args.last_phase >= 2:
             cmd = cmd_aosp + '--target-arch %s --target-device-type %s --flash-image' % (arch, args.target_device_type)
-            execute(cmd, interactive=True, dryrun=dryrun)
+            execute(cmd, abort=True, interactive=True, dryrun=dryrun)
 
         restore_dir()
 
         if args.last_phase >= 3:
             backup_dir(args.dir_chromium)
-            execute('python x64-upstream.py --extra-path=/workspace/project/depot_tools --target-arch %s --revert -- --test-formal' % arch, interactive=True, dryrun=dryrun)
+            execute(python_chromium + ' --extra-path=/workspace/project/depot_tools --target-arch %s --repo-type x64 --revert --sync --runhooks --build --test-formal --time-fixed' % arch, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
 
 

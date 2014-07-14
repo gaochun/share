@@ -688,13 +688,8 @@ def update_git_info_one(target_os):
     file.close()
 
     is_max_rev = True
-    pattern_hash = re.compile('^commit (.*)')
     pattern_rev = re.compile('git-svn-id: .*@(.*) (.*)')
     for line in lines:
-        match = pattern_hash.search(line)
-        if match:
-            hash = match.group(1)
-
         match = pattern_rev.search(line)
         if match:
             rev = int(match.group(1))

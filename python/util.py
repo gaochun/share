@@ -38,11 +38,17 @@ dir_share = dir_temp
 dir_python = dir_share + '/python'
 dir_linux = dir_share + '/linux'
 dir_common = dir_share + '/common'
-dir_home = os.getenv('HOME')
-dir_service = '/workspace/service'
-dir_service_chromium = dir_service + '/chromium'
+file_chromium = dir_python + '/chromium.py'
+file_aosp = dir_python + '/aosp.py'
+python_chromium = 'python ' + file_chromium
+python_aosp = 'python ' + file_aosp
 
-python_chromium = 'python ' + dir_python + '/chromium.py'
+dir_workspace = '/workspace'
+dir_service = dir_workspace + '/service'
+dir_service_chromium = dir_service + '/chromium'
+dir_project = dir_workspace + '/project'
+
+dir_home = os.getenv('HOME')
 
 target_os_all = ['android', 'linux']
 target_arch_all = ['x86', 'arm']
@@ -499,13 +505,16 @@ def copy_file(file_src, dir_dest, is_sylk=False):
         warning(file_src + ' does not exist')
         return
 
-    if dir_dest == dir_home:
+    file_name = file_src.split('/')[-1]
+    file_dest = dir_dest + '/' + file_name
+    if os.path.islink(file_dest) and os.readlink(file_dest) == file_src:
+        return
+
+    if re.search(dir_home, dir_dest) or re.search(dir_workspace, dir_dest):
         need_sudo = False
     else:
         need_sudo = True
 
-    file_name = file_src.split('/')[-1]
-    file_dest = dir_dest + '/' + file_name
     file_dest_bk = file_dest + '.bk'
     if os.path.exists(file_dest) and not os.path.exists(file_dest_bk):
         cmd = 'mv ' + file_dest + ' ' + file_dest_bk

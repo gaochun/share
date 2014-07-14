@@ -4,6 +4,54 @@ import fileinput
 from multiprocessing import Pool
 from util import *
 
+target_arch_index = {'x86': 0, 'arm': 1, 'x86_64': 2, 'arm64': 3}
+target_arch_strip = {
+    'x86': 'i686-linux-android-strip',
+    'arm': 'arm-linux-androideabi-strip',
+}
+
+# Each chromium version is: major.minor.build.patch
+# major -> svn rev, git commit, build. major commit is after build commit.
+# To get this, search 'The atomic number' in 'git log origin master chrome/VERSION'
+majorver_info = {
+    38: [278979, '85c11da0bf7aad87c0a563c7093cb52ee58e4666', 2063],
+    37: [269579, '47c9991b3153128d79eac26ad0e8ecb3d7e21128', 1986],
+    36: [260368, 'b1f8bdb570beade2a212e69bee1ea7340d80838e', 1917],
+    35: [252136, '6d5ba2122914c53d753e5fb960a601b43cb79c60', 1848],
+    34: [241271, '3824512f1312ec4260ad0b8bf372619c7168ef6b', 1751],
+    33: [233137, 'eeaecf1bb1c52d4b9b56a620cc5119409d1ecb7b', 1701],
+    32: [225138, '6a384c4afe48337237e3da81ccff8658755e2a02', 1652],
+    31: [217377, 'c95dd877deb939ec7b064831c2d20d92e93a4775', 1600],
+    30: [208581, '88367e9bf6a10b9e024ec99f12755b6f626bbe0c', 1548],
+}
+MAJORVER_INFO_INDEX_REV = 0
+
+ver_info = {
+    '36.0.1985.81': ['beta', ['8c15751f-fe2e-4570-92e0-8f447ae99112', 'df52e853-9c96-41f6-b3b9-7d2e615c356f']],
+    '36.0.1985.65':  ['beta', ['757d2126-de53-4925-b2c4-9c8fe2bd3fea', 'b44048e8-d452-4535-91f2-ac85eff04175']],
+    '35.0.1916.141': ['stable', ['b63d76a9-a8e4-4d2a-ad91-49fe0748a184', '283288f0-3c24-4344-b47a-55088763e809']],
+    '36.0.1985.49': ['beta', ['f2a6afcb-d1ff-4091-9c66-53dee36e44bb', '54b722b8-e2ec-4efd-adc9-57cbf07906bb']],
+    '36.0.1985.36': ['beta', ['68c033b2-f7c4-405f-8c81-b2cb952d3613', '79abd906-96e0-47cf-8ba4-19d4c878c340']],
+    '35.0.1916.138': ['stable', ['e78542a8-1914-4d66-8254-1e56ea1cd5b5', 'b8d5fccd-5008-46cb-b277-dc767429742a']],
+    '35.0.1916.122': ['stable', ['870cde07-60a9-4a21-b72a-859755afaad2', '9cc8db74-d0a6-4a6f-9bf9-352164051a64']],
+    '35.0.1916.117': ['beta', ['08d4d390-3072-49ea-81bb-4b195b8d0507', '11af04e2-4f92-4083-90d1-56d20521ce4d']],
+    '35.0.1916.99': ['beta', ['37882d6c-4608-4051-82fe-9259b4c585dc', '58ccef2a-816e-41a8-9805-1994252ac132']],
+    '35.0.1916.86': ['beta', ['3f060e3f-15b6-4258-a153-d518e1d79151', 'd19af173-64f0-44e2-a6a7-1acef91fa83e']],
+    '35.0.1916.69': ['beta', ['c0ecaab6-d6dd-410b-a8c6-474d34b6991c', '7495204a-ceb1-47cf-8fff-d4974953a7f3']],
+    '35.0.1916.48': ['beta', ['cab313ba-8627-4d47-b22e-4df70744c6eb', '20568323-6508-493c-89db-f6943c312d7a']],
+    '35.0.1916.34': ['beta', ['fed698ad-f0e9-41a9-8f85-6fe2caa89426', '117432fb-185f-4fe6-a8ba-392a16094a5b']],
+    '34.0.1847.114': ['stable', ['ef9f635c-379d-4300-a5b8-dc18c1f14782', 'a59c168c-e8ad-4532-9e58-5712bb0f8ed6']],
+    '33.0.1750.170': ['stable', ['3559af61-f333-42bb-b1f9-d0df30aa44d6', '6b9b54fc-48aa-4beb-973a-fcf61504e34e']],
+    '34.0.1847.99': ['beta', ['47f1b631-812d-4c32-8fb9-dbe312dc64ae', '663c3465-afe8-4abb-94d0-44656d11b313']],
+    '34.0.1847.76': ['beta', ['f8480155-7e4b-49dc-907a-04124848695d', 'a43bcb82-b121-41b9-a8be-60ce309171ca']],
+    '33.0.1750.166': ['stable', ['bc468ba0-d60e-44a7-ab8a-46a92af3eb95', '0e5b0784-1010-4ca5-9efc-2697ba93a6c8']],
+    '34.0.1847.62': ['beta', ['f7e92034-f602-4e2d-a483-8b5f034ab199', '2efbe11b-f0b2-4e6d-9374-b1906e68c782']],
+    '33.0.1750.136': ['stable', ['', '582969eb-6f20-4ee1-88f2-8252611c1e60']],  # No IA version
+    '33.0.1750.132': ['beta,stable', ['b1c0cc3c-e397-4a22-83ea-c2fbde2a78dc', 'd63a51d9-67b6-4122-b838-5c375b8a8114']],
+}
+VER_INFO_INDEX_TYPE = 0
+VER_INFO_INDEX_BUILD_ID = 1
+
 args = ''
 args_dict = []
 repo_type = ''
@@ -31,21 +79,6 @@ file_log = ''
 devices = []
 devices_name = []
 devices_type = []
-
-# major -> svn rev, git commit, build. major commit is after build commit.
-# To get this, search 'The atomic number' in 'git log origin master chrome/VERSION'
-ver_info = {
-    38: [278979, '85c11da0bf7aad87c0a563c7093cb52ee58e4666', 2063],
-    37: [269579, '47c9991b3153128d79eac26ad0e8ecb3d7e21128', 1986],
-    36: [260368, 'b1f8bdb570beade2a212e69bee1ea7340d80838e', 1917],
-    35: [252136, '6d5ba2122914c53d753e5fb960a601b43cb79c60', 1848],
-    34: [241271, '3824512f1312ec4260ad0b8bf372619c7168ef6b', 1751],
-    33: [233137, 'eeaecf1bb1c52d4b9b56a620cc5119409d1ecb7b', 1701],
-    32: [225138, '6a384c4afe48337237e3da81ccff8658755e2a02', 1652],
-    31: [217377, 'c95dd877deb939ec7b064831c2d20d92e93a4775', 1600],
-    30: [208581, '88367e9bf6a10b9e024ec99f12755b6f626bbe0c', 1548],
-}
-VER_INFO_INDEX_REV = 0
 
 # rev related
 rev = 0
@@ -265,7 +298,7 @@ examples:
     group_common.add_argument('--repo-type', dest='repo_type', help='repo type to indicate its usage', default='default')
     #dir: <arch>-<target-os>/out/<build_type>, example: x86-linux/out/Release
     group_common.add_argument('--target-os', dest='target_os', help='target os', choices=['android', 'linux'])
-    group_common.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'arm', 'arm64'], default='x86')
+    group_common.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'arm', 'x86_64', 'arm64'], default='x86')
     group_common.add_argument('--target-module', dest='target_module', help='target module to build', choices=['chrome', 'webview', 'content_shell'], default='webview')
     group_common.add_argument('--devices', dest='devices', help='device id list separated by ","', default='')
     group_common.add_argument('--dir-root', dest='dir_root', help='set root directory')
@@ -273,6 +306,7 @@ examples:
     group_common.add_argument('--extra-path', dest='extra_path', help='extra path for execution, such as path for depot_tools')
     group_common.add_argument('--time-fixed', dest='time_fixed', help='fix the time for test sake. We may run multiple tests and results are in same dir', action='store_true')
     group_common.add_argument('--rev', dest='rev', type=int, help='revision, will override --sync-upstream')
+    group_common.add_argument('--ver-type', dest='ver_type', help='ver type, stable or beta')
     group_common.add_argument('--build-type', dest='build_type', help='build type', choices=['release', 'debug'], default='release')
 
     group_gclient = parser.add_argument_group('gclient')
@@ -285,11 +319,13 @@ examples:
     group_basic = parser.add_argument_group('basic')
     group_basic.add_argument('--init', dest='init', help='init', action='store_true')
     group_basic.add_argument('--patch', dest='patch', help='apply patches', action='store_true')
-    group_basic.add_argument('--gen-mk', dest='gen_mk', help='generate makefile', action='store_true')
+    group_basic.add_argument('--prebuild', dest='prebuild', help='prebuild', action='store_true')
+    group_basic.add_argument('--makefile', dest='makefile', help='generate makefile', action='store_true')
     group_basic.add_argument('--build', dest='build', help='build', action='store_true')
     group_basic.add_argument('--build-skip-mk', dest='build_skip_mk', help='skip the generation of makefile', action='store_true')
     group_basic.add_argument('--build-fail-max', dest='build_fail_max', help='allow n build failures before it stops', default='0')
     group_basic.add_argument('--build-verbose', dest='build_verbose', help='output verbose info. Find log at out/Release/.ninja_log', action='store_true')
+    group_basic.add_argument('--postbuild', dest='postbuild', help='postbuild', action='store_true')
     group_basic.add_argument('--install', dest='install', help='install chrome for android', choices=['release', 'debug'])
     group_basic.add_argument('--run', dest='run', help='run', action='store_true')
     group_basic.add_argument('--run-option', dest='run_option', help='option to run')
@@ -523,8 +559,33 @@ def patch(force=False):
     apply_patch(patches, dir_patches)
 
 
-def gen_mk(force=False):
-    if not args.gen_mk and not force:
+def prebuild(force=False):
+    if not args.prebuild and not force:
+        return
+
+    if repo_type == 'chrome-android':
+        build_id = ver_info[ver][VER_INFO_INDEX_BUILD_ID][target_arch_index[target_arch]]
+        if build_id == '':
+            return
+
+        dir_prebuilt = 'src/prebuilt-' + target_arch
+        if not os.path.exists(dir_prebuilt):
+            os.mkdir(dir_prebuilt)
+
+        backup_dir(dir_prebuilt)
+        cmd = 'wget -c -i http://storage.googleapis.com/chrome-browser-components/' + build_id + '/index.html'
+        execute(cmd, interactive=True)
+
+        dir_release = 'src/out-' + target_arch + '/out/Release'
+        ensure_dir(dir_release)
+        cmd = 'cp *.a ' + dir_release
+        execute(cmd)
+
+        restore_dir()
+
+
+def makefile(force=False):
+    if not args.makefile and not force:
         return
 
     backup_dir(dir_src)
@@ -566,17 +627,17 @@ def build(force=False):
     if not args.build and not force:
         return
 
-    need_gen_mk = False
+    need_makefile = False
     if not args.build_skip_mk:
-        need_gen_mk = True
+        need_makefile = True
     if not _has_dir_out_build_type():
-        need_gen_mk = True
+        need_makefile = True
 
     print '== Build Environment =='
     print 'Directory of root: ' + dir_root
     print 'Build type: ' + build_type
     print 'Build system: Ninja'
-    print 'Generate makefile: ' + str(need_gen_mk)
+    print 'Generate makefile: ' + str(need_makefile)
     print 'Host OS: ' + host_os
     print 'Target OS: ' + target_os.capitalize()
     print '======================='
@@ -584,14 +645,16 @@ def build(force=False):
     name_func = get_caller_name()
     timer_start(name_func)
 
-    if need_gen_mk:
-        gen_mk(force=True)
+    if need_makefile:
+        makefile(force=True)
 
     cmd_ninja = 'ninja -k' + args.build_fail_max + ' -j' + number_cpu + ' -C ' + dir_out_build_type
-    if target_module == 'webview':
+    if target_os == 'android' and target_module == 'webview':
         cmd_ninja += ' android_webview_apk libwebviewchromium'
-    elif target_module == 'content_shell' and target_os == 'android':
+    elif target_os == 'android' and target_module == 'content_shell':
         cmd_ninja += ' content_shell_apk'
+    elif target_os == 'android' and target_module == 'chrome':
+        cmd_ninja += ' libchrome_prebuilt'
     else:
         cmd_ninja += ' ' + target_module
 
@@ -603,6 +666,53 @@ def build(force=False):
     timer_end(name_func)
     if result[0]:
         error('Failed to execute command: ' + cmd_ninja)
+
+
+def postbuild(force=False):
+    if not args.postbuild and not force:
+        return
+
+    if repo_type == 'chrome-android':
+        ver = dir_root.split('/')[-1]
+        ver_type = args.ver_type
+        dir_out = 'src/out-' + target_arch + '/out'
+        dir_tool = get_dir(dir_root) + '/tool'
+
+        if not ver_type in ver_info[ver][VER_INFO_INDEX_TYPE].split(','):
+            return
+
+        dir_ver = dir_service_chromium + '/android-' + target_arch + '-chrome/' + ver + '-' + ver_type
+        dir_chrome = dir_ver + '/Chrome'
+        dir_chrome_lib = dir_chrome + '/lib/%s' % target_arch
+
+        # unpack
+        execute('java -jar %s/apktool.jar d %s/Chrome.apk %s' % (dir_tool, dir_ver, dir_chrome), interactive=True)
+        # rename
+        execute('python prebuilt-%s/change_chromium_package.py -u %s' % (target_arch, dir_chrome), interactive=True)
+
+        # replace libchrome(view).so
+        result = execute('ls %s/libchrome*.so' % dir_chrome_lib, return_output=True)
+        file_chrome = result[1].split('/')[-1].strip('\n')
+        backup_dir(dir_out + '/Release/lib')
+        ## backup the one with symbol
+        execute('cp -f lib*prebuilt.so %s/%s' % (dir_ver, file_chrome), interactive=True, dryrun=True)
+        ## copy, strip and replace
+        execute('cp -f lib*prebuilt.so %s' % (file_chrome), interactive=True, dryrun=True)
+        execute(dir_tool + '/' + target_arch_strip[target_arch] + ' ' + file_chrome, dryrun=True)
+        execute('cp -f %s %s/' % (file_chrome, dir_chrome_lib), interactive=True)
+        restore_dir()
+
+        # replace libpeerconnection.so
+        cmd = 'cp -f prebuilt-%s/libpeerconnection_prebuilt.so %s/libpeerconnection.so' % (target_arch, dir_chrome_lib)
+        execute(cmd, interactive=True)
+
+        # repackage the new chromium.apk
+        # --zipalign: can be found in SDK
+        backup_dir(dir_ver)
+        execute('java -jar %s/apktool.jar b Chrome Chromium_unaligned.apk' % dir_tool, interactive=True)
+        execute('jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s/debug.keystore -storepass android Chromium_unaligned.apk androiddebugkey' % dir_tool, interactive=True)
+        execute('%s/zipalign -f -v 4 Chromium_unaligned.apk Chromium.apk' % dir_tool, interactive=True)
+        restore_dir()
 
 
 def run():
@@ -1204,8 +1314,9 @@ if __name__ == '__main__':
     runhooks()
     # basic
     patch()
-    gen_mk()
+    makefile()
     build()
+    postbuild()
     run()
     # test
     test_build()

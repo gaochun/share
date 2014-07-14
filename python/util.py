@@ -580,6 +580,10 @@ def ensure_dir(dir):
         os.makedirs(dir)
 
 
+def get_dir(path):
+    return os.path.split(os.path.realpath(path))[0]
+
+
 # return True if ver_a is greater or equal to ver_b
 # ver is in format a.b.c.d
 def ver_ge(ver_a, ver_b):

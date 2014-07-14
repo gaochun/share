@@ -476,13 +476,13 @@ def build_one(build_next):
 
     patch_after_sync(target_os, target_arch, target_module, rev)
 
-    cmd_gen_mk = run_chromium_script + ' --gen-mk --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
-    result = execute(cmd_gen_mk, dryrun=DRYRUN, show_progress=True)
+    cmd_makefile = run_chromium_script + ' --makefile --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
+    result = execute(cmd_makefile, dryrun=DRYRUN, show_progress=True)
     if result[0]:
         # Run hook to retry. E.g., for revision >=252065, we have to run with hook to update gn tool.
         cmd_sync_hook = cmd_sync.replace('-n ', '')
         execute(cmd_sync_hook, dryrun=DRYRUN, show_progress=True)
-        result = execute(cmd_gen_mk, dryrun=DRYRUN)
+        result = execute(cmd_makefile, dryrun=DRYRUN)
         if result[0]:
             execute(remotify_cmd('rm -f ' + file_lock))
             send_mail('webcatch@intel.com', 'yang.gu@intel.com', '[webcatch] Failed to generate makefile at ' + host_name, '')

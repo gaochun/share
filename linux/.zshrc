@@ -674,6 +674,7 @@ function symbolic_link() {
   fi
 
   if [ -d $3 -a ! -L $3/$dest_file ]; then
+    rm -f $3/$dest_file
     ln -s $1/$2 $3/$dest_file
   fi
 }
@@ -693,6 +694,12 @@ symbolic_link $DIR_PYTHON chromium64.py $DIR_PROJECT/android-ia
 
 # Skia
 symbolic_link $DIR_PYTHON skia.py $DIR_PROJECT/skia
+
+# aosp-stable
+symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-stable
+
+# aosp-stable-daily
+symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-stable-daily
 
 # sublime
 export PATH=$PATH:/workspace/software/sublime

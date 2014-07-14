@@ -386,7 +386,7 @@ def flash_image():
                 result = execute('ls *.tgz', return_output=True)
                 file_image = dir_extract + '/' + result[1].rstrip('\n')
             else:
-                file_image = args.file_image
+                file_image = args.file_image.split('/')[-1]
         else:
             if repo_date >= 20140624:
                 file_image = dir_root + '/out/dist/%s-om-factory.tgz' % get_product(arch, device_type, date=repo_date)
@@ -423,13 +423,18 @@ def flash_image():
     # This command would not return so we have to use timeout here
     execute('timeout 5s ' + adb(cmd='reboot bootloader'))
     sleep_sec = 3
+    is_connected = False
     for i in range(0, 60):
-        if not device_connected(mode='bootloader'):
+        if not connect_device(mode='bootloader'):
             info('Sleeping %s seconds' % str(sleep_sec))
             time.sleep(sleep_sec)
             continue
         else:
+            is_connected = True
             break
+
+    if not is_connected:
+        error('Can not connect to device in bootloader')
 
     if repo_type == 'gmin' or repo_type == 'upstream':
         combo = _get_combo(arch, device_type)
@@ -447,10 +452,18 @@ def flash_image():
         restore_dir()
 
     # Wait until system is up
-    while not device_connected():
-        info('Sleeping %s seconds' % str(sleep_sec))
-        time.sleep(sleep_sec)
-        connect_device()
+    is_connected = False
+    for i in range(0, 60):
+        if not connect_device():
+            info('Sleeping %s seconds' % str(sleep_sec))
+            time.sleep(sleep_sec)
+            continue
+        else:
+            is_connected = True
+            break
+
+    if not is_connected:
+        error('Can not connect to device after system boots up')
 
     # It will take about 45s to boot to GUI
     info('Sleeping 60 seconds until system fully boots up..')

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# TODO: use internal install package
+
 import fileinput
 from multiprocessing import Pool
 from util import *
@@ -223,10 +225,10 @@ def parse_arg():
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog='''
 examples:
-  python %(prog)s --clean -s --patch -b
+  python %(prog)s --revert -s --patch -b
   python %(prog)s --batch-build
   python %(prog)s --batch-build --sync-upstream
-  python %(prog)s --clean -s --sync-upstream --patch
+  python %(prog)s --revert -s --sync-upstream --patch
   python %(prog)s --batch-build --test-run
   python %(prog)s --batch-test
   python %(prog)s --test-dryrun --time-fixed
@@ -473,13 +475,6 @@ def revert(force=False):
     if not args.revert and not force:
         return
 
-    if not force:
-        warning('Revert is very dangerous, your local changes will be lost')
-        sys.stdout.write('Are you sure to do the revert? [yes/no]: ')
-        choice = raw_input().lower()
-        if choice not in ['yes', 'y']:
-            return
-
     _run_gclient('revert')
 
 
@@ -620,7 +615,7 @@ def install():
         return
 
     backup_dir(dir_src)
-    execute('python build/android/adb_install_apk.py --apk ContentShell.apk --' + args.install)
+    execute('python build/android/adb_install_apk.py --apk ContentShell.apk --' + args.install, interactive=True)
     restore_dir()
 
 
@@ -787,6 +782,7 @@ def _test_run_device(index_device, results):
 
     device = devices[index_device]
     device_name = devices_name[index_device]
+    device_type = devices_type[index_device]
     dir_test_device_name = dir_test_timestamp + '-' + device_name
 
     connect_device(device)

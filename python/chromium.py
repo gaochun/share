@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# TODO: use internal install package
-
 import fileinput
 from multiprocessing import Pool
 from util import *
@@ -607,16 +605,22 @@ def build(force=False):
         error('Failed to execute command: ' + cmd_ninja)
 
 
-def install():
-    if not args.install:
+def install(device, apks, force=False):
+    if not args.install and not force:
         return
 
     if not target_os == 'android':
         return
 
-    backup_dir(dir_src)
-    execute('python build/android/adb_install_apk.py --apk ContentShell.apk --' + args.install, interactive=True)
-    restore_dir()
+    cmd = 'python src/build/android/adb_install_apk.py --apk_package %s --%s' % (' '.join(apks), build_type)
+    if not args.just_out:
+        cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + '/out ' + cmd
+    if device != '':
+        cmd += '-d ' + device
+    result = execute(cmd, interactive=True)
+
+    if result[0]:
+        error('Failed to install packages')
 
 
 def run():
@@ -819,12 +823,7 @@ def _test_run_device(index_device, results):
                         apks = []
 
                     if apks:
-                        cmd = 'src/build/android/adb_install_apk.py -d %s --apk_package %s --%s' % (device, ' '.join(apks), build_type)
-                        if not args.just_out:
-                            cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + '/out ' + cmd
-                        result = execute(cmd, interactive=True, dryrun=False)
-                        if result[0]:
-                            warning('Failed to install packages for suite "' + suite + '"')
+                        install(device=device, apks=apks, force=True)
 
                     # push test data
                     #cmd = adb(cmd='push ', device=device)

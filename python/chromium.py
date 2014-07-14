@@ -605,24 +605,6 @@ def build(force=False):
         error('Failed to execute command: ' + cmd_ninja)
 
 
-def install(device, apks, force=False):
-    if not args.install and not force:
-        return
-
-    if not target_os == 'android':
-        return
-
-    cmd = 'python src/build/android/adb_install_apk.py --apk_package %s --%s' % (' '.join(apks), build_type)
-    if not args.just_out:
-        cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + '/out ' + cmd
-    if device != '':
-        cmd += '-d ' + device
-    result = execute(cmd, interactive=True)
-
-    if result[0]:
-        error('Failed to install packages')
-
-
 def run():
     if not args.run:
         return()
@@ -823,7 +805,7 @@ def _test_run_device(index_device, results):
                         apks = []
 
                     if apks:
-                        install(device=device, apks=apks, force=True)
+                        _install_apk(device=device, apks=apks, force=True)
 
                     # push test data
                     #cmd = adb(cmd='push ', device=device)
@@ -1190,6 +1172,24 @@ def _get_hash():
                 error('Could not find hash for rev ' + rev)
 
     restore_dir()
+
+
+def _install_apk(device, apks, force=False):
+    if not args.install and not force:
+        return
+
+    if not target_os == 'android':
+        return
+
+    cmd = 'python src/build/android/adb_install_apk.py --apk_package %s --%s' % (' '.join(apks), build_type)
+    if not args.just_out:
+        cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + '/out ' + cmd
+    if device != '':
+        cmd += '-d ' + device
+    result = execute(cmd, interactive=True)
+
+    if result[0]:
+        error('Failed to install packages')
 ########## Internal function end ##########
 
 
@@ -1206,7 +1206,6 @@ if __name__ == '__main__':
     patch()
     gen_mk()
     build()
-    install()
     run()
     # test
     test_build()

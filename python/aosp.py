@@ -282,6 +282,13 @@ def build():
             execute('rm -rf vendor')
             execute('cp -rf ' + dir_backup_spec_driver + ' ./')
 
+        if not args.build_skip_mk and os.path.exists(dir_root + '/external/chromium_org/src'):
+            cmd = '. build/envsetup.sh && lunch ' + combo + ' && ' + dir_root + '/external/chromium_org/src/android_webview/tools/gyp_webview linux-x86'
+            if arch == 'x86_64':
+                cmd += ' && ' + dir_root + '/external/chromium_org/src/android_webview/tools/gyp_webview linux-x86_64'
+            cmd = bashify(cmd)
+            execute(cmd, interactive=True)
+
         if module == 'system' or module == 'cts':
             cmd = '. build/envsetup.sh && lunch ' + combo + ' && make '
             if module == 'system':

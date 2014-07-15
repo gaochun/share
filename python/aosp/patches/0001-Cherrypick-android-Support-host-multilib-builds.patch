@@ -1,0 +1,98 @@
+From e98c256f6c7b688703a249ed91c9c68412bc92e7 Mon Sep 17 00:00:00 2001
+From: "Torne (Richard Coles)" <torne@google.com>
+Date: Fri, 30 May 2014 12:13:06 +0100
+Subject: [PATCH] Cherrypick "android: Support host multilib builds."
+
+Take not-yet-landed upstream patch from
+https://codereview.chromium.org/301373002/ to unblock host multilib
+work.
+
+> The Android build system now supports multilib 32/64-bit host builds as
+> well as target builds, and Chromium needs to make use of this to
+> properly support compiling V8 for host. Introduce a GYP_HOST_VAR_PREFIX
+> variable that works equivalently to GYP_VAR_PREFIX and use it in all the
+> places where the first/second host architecture must be selected, and
+> also introduce GYP_HOST_MULTILIB to enable the top level makefile to
+> specify whether it wants 32-bit or 64-bit host binaries.
+>
+> BUG=chromium:358141
+
+Bug: 14826931
+Change-Id: I7d55bc4c1b27acddd7ff192f8d3a6cb7ff724c9e
+---
+ pylib/gyp/generator/android.py | 19 ++++++++++++-------
+ 1 file changed, 12 insertions(+), 7 deletions(-)
+
+diff --git a/pylib/gyp/generator/android.py b/pylib/gyp/generator/android.py
+index 3c95143..37b8b13 100644
+--- a/pylib/gyp/generator/android.py
++++ b/pylib/gyp/generator/android.py
+@@ -188,6 +188,7 @@ class AndroidMkWriter(object):
+     self.WriteLn('LOCAL_MODULE_TAGS := optional')
+     if self.toolset == 'host':
+       self.WriteLn('LOCAL_IS_HOST_MODULE := true')
++      self.WriteLn('LOCAL_MULTILIB := $(GYP_HOST_MULTILIB)')
+     else:
+       self.WriteLn('LOCAL_MODULE_TARGET_ARCH := '
+                    '$(TARGET_$(GYP_VAR_PREFIX)ARCH)')
+@@ -195,7 +196,7 @@ class AndroidMkWriter(object):
+     # Grab output directories; needed for Actions and Rules.
+     if self.toolset == 'host':
+       self.WriteLn('gyp_intermediate_dir := '
+-                   '$(call local-intermediates-dir)')
++                   '$(call local-intermediates-dir,,$(GYP_HOST_VAR_PREFIX))')
+     else:
+       self.WriteLn('gyp_intermediate_dir := '
+                    '$(call local-intermediates-dir,,$(GYP_VAR_PREFIX))')
+@@ -694,14 +695,15 @@ class AndroidMkWriter(object):
+       path = '$(gyp_shared_intermediate_dir)'
+     elif self.type == 'shared_library':
+       if self.toolset == 'host':
+-        path = '$(HOST_OUT_INTERMEDIATE_LIBRARIES)'
++        path = '$($(GYP_HOST_VAR_PREFIX)HOST_OUT_INTERMEDIATE_LIBRARIES)'
+       else:
+         path = '$($(GYP_VAR_PREFIX)TARGET_OUT_INTERMEDIATE_LIBRARIES)'
+     else:
+       # Other targets just get built into their intermediate dir.
+       if self.toolset == 'host':
+-        path = '$(call intermediates-dir-for,%s,%s,true)' % (self.android_class,
+-                                                            self.android_module)
++        path = ('$(call intermediates-dir-for,%s,%s,true,,'
++                '$(GYP_HOST_VAR_PREFIX))' % (self.android_class,
++                                             self.android_module))
+       else:
+         path = ('$(call intermediates-dir-for,%s,%s,,,$(GYP_VAR_PREFIX))'
+                 % (self.android_class, self.android_module))
+@@ -891,6 +893,8 @@ class AndroidMkWriter(object):
+       self.WriteLn('LOCAL_UNINSTALLABLE_MODULE := true')
+       if self.toolset == 'target':
+         self.WriteLn('LOCAL_2ND_ARCH_VAR_PREFIX := $(GYP_VAR_PREFIX)')
++      else:
++        self.WriteLn('LOCAL_2ND_ARCH_VAR_PREFIX := $(GYP_HOST_VAR_PREFIX)')
+       self.WriteLn()
+       self.WriteLn('include $(BUILD_SYSTEM)/base_rules.mk')
+       self.WriteLn()
+@@ -898,9 +902,8 @@ class AndroidMkWriter(object):
+       self.WriteLn('\t$(hide) echo "Gyp timestamp: $@"')
+       self.WriteLn('\t$(hide) mkdir -p $(dir $@)')
+       self.WriteLn('\t$(hide) touch $@')
+-      if self.toolset == 'target':
+-        self.WriteLn()
+-        self.WriteLn('LOCAL_2ND_ARCH_VAR_PREFIX :=')
++      self.WriteLn()
++      self.WriteLn('LOCAL_2ND_ARCH_VAR_PREFIX :=')
+ 
+ 
+   def WriteList(self, value_list, variable=None, prefix='',
+@@ -1084,6 +1087,8 @@ def GenerateOutput(target_list, target_dicts, data, params):
+ 
+   root_makefile.write('GYP_CONFIGURATION ?= %s\n' % default_configuration)
+   root_makefile.write('GYP_VAR_PREFIX ?=\n')
++  root_makefile.write('GYP_HOST_VAR_PREFIX ?=\n')
++  root_makefile.write('GYP_HOST_MULTILIB ?=\n')
+ 
+   # Write out the sorted list of includes.
+   root_makefile.write('\n')
+-- 
+1.9.1
+

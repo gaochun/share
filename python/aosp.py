@@ -52,6 +52,7 @@ patches_build_common = {
 }
 
 patches_build_upstream_chromium = {
+    'external/chromium_org/src/tools/gyp': ['0001-Cherrypick-android-Support-host-multilib-builds.patch'],
 }
 
 patches_build_aosp_chromium = {}

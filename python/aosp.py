@@ -52,8 +52,6 @@ patches_build_common = {
 }
 
 patches_build_upstream_chromium = {
-    'frameworks/webview': ['0001-Change-drawGLFunctor-to-64-bit.patch'],
-    'external/chromium-libpac': ['0001-libpac-Change-v8-path-and-v8-tools-module-name.patch'],
 }
 
 patches_build_aosp_chromium = {}

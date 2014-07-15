@@ -19,7 +19,7 @@ examples:
   python %(prog)s --target-arch x86,x86_64 --dir-aosp aosp-stable-daily --last-phase 1
 
   crontab -e
-  0 1 * * * cd /workspace/project/share/python && python %(prog)s --target-arch x86_64
+  0 1 * * * cd /workspace/project/share/python && git reset --hard && git pull && python %(prog)s --target-arch x86_64
 ''')
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch, such as x86, x86_64', default='x86_64')

@@ -679,27 +679,21 @@ function symbolic_link() {
   fi
 }
 
-# chromium-desktop
+# symbolic link
+symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp
+symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-cr
+symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-gmin
+symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-mcg
+symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-stable
+symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-stable-daily
+symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-stable-cr
+
 symbolic_link $DIR_PYTHON chromium.py $DIR_PROJECT/chromium-linux
 export CHROME_DEVEL_SANDBOX=/usr/local/sbin/chrome-devel-sandbox
-
-# chromium-android
 symbolic_link $DIR_PYTHON chromium.py $DIR_PROJECT/chromium-android
+symbolic_link $DIR_PYTHON chromium.py $DIR_PROJECT/chromium-android-x64
 
-# Android
-symbolic_link $DIR_PYTHON android.py $DIR_PROJECT/android
-
-# Android-ia
-symbolic_link $DIR_PYTHON chromium64.py $DIR_PROJECT/android-ia
-
-# Skia
 symbolic_link $DIR_PYTHON skia.py $DIR_PROJECT/skia
-
-# aosp-stable
-symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-stable
-
-# aosp-stable-daily
-symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-stable-daily
 
 # sublime
 export PATH=$PATH:/workspace/software/sublime

@@ -21,10 +21,7 @@ def parse_arg():
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog='''
 examples:
-  python %(prog)s --build
-  python %(prog)s --sync-versions
-  python %(prog)s --generate-apk --version-id 36.0.1985.81 --version-type beta --target-arch arm
-  python %(prog)s --generate-apk --version-id 35.0.1916.141 --version-type stable --target-arch x86
+  python %(prog)s --ver 36.0.1985.81 --phase all
 ''')
     parser.add_argument('--ver', dest='ver', help='version', required=True)
     parser.add_argument('--ver-type', dest='ver_type', help='ver type', default='beta,stable')

@@ -29,7 +29,7 @@ pkgs_common = [
     'libicu-dev',
     # required by Chromium build
     'libspeechd-dev', 'libgdk-pixbuf2.0-dev', 'libgtk2.0-dev', 'libdrm-dev', 'libgnome-keyring-dev', 'libgconf2-dev', 'libudev-dev',
-    'libpci-dev', 'linux-tools-generic', 'binutils-dev', 'libelf-dev', 'gperf', 'gcc-4.8-multilib', 'g++-4.8-multilib', 'bison', 'python-pip',
+    'libpci-dev', 'linux-tools-generic', 'binutils-dev', 'libelf-dev', 'gperf', 'bison', 'python-pip',
     'module-assistant', 'autoconf', 'automake', 'libnss3-dev', 'ant', 'libcups2-dev', 'libasound2-dev', 'libxss-dev', 'libxtst-dev',
     'libpulse-dev', 'libexif-dev', 'libkrb5-dev', 'libcap-dev',
     'postfix',  # smtp server
@@ -60,6 +60,13 @@ Examples:
 
 
 def setup():
+    ver_gcc_result = execute('ls -l /usr/bin/gcc', show_command=True, return_output=True)
+    match = re.match('.+gcc-(.+)', ver_gcc_result[1])
+    if match:
+        ver_gcc = match.group(1)
+        pkgs_common.append('gcc-%s-multilib' % ver_gcc)
+        pkgs_common.append('g++-%s-multilib' % ver_gcc)
+
     backup_dir(dir_python)
 
 

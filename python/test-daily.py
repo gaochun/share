@@ -75,10 +75,6 @@ def setup():
 
 
 def test():
-    backup_dir('share')
-    execute('git pull', interactive=True, dryrun=dryrun)
-    restore_dir()
-
     cmd_aosp = python_aosp + ' --extra-path=/workspace/project/depot_tools '
 
     backup_dir(args.dir_aosp)

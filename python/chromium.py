@@ -1185,7 +1185,7 @@ def _install_apk(device, apks, force=False):
     if not args.just_out:
         cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + '/out ' + cmd
     if device != '':
-        cmd += '-d ' + device
+        cmd += ' -d ' + device
     result = execute(cmd, interactive=True)
 
     if result[0]:

@@ -38,7 +38,7 @@ pkgs_common = [
     'lib32z1',
     'openjdk-7-jdk',
     'dconf-editor',
-    'dnsmasq',
+    'dnsmasq', 'lighttpd',
 
     # Package used at home
     'openconnect',

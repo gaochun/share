@@ -102,7 +102,7 @@ def test():
 
         if args.last_phase >= 3:
             backup_dir(args.dir_chromium)
-            execute(python_chromium + ' --extra-path=/workspace/project/depot_tools --target-arch %s --repo-type x64 --revert --sync --runhooks --build --test-formal --time-fixed' % arch, abort=True, interactive=True, dryrun=dryrun)
+            execute(python_chromium + ' --extra-path=/workspace/project/depot_tools --target-arch %s --repo-type x64 --revert --sync --runhooks --build --test-run --test-formal --time-fixed' % arch, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
 
 

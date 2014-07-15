@@ -673,9 +673,11 @@ function symbolic_link() {
     dest_file=$2
   fi
 
-  if [ -d $3 -a ! -L $3/$dest_file ]; then
-    rm -f $3/$dest_file
-    ln -s $1/$2 $3/$dest_file
+  if [ -d $3 ]; then
+    if [ ! -L $3/$dest_file ] || [ ! "$(readlink $3/$dest_file)" = "$1/$2" ]; then
+      rm -f $3/$dest_file
+      ln -s $1/$2 $3/$dest_file
+    fi
   fi
 }
 

@@ -420,8 +420,10 @@ def setup():
 
     if args.dir_root:
         dir_root = args.dir_root
-    else:
+    elif os.path.islink(sys.argv[0]):
         dir_root = get_symbolic_link_dir()
+    else:
+        dir_root = os.path.abspath(os.getcwd())
 
     if not os.path.exists(dir_root):
         os.makedirs(dir_root)
@@ -1260,7 +1262,7 @@ def _get_hash():
     if rev == REV_MAX:
         error('_get_hash should not be called for REV_MAX')
 
-    backup_dir(dir_src)
+    backup_dir('src')
     execute('git log origin master >git_log')
     f = open('git_log')
     lines = f.readlines()

@@ -95,7 +95,7 @@ examples:
     parser.add_argument('--extra-path', dest='extra_path', help='extra path for execution, such as path for depot_tools')
     parser.add_argument('--hack-app-process', dest='hack_app_process', help='hack app_process', action='store_true')
     parser.add_argument('--time-fixed', dest='time_fixed', help='fix the time for test sake. We may run multiple tests and results are in same dir', action='store_true')
-
+    parser.add_argument('--dir-root', dest='dir_root', help='set root directory')
     parser.add_argument('--cts-run', dest='cts_run', help='package to run with cts, such as android.webkit, com.android.cts.browserbench')
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'all'], default='x86_64')
@@ -113,7 +113,13 @@ def setup():
     global dir_root, dir_chromium, dir_out, target_archs, target_devices_type, target_modules, chromium_version, devices, devices_name, devices_type, timestamp, use_upstream_chromium, patches_build
     global repo_type, repo_date, file_log, variant
 
-    dir_root = os.path.abspath(os.getcwd())
+    if args.dir_root:
+        dir_root = args.dir_root
+    elif os.path.islink(sys.argv[0]):
+        dir_root = get_symbolic_link_dir()
+    else:
+        dir_root = os.path.abspath(os.getcwd())
+
     dir_chromium = dir_root + '/external/chromium_org'
     dir_out = dir_root + '/out'
 

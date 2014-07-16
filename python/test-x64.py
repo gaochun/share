@@ -6,6 +6,9 @@ target_archs = ''
 target_devices_type = ''
 dryrun = False
 
+phases_all = ['aosp-prebuild', 'aosp-build', 'aosp-flash', 'chromium-test']
+phases = []
+
 
 def handle_option():
     global args, args_dict
@@ -16,7 +19,7 @@ examples:
   python %(prog)s --target-arch x86
   python %(prog)s --target-arch x86_64
   python %(prog)s --target-arch x86,x86_64
-  python %(prog)s --target-arch x86,x86_64 --dir-aosp aosp-stable-daily --last-phase 1
+  python %(prog)s --target-arch x86,x86_64 --dir-aosp aosp-stable-daily
 
   crontab -e
   0 1 * * * cd /workspace/project/share/python && git reset --hard && git pull && python %(prog)s --target-arch x86_64
@@ -26,10 +29,7 @@ examples:
     parser.add_argument('--target-device-type', dest='target_device_type', help='target device type, such as baytrail, generic', default='baytrail')
     parser.add_argument('--dir-aosp', dest='dir_aosp', help='dir for aosp', default='aosp-stable')
     parser.add_argument('--dir-chromium', dest='dir_chromium', help='dir for chromium', default='chromium-android-test')
-    # phase 1: aosp build, backup
-    # phase 2: aosp flash
-    # phase 3: chromium run test
-    parser.add_argument('--last-phase', dest='last_phase', help='last phase to execute', type=int, default=3)
+    parser.add_argument('--phase', dest='phase', help='last phase to execute', default='all')
 
     args = parser.parse_args()
     args_dict = vars(args)
@@ -40,7 +40,7 @@ examples:
 
 
 def setup():
-    global target_archs, target_devices_type
+    global target_archs, target_devices_type, phases
 
     backup_dir(dir_project)
 
@@ -73,33 +73,38 @@ def setup():
     copy_file(file_aosp, args.dir_aosp, is_sylk=True)
     copy_file(file_chromium, args.dir_chromium, is_sylk=True)
 
+    if args.phase == 'all':
+        phases = phases_all
+    else:
+        phases = args.phase.split(',')
+
 
 def test():
     cmd_aosp = python_aosp + ' --extra-path=/workspace/project/depot_tools '
 
-    backup_dir(args.dir_aosp)
-    cmd = cmd_aosp + '--sync aosp --patch --remove-out'
-    execute(cmd, interactive=True, abort=True, dryrun=dryrun)
-    restore_dir()
-
-    # build images first to ensure the generation
-    for arch in target_archs:
+    if 'aosp-prebuild' in phases:
         backup_dir(args.dir_aosp)
-        cmd = cmd_aosp + '--target-arch %s --target-device-type %s --build --backup' % (arch, args.target_device_type)
-        execute(cmd, abort=True, interactive=True, dryrun=dryrun)
+        cmd = cmd_aosp + '--sync aosp --patch --remove-out'
+        execute(cmd, interactive=True, abort=True, dryrun=dryrun)
         restore_dir()
 
+    if 'aosp-build' in phases:
+        for arch in target_archs:
+            backup_dir(args.dir_aosp)
+            cmd = cmd_aosp + '--target-arch %s --target-device-type %s --build --backup' % (arch, args.target_device_type)
+            execute(cmd, abort=True, interactive=True, dryrun=dryrun)
+            restore_dir()
+
     for arch in target_archs:
-        # flash image
-        if args.last_phase >= 2:
+        if 'aosp-flash' in phases:
             backup_dir(args.dir_aosp)
             cmd = cmd_aosp + '--target-arch %s --target-device-type %s --flash-image' % (arch, args.target_device_type)
             execute(cmd, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
-        # run test
-        if args.last_phase >= 3:
+
+        if 'chromium-test' in phases:
             backup_dir(args.dir_chromium)
-            execute(python_chromium + ' --extra-path=/workspace/project/depot_tools --target-arch %s --repo-type x64 --revert --sync --runhooks --build --test-run --test-formal' % arch, abort=True, interactive=True, dryrun=dryrun)
+            execute(python_chromium + ' --extra-path=/workspace/project/depot_tools --target-arch %s --repo-type x64 --sync --runhooks --build --test-run --test-formal ' % arch, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
 
 

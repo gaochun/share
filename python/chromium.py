@@ -537,7 +537,7 @@ def sync(force=False):
                 managed = True
 
     if not managed:
-        backup_dir('src')
+        backup_dir(dir_src)
         execute('git pull --rebase origin master')
         restore_dir()
 
@@ -1262,7 +1262,7 @@ def _get_hash():
     if rev == REV_MAX:
         error('_get_hash should not be called for REV_MAX')
 
-    backup_dir('src')
+    backup_dir(dir_src)
     execute('git log origin master >git_log')
     f = open('git_log')
     lines = f.readlines()
@@ -1294,7 +1294,7 @@ def _install_apk(device, apks, force=False):
     if not target_os == 'android':
         return
 
-    cmd = 'python src/build/android/adb_install_apk.py --apk_package %s --%s' % (' '.join(apks), build_type)
+    cmd = 'python %s/build/android/adb_install_apk.py --apk_package %s --%s' % (dir_src, ' '.join(apks), build_type)
     if not args.just_out:
         cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + '/out ' + cmd
     if device != '':

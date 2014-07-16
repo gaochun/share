@@ -149,7 +149,7 @@ repo_type_info = {
         'test_filter': {},
     },
     'x64': {
-        'rev': 280559,
+        'rev': 283373,
         'dir_patches': dir_python + '/chromium-patches/x64',
         'patches': {
             'src': [

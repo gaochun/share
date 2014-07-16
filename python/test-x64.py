@@ -82,23 +82,24 @@ def test():
     execute(cmd, interactive=True, abort=True, dryrun=dryrun)
     restore_dir()
 
+    # build images first to ensure the generation
     for arch in target_archs:
         backup_dir(args.dir_aosp)
-
-        # build aosp
         cmd = cmd_aosp + '--target-arch %s --target-device-type %s --build --backup' % (arch, args.target_device_type)
         execute(cmd, abort=True, interactive=True, dryrun=dryrun)
-
-        # flash image
-        if args.last_phase >= 2:
-            cmd = cmd_aosp + '--target-arch %s --target-device-type %s --flash-image' % (arch, args.target_device_type)
-            execute(cmd, abort=True, interactive=True, dryrun=dryrun)
-
         restore_dir()
 
+    for arch in target_archs:
+        # flash image
+        if args.last_phase >= 2:
+            backup_dir(args.dir_aosp)
+            cmd = cmd_aosp + '--target-arch %s --target-device-type %s --flash-image' % (arch, args.target_device_type)
+            execute(cmd, abort=True, interactive=True, dryrun=dryrun)
+            restore_dir()
+        # run test
         if args.last_phase >= 3:
             backup_dir(args.dir_chromium)
-            execute(python_chromium + ' --extra-path=/workspace/project/depot_tools --target-arch %s --repo-type x64 --revert --sync --runhooks --build --test-run --test-formal --time-fixed' % arch, abort=True, interactive=True, dryrun=dryrun)
+            execute(python_chromium + ' --extra-path=/workspace/project/depot_tools --target-arch %s --repo-type x64 --revert --sync --runhooks --build --test-run --test-formal' % arch, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
 
 

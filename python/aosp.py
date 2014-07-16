@@ -53,6 +53,7 @@ patches_build_common = {
 
 patches_build_upstream_chromium = {
     'external/chromium_org/src/tools/gyp': ['0001-Cherrypick-android-Support-host-multilib-builds.patch'],
+    'frameworks/webview': ['0001-Fix-WebView-crash-on-startup-due-to-missing-resource.patch'],
 }
 
 patches_build_aosp_chromium = {}

@@ -1,0 +1,97 @@
+From 7aa58ad4c04fc1ee9c751016e61cddaa090ba0c0 Mon Sep 17 00:00:00 2001
+From: Marcin Kosiba <mkosiba@google.com>
+Date: Fri, 4 Jul 2014 19:04:51 +0100
+Subject: [PATCH] Fix WebView crash on startup due to missing resource.
+
+BUG: 15986106
+Change-Id: I684b6e37f5e7947474cc2938d48fc3761e811fc7
+---
+ .../java/com/android/webview/chromium/ResourceProvider.java |  2 ++
+ .../webview/chromium/WebViewChromiumFactoryProvider.java    |  2 +-
+ .../base/core/res/res/values/chromium-resources.xml         |  2 ++
+ .../base/core/res/res/values/chromium-symbols.xml           |  2 ++
+ .../overlay/frameworks/base/core/res/res/values/config.xml  | 13 +++++++++++++
+ 5 files changed, 20 insertions(+), 1 deletion(-)
+ create mode 100644 chromium/overlay/frameworks/base/core/res/res/values/config.xml
+
+diff --git a/chromium/java/com/android/webview/chromium/ResourceProvider.java b/chromium/java/com/android/webview/chromium/ResourceProvider.java
+index 7f6078e..8f02852 100644
+--- a/chromium/java/com/android/webview/chromium/ResourceProvider.java
++++ b/chromium/java/com/android/webview/chromium/ResourceProvider.java
+@@ -281,6 +281,8 @@ public class ResourceProvider {
+                 com.android.internal.R.raw.nodomain);
+         AwResource.setDefaultTextEncoding(
+                 com.android.internal.R.string.default_text_encoding);
++        AwResource.setConfigKeySystemUuidMapping(
++                com.android.internal.R.array.config_keySystemUuidMapping);
+ 
+         sInitialized = true;
+     }
+diff --git a/chromium/java/com/android/webview/chromium/WebViewChromiumFactoryProvider.java b/chromium/java/com/android/webview/chromium/WebViewChromiumFactoryProvider.java
+index b50360e..5061ff2 100644
+--- a/chromium/java/com/android/webview/chromium/WebViewChromiumFactoryProvider.java
++++ b/chromium/java/com/android/webview/chromium/WebViewChromiumFactoryProvider.java
+@@ -182,6 +182,7 @@ public class WebViewChromiumFactoryProvider implements WebViewFactoryProvider {
+         PathService.override(DIR_RESOURCE_PAKS_ANDROID,
+                 "/system/framework/webview/paks");
+ 
++        ResourceProvider.registerResources(ActivityThread.currentApplication());
+         AwBrowserProcess.start(ActivityThread.currentApplication());
+         initPlatSupportLibrary();
+ 
+@@ -295,7 +296,6 @@ public class WebViewChromiumFactoryProvider implements WebViewFactoryProvider {
+                 mWebViewsToStart.add(new WeakReference<WebViewChromium>(wvc));
+             }
+         }
+-        ResourceProvider.registerResources(webView.getContext());
+         return wvc;
+     }
+ 
+diff --git a/chromium/overlay/frameworks/base/core/res/res/values/chromium-resources.xml b/chromium/overlay/frameworks/base/core/res/res/values/chromium-resources.xml
+index f0668a5..424ca95 100644
+--- a/chromium/overlay/frameworks/base/core/res/res/values/chromium-resources.xml
++++ b/chromium/overlay/frameworks/base/core/res/res/values/chromium-resources.xml
+@@ -112,6 +112,8 @@
+   <add-resource type="string" name="webviewchromium_time_picker_dialog_title" />
+   <add-resource type="string" name="webviewchromium_week_picker_dialog_title" />
+ 
++  <add-resource type="array" name="config_keySystemUuidMapping" />
++
+   <add-resource type="style" name="webviewchromium_DropdownPopupWindow" />
+   <add-resource type="style" name="webviewchromium_SelectPopupDialog" />
+ </resources>
+diff --git a/chromium/overlay/frameworks/base/core/res/res/values/chromium-symbols.xml b/chromium/overlay/frameworks/base/core/res/res/values/chromium-symbols.xml
+index 0c53525..7c33abc 100644
+--- a/chromium/overlay/frameworks/base/core/res/res/values/chromium-symbols.xml
++++ b/chromium/overlay/frameworks/base/core/res/res/values/chromium-symbols.xml
+@@ -115,6 +115,8 @@
+   <java-symbol type="string" name="webviewchromium_time_picker_dialog_title" />
+   <java-symbol type="string" name="webviewchromium_week_picker_dialog_title" />
+ 
++  <java-symbol type="array" name="config_keySystemUuidMapping" />
++
+   <java-symbol type="id" name="webviewchromium_dropdown_label" />
+   <java-symbol type="id" name="webviewchromium_dropdown_popup_window" />
+   <java-symbol type="id" name="webviewchromium_dropdown_sublabel" />
+diff --git a/chromium/overlay/frameworks/base/core/res/res/values/config.xml b/chromium/overlay/frameworks/base/core/res/res/values/config.xml
+new file mode 100644
+index 0000000..ebbaeb4
+--- /dev/null
++++ b/chromium/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -0,0 +1,13 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright 2014 The Chromium Authors. All rights reserved.
++     Use of this source code is governed by a BSD-style license that can be
++     found in the LICENSE file.
++-->
++
++<resources>
++    <!-- Array of "[keySystemName],[UuidOfMediaDrm]" -->
++    <string-array name="config_keySystemUuidMapping" translatable="false">
++        <!-- Use Widevine's UUID to pass the availability-test of MediaDRM plugin -->
++        <item>"com.oem.test-keysystem,EDEF8BA9-79D6-4ACE-A3C8-27DCD51D21ED"</item>
++    </string-array>
++</resources>
+-- 
+1.9.1
+

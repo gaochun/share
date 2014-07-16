@@ -719,6 +719,7 @@ def postbuild(force=False):
         execute('java -jar %s/apktool.jar b Chrome -o Chromium_unaligned.apk' % dir_tool, interactive=True)
         execute('jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s/debug.keystore -storepass android Chromium_unaligned.apk androiddebugkey' % dir_tool, interactive=True)
         execute('%s/zipalign -f -v 4 Chromium_unaligned.apk Chromium.apk' % dir_tool, interactive=True)
+        execute('rm -f Chromium_unaligned.apk')
         restore_dir()
 
 

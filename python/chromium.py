@@ -1317,6 +1317,7 @@ if __name__ == '__main__':
     runhooks()
     # basic
     patch()
+    prebuild()
     makefile()
     build()
     postbuild()

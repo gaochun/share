@@ -693,9 +693,9 @@ def postbuild(force=False):
         dir_chrome_lib = dir_chrome + '/lib/%s' % target_arch
 
         # unpack
-        execute('java -jar %s/apktool.jar d %s/Chrome.apk %s' % (dir_tool, dir_ver, dir_chrome), interactive=True)
+        execute('java -jar %s/apktool.jar d %s/Chrome.apk -o %s' % (dir_tool, dir_ver, dir_chrome), interactive=True)
         # rename
-        execute('python prebuilt-%s/change_chromium_package.py -u %s' % (target_arch, dir_chrome), interactive=True)
+        execute('python %s/prebuilt-%s/change_chromium_package.py -u %s' % (dir_src, target_arch, dir_chrome), interactive=True)
 
         # replace libchrome(view).so
         result = execute('ls %s/libchrome*.so' % dir_chrome_lib, return_output=True)
@@ -710,13 +710,13 @@ def postbuild(force=False):
         restore_dir()
 
         # replace libpeerconnection.so
-        cmd = 'cp -f prebuilt-%s/libpeerconnection_prebuilt.so %s/libpeerconnection.so' % (target_arch, dir_chrome_lib)
+        cmd = 'cp -f %s/prebuilt-%s/libpeerconnection_prebuilt.so %s/libpeerconnection.so' % (dir_src, target_arch, dir_chrome_lib)
         execute(cmd, interactive=True)
 
         # repackage the new chromium.apk
         # --zipalign: can be found in SDK
         backup_dir(dir_ver)
-        execute('java -jar %s/apktool.jar b Chrome Chromium_unaligned.apk' % dir_tool, interactive=True)
+        execute('java -jar %s/apktool.jar b Chrome -o Chromium_unaligned.apk' % dir_tool, interactive=True)
         execute('jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s/debug.keystore -storepass android Chromium_unaligned.apk androiddebugkey' % dir_tool, interactive=True)
         execute('%s/zipalign -f -v 4 Chromium_unaligned.apk Chromium.apk' % dir_tool, interactive=True)
         restore_dir()

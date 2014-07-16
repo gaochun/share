@@ -95,6 +95,8 @@ rev_gyp_defines = 260548
 # From this rev, android_gyp is no longer supported. Use gyp_chromium instead.
 rev_no_android_gyp = 262292
 
+ver = ''
+
 test_command_default = [
     'gtest',
     'instrumentation',
@@ -364,8 +366,20 @@ def setup():
     global target_os, target_arch, target_module
     global devices, devices_name, devices_type
     global file_log, timestamp, test_suite, build_type, rev, dir_patches, patches, test_filter, repo_type
+    global ver
+
+    if args.dir_root:
+        dir_root = args.dir_root
+    elif os.path.islink(sys.argv[0]):
+        dir_root = get_symbolic_link_dir()
+    else:
+        dir_root = os.path.abspath(os.getcwd())
 
     repo_type = args.repo_type
+    # repo type specific variables
+    if repo_type == 'chrome-android':
+        ver = dir_root.split('/')[-1]
+
     # set repo_type related global variables
     for key in repo_type_info['default']:
         if repo_type == 'default' or not repo_type in repo_type_info or not key in repo_type_info[repo_type]:
@@ -417,13 +431,6 @@ def setup():
             target_module = 'webview'
     else:
         target_module = args.target_module
-
-    if args.dir_root:
-        dir_root = args.dir_root
-    elif os.path.islink(sys.argv[0]):
-        dir_root = get_symbolic_link_dir()
-    else:
-        dir_root = os.path.abspath(os.getcwd())
 
     if not os.path.exists(dir_root):
         os.makedirs(dir_root)
@@ -500,7 +507,6 @@ def init(force=False):
         return
 
     if repo_type == 'chrome-android':
-        ver = dir_root.split('/')[-1]
         cmd = 'gclient config https://src.chromium.org/chrome/releases/' + ver
         execute(cmd)
         cmd = 'echo "target_os = [\'android\']" >> .gclient'
@@ -566,7 +572,6 @@ def prebuild(force=False):
         return
 
     if repo_type == 'chrome-android':
-        ver = dir_root.split('/')[-1]
         build_id = ver_info[ver][VER_INFO_INDEX_BUILD_ID][target_arch_index[target_arch]]
         if build_id == '':
             return
@@ -579,7 +584,7 @@ def prebuild(force=False):
         cmd = 'wget -c -i http://storage.googleapis.com/chrome-browser-components/' + build_id + '/index.html'
         execute(cmd, interactive=True)
 
-        dir_release = 'src/out-' + target_arch + '/out/Release'
+        dir_release = dir_src + '/out-' + target_arch + '/out/Release'
         ensure_dir(dir_release)
         cmd = 'cp *.a ' + dir_release
         execute(cmd)
@@ -676,7 +681,6 @@ def postbuild(force=False):
         return
 
     if repo_type == 'chrome-android':
-        ver = dir_root.split('/')[-1]
         ver_type = args.ver_type
         dir_out = 'src/out-' + target_arch + '/out'
         dir_tool = get_dir(dir_root) + '/tool'
@@ -1304,6 +1308,7 @@ def _install_apk(device, apks, force=False):
 
     if result[0]:
         error('Failed to install packages')
+
 ########## Internal function end ##########
 
 

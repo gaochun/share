@@ -566,6 +566,7 @@ def prebuild(force=False):
         return
 
     if repo_type == 'chrome-android':
+        ver = dir_root.split('/')[-1]
         build_id = ver_info[ver][VER_INFO_INDEX_BUILD_ID][target_arch_index[target_arch]]
         if build_id == '':
             return

@@ -17,23 +17,30 @@ phases_all = ['init', 'sync', 'runhooks', 'prebuild', 'makefile', 'build', 'post
 
 def parse_arg():
     global args, args_dict
-    parser = argparse.ArgumentParser(description='Script to build chrome for android with symbol',
+    parser = argparse.ArgumentParser(description='Script about chrome for android',
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog='''
 examples:
   python %(prog)s --ver 36.0.1985.81 --phase all
 ''')
-    parser.add_argument('--ver', dest='ver', help='version', required=True)
+    parser.add_argument('--ver', dest='ver', help='version')
     parser.add_argument('--ver-type', dest='ver_type', help='ver type', default='beta,stable')
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', default='x86')
-    parser.add_argument('--phase', dest='phase', help='phase', default='all')
+    parser.add_argument('--phase', dest='phase', help='phase, including ' + ','.join(phases_all), default='all')
 
     args = parser.parse_args()
     args_dict = vars(args)
 
+    if len(sys.argv) <= 1:
+        parser.print_help()
+        quit()
+
 
 def setup():
     global dir_root, vers, ver_types, target_archs, phases
+
+    if not args.ver:
+        error('You must designate version using --ver option')
 
     dir_root = get_symbolic_link_dir()
 

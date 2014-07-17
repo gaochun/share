@@ -775,7 +775,7 @@ def _backup_one(arch, device_type, module):
         backup_dir(dir_backup)
         name_tar = name + '-' + host_name + '.tar.gz'
         execute('tar zcf ' + name_tar + ' ' + name)
-        backup_smb('//wp-03.sh.intel.com/aosp-stable', 'temp', name_tar, dryrun=False)
+        backup_smb('//wp-03.sh.intel.com/aosp', 'aosp-stable/temp', name_tar, dryrun=False)
         restore_dir()
 
 

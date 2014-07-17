@@ -88,7 +88,7 @@ examples:
     parser.add_argument('--file-image', dest='file_image', help='image tgz file')
     parser.add_argument('--backup', dest='backup', help='backup output to both local and samba server', action='store_true')
     parser.add_argument('--backup-skip-server', dest='backup_skip_server', help='only local backup', action='store_true')
-    parser.add_argument('--start-emu', dest='start_emu', help='start the emulator. Copy http://ubuntu-ygu5-02.sh.intel.com/aosp-stable/sdcard.img to dir_root and rename it as sdcard-<arch>.img', action='store_true')
+    parser.add_argument('--start-emu', dest='start_emu', help='start the emulator. Copy sdcard.img to dir_root and rename it as sdcard-<arch>.img', action='store_true')
     parser.add_argument('--dir-emu', dest='dir_emu', help='emulator dir')
     parser.add_argument('--analyze', dest='analyze', help='analyze tombstone or ANR file')
     parser.add_argument('--push', dest='push', help='push updates to system', action='store_true')
@@ -775,7 +775,7 @@ def _backup_one(arch, device_type, module):
         backup_dir(dir_backup)
         name_tar = name + '-' + host_name + '.tar.gz'
         execute('tar zcf ' + name_tar + ' ' + name)
-        backup_smb('//ubuntu-ygu5-02.sh.intel.com/aosp-stable', 'temp', name_tar, dryrun=False)
+        backup_smb('//wp-03.sh.intel.com/aosp-stable', 'temp', name_tar, dryrun=False)
         restore_dir()
 
 

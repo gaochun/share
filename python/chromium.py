@@ -95,7 +95,9 @@ rev_gyp_defines = 260548
 # From this rev, android_gyp is no longer supported. Use gyp_chromium instead.
 rev_no_android_gyp = 262292
 
+# repo type specific variables
 ver = ''
+soname = ''
 
 test_command_default = [
     'gtest',
@@ -366,7 +368,7 @@ def setup():
     global target_os, target_arch, target_module
     global devices, devices_name, devices_type
     global file_log, timestamp, test_suite, build_type, rev, dir_patches, patches, test_filter, repo_type
-    global ver
+    global ver, soname
 
     if args.dir_root:
         dir_root = args.dir_root
@@ -376,9 +378,6 @@ def setup():
         dir_root = os.path.abspath(os.getcwd())
 
     repo_type = args.repo_type
-    # repo type specific variables
-    if repo_type == 'chrome-android':
-        ver = dir_root.split('/')[-1]
 
     # set repo_type related global variables
     for key in repo_type_info['default']:
@@ -501,6 +500,16 @@ no_proxy=%(no_proxy)s
         for suite in _setup_list(command + '_suite'):
             test_suite[command].append(suite)
 
+    # repo type specific variables
+    if repo_type == 'chrome-android':
+        ver = dir_root.split('/')[-1]
+
+        result = execute('ls src/prebuilt-%s/*.gyp' % target_arch, return_output=True)
+        file_gyp = result[1].split('/')[-1].strip('\n')
+        pattern = re.compile('(.*)_target')
+        match = pattern.search(file_gyp)
+        soname = match.group(1)
+
 
 def init(force=False):
     if not args.init and not force:
@@ -608,9 +617,7 @@ def makefile(force=False):
 
         if repo_type == 'chrome-android':
             # gyp file must be in src dir, and contained in one level of directory
-            result = execute('ls prebuilt-%s/*.gyp' % target_arch, return_output=True)
-            file_gyp = result[1].split('/')[-1].strip('\n')
-            cmd = 'GYP_DEFINES="$GYP_DEFINES libpeer_target_type=loadable_module OS=android host_os=linux" CHROMIUM_GYP_FILE="prebuilt-%s/%s"' % (target_arch, file_gyp) + ' build/gyp_chromium -Dtarget_arch=' + target_arch_temp
+            cmd = 'GYP_DEFINES="$GYP_DEFINES libpeer_target_type=loadable_module OS=android host_os=linux" CHROMIUM_GYP_FILE="prebuilt-%s/%s_target.gyp"' % (target_arch, soname) + ' build/gyp_chromium -Dtarget_arch=' + target_arch_temp
         else:
             # We can't omit this step as android_gyp is a built-in command, instead of environmental variable.
             if rev < rev_envsetup:
@@ -664,7 +671,7 @@ def build(force=False):
     elif target_os == 'android' and target_module == 'content_shell':
         cmd_ninja += ' content_shell_apk'
     elif target_os == 'android' and target_module == 'chrome':
-        cmd_ninja += ' libchrome_prebuilt'
+        cmd_ninja += ' lib%s_prebuilt' % soname
     else:
         cmd_ninja += ' ' + target_module
 

@@ -29,7 +29,7 @@ examples:
     parser.add_argument('--target-device-type', dest='target_device_type', help='target device type, such as baytrail, generic', default='baytrail')
     parser.add_argument('--dir-aosp', dest='dir_aosp', help='dir for aosp', default='aosp-stable')
     parser.add_argument('--dir-chromium', dest='dir_chromium', help='dir for chromium', default='chromium-android-test')
-    parser.add_argument('--phase', dest='phase', help='last phase to execute', default='all')
+    parser.add_argument('--phase', dest='phase', help='phase, including ' + ','.join(phases_all), default='all')
 
     args = parser.parse_args()
     args_dict = vars(args)

@@ -608,7 +608,9 @@ def makefile(force=False):
 
         if repo_type == 'chrome-android':
             # gyp file must be in src dir, and contained in one level of directory
-            cmd = 'GYP_DEFINES="$GYP_DEFINES libpeer_target_type=loadable_module OS=android host_os=linux" CHROMIUM_GYP_FILE="prebuilt-%s/chrome_target.gyp"' % target_arch + ' build/gyp_chromium -Dtarget_arch=' + target_arch_temp
+            result = execute('ls prebuilt-%s/*.gyp' % target_arch, return_output=True)
+            file_gyp = result[1].split('/')[-1].strip('\n')
+            cmd = 'GYP_DEFINES="$GYP_DEFINES libpeer_target_type=loadable_module OS=android host_os=linux" CHROMIUM_GYP_FILE="prebuilt-%s/%s"' % (target_arch, file_gyp) + ' build/gyp_chromium -Dtarget_arch=' + target_arch_temp
         else:
             # We can't omit this step as android_gyp is a built-in command, instead of environmental variable.
             if rev < rev_envsetup:

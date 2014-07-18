@@ -18,6 +18,7 @@ import inspect
 import multiprocessing
 import re
 import commands
+import fcntl
 
 formatter = logging.Formatter('[%(asctime)s - %(levelname)s] %(message)s', "%Y-%m-%d %H:%M:%S")
 host_os = platform.system().lower()
@@ -44,8 +45,10 @@ python_chromium = 'python ' + file_chromium
 python_aosp = 'python ' + file_aosp
 
 dir_workspace = '/workspace'
-dir_service = dir_workspace + '/service'
-dir_service_chromium = dir_service + '/chromium'
+dir_server = dir_workspace + '/server'
+dir_server_aosp = dir_server + '/aosp'
+dir_server_chromium = dir_server + '/chromium'
+dir_server_log = dir_server + '/log'
 dir_project = dir_workspace + '/project'
 
 dir_home = os.getenv('HOME')
@@ -598,6 +601,14 @@ def ver_ge(ver_a, ver_b):
             return False
 
     return True
+
+
+def singleton(lock):
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except:
+        print 'ho'
+        exit(0)
 ################################################################################
 
 

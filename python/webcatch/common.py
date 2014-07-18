@@ -9,7 +9,7 @@ servers = [
     'ubuntu-ygu5-02',
 ]
 server_main = servers[0]
-dir_out_server = '/workspace/service/webcatch/out'
+dir_out_server = '/workspace/server/webcatch/out'
 
 # comb: [binary_format, rev_min_built, rev_max_built]
 comb_valid = {

@@ -697,7 +697,7 @@ def postbuild(force=False):
         if not ver_type in ver_info[ver][VER_INFO_INDEX_TYPE].split(','):
             return
 
-        dir_ver = dir_service_chromium + '/android-' + target_arch + '-chrome/' + ver + '-' + ver_type
+        dir_ver = dir_server_chromium + '/android-' + target_arch + '-chrome/' + ver + '-' + ver_type
         dir_chrome = dir_ver + '/Chrome'
         dir_chrome_lib = dir_chrome + '/lib/%s' % target_arch
 

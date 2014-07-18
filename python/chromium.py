@@ -91,9 +91,11 @@ rev_envsetup = 252034
 
 # Form this rev, envsetup would no longer set OS=android, we need to define it using GYP_DEFINES='OS=android'
 rev_gyp_defines = 260548
+ver_gyp_defines = '37.0.0.0'
 
 # From this rev, android_gyp is no longer supported. Use gyp_chromium instead.
 rev_no_android_gyp = 262292
+ver_no_android_gyp = '37.0.1847.62'
 
 # repo type specific variables
 ver = ''
@@ -443,7 +445,6 @@ def setup():
     dir_test = dir_root + '/test'
     dir_test_timestamp = dir_test + '/' + timestamp
 
-    setenv('GYP_DEFINES', 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os)
     setenv('GYP_GENERATORS', 'ninja')
     backup_dir(dir_root)
 
@@ -461,6 +462,18 @@ def setup():
     target_module = args.target_module
 
     file_log = dir_root + '/log-' + timestamp + '.txt'
+
+    # repo type specific variables
+    if repo_type == 'chrome-android':
+        ver = dir_root.split('/')[-1]
+
+        path_gyp = '%s/prebuilt-%s/*.gyp' % (dir_src, target_arch)
+        if os.path.exists(path_gyp):
+            result = execute('ls %s' % path_gyp, return_output=True)
+            file_gyp = result[1].split('/')[-1].strip('\n')
+            pattern = re.compile('(.*)_target')
+            match = pattern.search(file_gyp)
+            soname = match.group(1)
 
     if target_os == 'windows':
         setenv('GYP_DEFINES', 'werror= disable_nacl=1 component=shared_library enable_svg=0 windows_sdk_path="d:/user/ygu5/project/chromium/win_toolchain/win8sdk"')
@@ -480,7 +493,7 @@ def setup():
             if not os.getenv('ANDROID_SDK_ROOT'):
                 error('Environment is not well set')
 
-        if rev < rev_gyp_defines:
+        if rev < rev_gyp_defines or ver_ge(ver_gyp_defines, ver):
             setenv('GYP_DEFINES', 'werror= disable_nacl=1 enable_svg=0')
         else:
             setenv('GYP_DEFINES', 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os)
@@ -499,18 +512,6 @@ no_proxy=%(no_proxy)s
         test_suite[command] = []
         for suite in _setup_list(command + '_suite'):
             test_suite[command].append(suite)
-
-    # repo type specific variables
-    if repo_type == 'chrome-android':
-        ver = dir_root.split('/')[-1]
-
-        path_gyp = '%s/prebuilt-%s/*.gyp' % (dir_src, target_arch)
-        if os.path.exists(path_gyp):
-            result = execute('ls %s' % path_gyp, return_output=True)
-            file_gyp = result[1].split('/')[-1].strip('\n')
-            pattern = re.compile('(.*)_target')
-            match = pattern.search(file_gyp)
-            soname = match.group(1)
 
 
 def init(force=False):
@@ -630,7 +631,11 @@ def makefile(force=False):
             if soname == '':
                 error('Please download prebuilt first')
             # gyp file must be in src dir, and contained in one level of directory
-            cmd = 'GYP_DEFINES="$GYP_DEFINES libpeer_target_type=loadable_module OS=android host_os=linux" CHROMIUM_GYP_FILE="prebuilt-%s/%s_target.gyp"' % (target_arch, soname) + ' build/gyp_chromium -Dtarget_arch=' + target_arch_temp
+            cmd = 'GYP_DEFINES="$GYP_DEFINES libpeer_target_type=loadable_module OS=android host_os=linux" CHROMIUM_GYP_FILE="prebuilt-%s/%s_target.gyp"' % (target_arch, soname) + ' build/gyp_chromium -Dtarget_arch='
+            if ver_ge(ver_no_android_gyp, ver):
+                cmd += target_arch
+            else:
+                cmd += target_arch_temp
         else:
             # We can't omit this step as android_gyp is a built-in command, instead of environmental variable.
             if rev < rev_envsetup:

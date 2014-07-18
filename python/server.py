@@ -42,17 +42,12 @@ def run():
             # chrome-android build
             pass
 
-        time.sleep(1800)
-
 
 # If callback does not start within interval, start it
 def _run_one(cb, interval):
     file_cb = dir_server_log + '/' + cb
-    if not os.path.exists(file_cb):
+    if not os.path.exists(file_cb) or not has_recent_change(file_cb, interval=interval):
         execute('touch ' + file_cb)
-        globals()[cb]()
-
-    if not has_recent_change(file_cb, interval=interval):
         globals()[cb]()
 
 

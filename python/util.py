@@ -62,8 +62,8 @@ def get_datetime(format='%Y%m%d%H%M%S'):
     return time.strftime(format, time.localtime())
 
 
-def has_recent_change(file):
-    if time.time() - os.path.getmtime(file) < 24 * 3600:  # One day
+def has_recent_change(path_file, interval=24*3600):
+    if time.time() - os.path.getmtime(path_file) < interval:
         return True
     else:
         return False

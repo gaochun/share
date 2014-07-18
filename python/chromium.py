@@ -504,7 +504,7 @@ no_proxy=%(no_proxy)s
     if repo_type == 'chrome-android':
         ver = dir_root.split('/')[-1]
 
-        result = execute('ls src/prebuilt-%s/*.gyp' % target_arch, return_output=True)
+        result = execute('ls %s/prebuilt-%s/*.gyp' % (dir_src, target_arch), return_output=True)
         file_gyp = result[1].split('/')[-1].strip('\n')
         pattern = re.compile('(.*)_target')
         match = pattern.search(file_gyp)
@@ -585,7 +585,7 @@ def prebuild(force=False):
         if build_id == '':
             return
 
-        dir_prebuilt = 'src/prebuilt-' + target_arch
+        dir_prebuilt = '%s/prebuilt-%s' % (dir_src, target_arch)
         if not os.path.exists(dir_prebuilt):
             os.mkdir(dir_prebuilt)
 
@@ -691,7 +691,7 @@ def postbuild(force=False):
 
     if repo_type == 'chrome-android':
         ver_type = args.ver_type
-        dir_out = 'src/out-' + target_arch + '/out'
+        dir_out = dir_src + '/out-' + target_arch + '/out'
         dir_tool = get_dir(dir_root) + '/tool'
 
         if not ver_type in ver_info[ver][VER_INFO_INDEX_TYPE].split(','):
@@ -749,7 +749,7 @@ def run():
 
         cmd = dir_out_build_type + '/chrome ' + option
     else:
-        cmd = dir_root + '/src/build/android/adb_run_content_shell'
+        cmd = dir_src + '/build/android/adb_run_content_shell'
 
     if args.run_option:
         cmd += ' ' + args.run_option
@@ -951,7 +951,7 @@ def _test_run_device(index_device, results):
                 else:
                     cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + '/out '
 
-                cmd += 'src/build/android/test_runner.py ' + command
+                cmd += dir_src + '/build/android/test_runner.py ' + command
 
                 if command == 'gtest':
                     cmd += ' -s ' + suite

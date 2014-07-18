@@ -48,6 +48,7 @@ commands = [
     ('basic', "lsof -p NNNN | awk '{print $9}' | grep '\.so'", 'see if a file is opened', TYPE_NULL),
     ('basic', "rsync -avzL /media/GYAGP/* /workspace/backup/usb", 'rsync usb key', TYPE_NULL),
     ('basic', "sudo route add default gw 10.239.14.241 eth0", 'add default route', TYPE_NULL),
+    ('basic', "sudo hwclock", 'CMOS clock', TYPE_NULL),
     ('upgrade', 'do-release-upgrade', 'Upgrade system', TYPE_NULL),
     ('info', 'cat /etc/os-release', 'List distribution info', TYPE_RUNNABLE),
     ('info', 'cat /etc/lsb-release', 'List distribution info', TYPE_RUNNABLE),

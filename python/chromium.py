@@ -504,11 +504,13 @@ no_proxy=%(no_proxy)s
     if repo_type == 'chrome-android':
         ver = dir_root.split('/')[-1]
 
-        result = execute('ls %s/prebuilt-%s/*.gyp' % (dir_src, target_arch), return_output=True)
-        file_gyp = result[1].split('/')[-1].strip('\n')
-        pattern = re.compile('(.*)_target')
-        match = pattern.search(file_gyp)
-        soname = match.group(1)
+        path_gyp = '%s/prebuilt-%s/*.gyp' % (dir_src, target_arch)
+        if os.path.exists(path_gyp):
+            result = execute('ls %s' % path_gyp, return_output=True)
+            file_gyp = result[1].split('/')[-1].strip('\n')
+            pattern = re.compile('(.*)_target')
+            match = pattern.search(file_gyp)
+            soname = match.group(1)
 
 
 def init(force=False):
@@ -577,6 +579,8 @@ def patch(force=False):
 
 
 def prebuild(force=False):
+    global soname
+
     if not args.prebuild and not force:
         return
 
@@ -598,6 +602,13 @@ def prebuild(force=False):
         cmd = 'cp *.a ' + dir_release
         execute(cmd)
 
+        path_gyp = '%s/prebuilt-%s/*.gyp' % (dir_src, target_arch)
+        result = execute('ls %s' % path_gyp, return_output=True)
+        file_gyp = result[1].split('/')[-1].strip('\n')
+        pattern = re.compile('(.*)_target')
+        match = pattern.search(file_gyp)
+        soname = match.group(1)
+
         restore_dir()
 
 
@@ -616,6 +627,8 @@ def makefile(force=False):
             target_arch_temp = target_arch
 
         if repo_type == 'chrome-android':
+            if soname == '':
+                error('Please download prebuilt first')
             # gyp file must be in src dir, and contained in one level of directory
             cmd = 'GYP_DEFINES="$GYP_DEFINES libpeer_target_type=loadable_module OS=android host_os=linux" CHROMIUM_GYP_FILE="prebuilt-%s/%s_target.gyp"' % (target_arch, soname) + ' build/gyp_chromium -Dtarget_arch=' + target_arch_temp
         else:
@@ -671,6 +684,8 @@ def build(force=False):
     elif target_os == 'android' and target_module == 'content_shell':
         cmd_ninja += ' content_shell_apk'
     elif target_os == 'android' and target_module == 'chrome':
+        if soname == '':
+            error('Please download prebuilt first')
         cmd_ninja += ' lib%s_prebuilt' % soname
     else:
         cmd_ninja += ' ' + target_module

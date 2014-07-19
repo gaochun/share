@@ -466,14 +466,7 @@ def setup():
     # repo type specific variables
     if repo_type == 'chrome-android':
         ver = dir_root.split('/')[-1]
-
-        path_gyp = '%s/prebuilt-%s/*.gyp' % (dir_src, target_arch)
-        if os.path.exists(path_gyp):
-            result = execute('ls %s' % path_gyp, return_output=True)
-            file_gyp = result[1].split('/')[-1].strip('\n')
-            pattern = re.compile('(.*)_target')
-            match = pattern.search(file_gyp)
-            soname = match.group(1)
+        soname = _get_soname()
 
     if target_os == 'windows':
         setenv('GYP_DEFINES', 'werror= disable_nacl=1 component=shared_library enable_svg=0 windows_sdk_path="d:/user/ygu5/project/chromium/win_toolchain/win8sdk"')
@@ -603,12 +596,7 @@ def prebuild(force=False):
         cmd = 'cp *.a ' + dir_release
         execute(cmd)
 
-        path_gyp = '%s/prebuilt-%s/*.gyp' % (dir_src, target_arch)
-        result = execute('ls %s' % path_gyp, return_output=True)
-        file_gyp = result[1].split('/')[-1].strip('\n')
-        pattern = re.compile('(.*)_target')
-        match = pattern.search(file_gyp)
-        soname = match.group(1)
+        soname = _get_soname()
 
         restore_dir()
 
@@ -1339,6 +1327,22 @@ def _install_apk(device, apks, force=False):
     if result[0]:
         error('Failed to install packages')
 
+
+def _get_soname():
+    if not repo_type == 'chrome-android':
+        soname = ''
+    else:
+        dir_prebuilt = '%s/prebuilt-%s' % (dir_src, target_arch)
+        result = execute('ls %s/*.gyp' % dir_prebuilt, return_output=True)
+        if result[0] == 0:
+            file_gyp = result[1].split('/')[-1].strip('\n')
+            pattern = re.compile('(.*)_target')
+            match = pattern.search(file_gyp)
+            soname = match.group(1)
+        else:
+            soname = ''
+
+    return soname
 ########## Internal function end ##########
 
 

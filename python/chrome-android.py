@@ -1,5 +1,5 @@
 from util import *
-
+from chromium import ver_info
 
 # apk tool is downloaded from https://code.google.com/p/android-apktool/downloads/list
 # http://connortumbleson.com/apktool/test_versions

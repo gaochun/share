@@ -95,7 +95,7 @@ ver_gyp_defines = '37.0.0.0'
 
 # From this rev, android_gyp is no longer supported. Use gyp_chromium instead.
 rev_no_android_gyp = 262292
-ver_no_android_gyp = '37.0.1847.62'
+ver_no_android_gyp = '34.0.1847.62'
 
 # repo type specific variables
 ver = ''

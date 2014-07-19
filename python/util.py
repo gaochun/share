@@ -599,7 +599,7 @@ def ver_ge(ver_a, ver_b):
             return True
         elif vers_a[index] < vers_b[index]:
             return False
-
+        index += 1
     return True
 
 

@@ -74,19 +74,20 @@ def run():
     if not args.run:
         return
 
-    for phase in phases_all:
-        if phase not in phases:
+    for ver in vers:
+        if ver_info[ver][VER_INFO_INDEX_STAGE] == 'end':
+            info('%s has been marked as built' % ver)
             continue
-        for ver in vers:
-            if phase in ['init', 'sync', 'runhooks']:
+        for phase in ['init', 'sync', 'runhooks']:
+            if phase in phases:
                 execute(_get_cmd(phase, ver), interactive=True)
-                continue
-            for target_arch in target_archs:
-                if phase in ['prebuild', 'makefile', 'build']:
+        for target_arch in target_archs:
+            for phase in ['prebuild', 'makefile', 'build']:
+                if phase in phases:
                     execute(_get_cmd(phase, ver, target_arch), interactive=True)
-                    continue
-                for ver_type in ver_types:
-                    if phase in ['postbuild']:
+            for ver_type in ver_types:
+                for phase in ['postbuild']:
+                    if phase in phases:
                         execute(_get_cmd(phase, ver, target_arch, ver_type), interactive=True)
 
 

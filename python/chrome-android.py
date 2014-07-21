@@ -1,5 +1,8 @@
 from util import *
 from chromium import ver_info
+from chromium import VER_INFO_INDEX_TYPE
+from chromium import VER_INFO_INDEX_STAGE
+from chromium import VER_INFO_INDEX_BUILD_ID
 
 # apk tool is downloaded from https://code.google.com/p/android-apktool/downloads/list
 # http://connortumbleson.com/apktool/test_versions
@@ -23,10 +26,12 @@ def parse_arg():
 examples:
   python %(prog)s --ver 36.0.1985.81 --phase all
 ''')
-    parser.add_argument('--ver', dest='ver', help='version')
-    parser.add_argument('--ver-type', dest='ver_type', help='ver type', default='beta,stable')
-    parser.add_argument('--target-arch', dest='target_arch', help='target arch', default='x86')
+    parser.add_argument('--ver', dest='ver', help='version', default='all')
+    parser.add_argument('--ver-type', dest='ver_type', help='ver type', default='all')
+    parser.add_argument('--target-arch', dest='target_arch', help='target arch', default='all')
     parser.add_argument('--phase', dest='phase', help='phase, including ' + ','.join(phases_all), default='all')
+    parser.add_argument('--check', dest='check', help='check', action='store_true')
+    parser.add_argument('--run', dest='run', help='run', action='store_true')
 
     args = parser.parse_args()
     args_dict = vars(args)
@@ -49,10 +54,13 @@ def setup():
     else:
         vers = args.ver.split(',')
 
-    ver_types = args.ver_type.split(',')
+    if args.ver_type == 'all':
+        ver_types = ['stable', 'beta']
+    else:
+        ver_types = args.ver_type.split(',')
 
     if args.target_arch == 'all':
-        target_archs = ['arm', 'x86']
+        target_archs = ['x86', 'arm']
     else:
         target_archs = args.target_arch.split(',')
 
@@ -63,6 +71,9 @@ def setup():
 
 
 def run():
+    if not args.run:
+        return
+
     for phase in phases_all:
         if phase not in phases:
             continue
@@ -77,6 +88,21 @@ def run():
                 for ver_type in ver_types:
                     if phase in ['postbuild']:
                         execute(_get_cmd(phase, ver, target_arch, ver_type), interactive=True)
+
+
+def check():
+    if not args.check:
+        return
+
+    for target_arch, ver, ver_type in [(target_arch, ver, ver_type) for target_arch in target_archs for ver in vers for ver_type in ver_types]:
+        if ver_info[ver][VER_INFO_INDEX_BUILD_ID] == '':
+            continue
+
+        if ver_type not in ver_info[ver][VER_INFO_INDEX_TYPE]:
+            continue
+
+        if not os.path.exists(dir_server_chromium + '/android-%s-chrome/%s-%s/Chromium.apk' % (target_arch, ver, ver_type)):
+            info('%s,%s,%s has not been built' % (target_arch, ver, ver_type))
 
 
 def _get_cmd(phase, ver, target_arch='', ver_type=''):
@@ -94,4 +120,5 @@ def _get_cmd(phase, ver, target_arch='', ver_type=''):
 if __name__ == "__main__":
     parse_arg()
     setup()
+    check()
     run()

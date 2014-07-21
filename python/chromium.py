@@ -407,23 +407,6 @@ def setup():
         if result[0]:
             error('Could not find ' + cmd + ', and you may use --extra-path to designate it')
 
-    # set target_os
-    if args.target_os:
-        target_os = args.target_os
-    else:
-        found = False
-        f = open('.gclient')
-        lines = f.readlines()
-        f.close()
-        for line in lines:
-            if re.match("target_os = \['android'\]", line):
-                found = True
-                break
-        if found:
-            target_os = 'android'
-        else:
-            target_os = 'linux'
-
     target_arch = args.target_arch
     if not args.target_module:
         if target_os == 'linux':
@@ -447,6 +430,24 @@ def setup():
 
     setenv('GYP_GENERATORS', 'ninja')
     backup_dir(dir_root)
+
+
+    # set target_os
+    if args.target_os:
+        target_os = args.target_os
+    else:
+        found = False
+        f = open('.gclient')
+        lines = f.readlines()
+        f.close()
+        for line in lines:
+            if re.match("target_os = \['android'\]", line):
+                found = True
+                break
+        if found:
+            target_os = 'android'
+        else:
+            target_os = 'linux'
 
     if _need_device():
         if args.devices:
@@ -486,7 +487,7 @@ def setup():
             if not os.getenv('ANDROID_SDK_ROOT'):
                 error('Environment is not well set')
 
-        if rev < rev_gyp_defines or ver_ge(ver_gyp_defines, ver):
+        if rev < rev_gyp_defines or repo_type == 'chrome-android' and ver_ge(ver_gyp_defines, ver):
             setenv('GYP_DEFINES', 'werror= disable_nacl=1 enable_svg=0')
         else:
             setenv('GYP_DEFINES', 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os)

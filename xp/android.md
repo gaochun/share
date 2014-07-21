@@ -1,7 +1,16 @@
 <todo>
 set up http server on android
 am start content shell
+
+* change sleep time
 </todo>
+
+<useful>
+* svc power stayon usb // ensure screen on when charging
+
+
+</useful>
+
 
 <general>
 * adb shell su -- <cmd>
@@ -15,17 +24,18 @@ check route
 *
 setprop dalvik.vm.profiler 1
 
-* 
+setprop persist.sys.language de
+setprop persist.sys.country de
+
+*
 system.buildprop
 
-* 
+*
 dalvik.vm.heapstartsize
 dalvik.vm.heapgrowthlimit: maximum if android:largeHeap is not true in manifest
 dalvik.vm.heapsize: 最大size
 
 heap每次分配的大小跟当时环境有关
-
-* svc power stayon usb // ensure screen on when charging
 
 * build/envsetup.sh
 Set lunch combo: Some combos are added here, while the others added via vendorsetup.sh. For example: device/intel/kvm_initrd_64bit/vendorsetup.sh
@@ -68,7 +78,7 @@ $(info Value of my_module_multilib is '$(my_module_multilib)')
 
 * general makefiles: build/
   baytrail specific makefiles: device/intel/baytrail
-  
+
 </makefile>
 
 <perf>

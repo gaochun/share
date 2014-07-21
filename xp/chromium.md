@@ -1,7 +1,12 @@
 <commit>
 20131119 r236024 Android: Reenable canvas anti-aliasing
 
-</commit>   
+</commit>
+
+git config rietveld.server https://codereview.chromium.org
+*
+fatal: ref HEAD is not a symbolic ref
+solution: git checkout master
 
 Run '/usr/bin/python src/build/util/lastchange.py -o src/build/util/LASTCHANGE' in '/workspace/project/webcatch/project/chromium-linux'
 Run '/usr/bin/python src/build/util/lastchange.py -s src/third_party/WebKit -o src/build/util/LASTCHANGE.blink' in '/workspace/project/webcatch/project/chromium-linux'
@@ -49,7 +54,7 @@ void WebLayerTreeViewImpl::composite() // webkit/compositor_bindings/WebLayerTre
                                         RenderBox::requiresLayer (third_party/WebKit/Source/WebCore/rendering/RenderBox.h) //
                                     RenderHTMLCanvas::requiresLayer (third_party/WebKit/Source/WebCore/rendering/RenderHTMLCanvas.cpp // To decide if a new layer is needed. TODO: it seems this function would be accessed twice, why?
 
- 
+
 
 
 #<font color="red">[/general]</font>#
@@ -57,18 +62,18 @@ void WebLayerTreeViewImpl::composite() // webkit/compositor_bindings/WebLayerTre
 #<font color="red">[switch_flag]</font>#
 
 ## all the switches ##
-content/public/common/content_switches.cc|h  
+content/public/common/content_switches.cc|h
 switches::kEnableAccelerated2dCanvas
 
 ## settings ##
-WebKit/Source/WebCore/page/Settings.cpp  
+WebKit/Source/WebCore/page/Settings.cpp
 m_acceleratedCanvas2dEnabled
 
 ## about flags ##
-chrome/browser/ui/webui/flags_ui.cc  
-chrome/app/generated_resources.grd  
-chrome/browser/about_flags.cc  
-ui/base/ui_base_switches.(cc|h) 
+chrome/browser/ui/webui/flags_ui.cc
+chrome/app/generated_resources.grd
+chrome/browser/about_flags.cc
+ui/base/ui_base_switches.(cc|h)
 
     ContentMain (content/app/content_main.cc)
         main_ContentMainRunnerImpl.initialize (/content/app/content_main_runner.cc)
@@ -86,13 +91,13 @@ gc is triggered by LowMemoryNotification or IdleNotification
 
     TaskManagerView::ButtonPressed // purge_memory_button_ in task manager is pressed
         MemoryPurger::PurgeAll()
-            MemoryPurger::PurgeRenderers         
+            MemoryPurger::PurgeRenderers
                 MemoryPurger::PurgeRendererForHost
                     ChromeViewMsg_PurgeMemory  // IPC_MESSAGE_HANDLER(ChromeViewMsg_PurgeMemory, OnPurgeMemory)
-                        ChromeRenderProcessObserver::OnPurgeMemory         
+                        ChromeRenderProcessObserver::OnPurgeMemory
                             v8::V8::LowMemoryNotification
                                 CollectAllAvailableGarbage
-									Heap::CollectGarbage 
+									Heap::CollectGarbage
 
 *IdleNotification*
 
@@ -105,23 +110,23 @@ gc is triggered by LowMemoryNotification or IdleNotification
                             GarbageCollectionPrologue
                             PerformGarbageCollection
                             GarbageCollectionEpilogue
-                   
-                   
+
+
 **how to expose gc to JS**
 
-Name is after const char* const GCExtension::kSource = "native function gc();"; (v8/src/extensions/gc-extension.cc)  
+Name is after const char* const GCExtension::kSource = "native function gc();"; (v8/src/extensions/gc-extension.cc)
 
 if (FLAG_expose_gc) in v8/src/bootstrapper.cc
 
     V8DOMWindowShell::initContextIfNeeded  // third_party/WebKit/Source/WebCore/bindings/v8/V8DOMWindowShell.cpp, V8 initializes context
-        createNewContext(m_global, 0, 0);    
+        createNewContext(m_global, 0, 0);
             V8DOMWindowShell::createNewContext
                 v8::Context::New(&extensionConfiguration, globalTemplate, global);
                     Bootstrapper::CreateEnvironment
                         Bootstrapper::InstallExtensions
                             Genesis::InstallExtensions
                                 InstallExtension("v8/gc", &extension_states)
-         
+
 gc() in javascript will map to CollectAllGarbage()
 
     checkMemoryUsage  // third_party/WebKit/Source/WebCore/bindings/v8/V8GCController.cpp
@@ -137,14 +142,14 @@ gc() in javascript will map to CollectAllGarbage()
         virtual size_t highMemoryUsageMB() { return 1024; }
 
         // Delta of memory usage growth (vs. last actualMemoryUsageMB()) to force GC when memory usage is high.
-        virtual size_t highUsageDeltaMB() { return 128; }    
-    
+        virtual size_t highUsageDeltaMB() { return 128; }
+
 #<font color="red">[/gc]</font>#
 
 
 #<font color="red">[canvas]</font>#
 ## Create canvas based on SkGpuDevice ##
-    CanvasRenderingContext2D::fillRect 
+    CanvasRenderingContext2D::fillRect
         CanvasRenderingContext2D::drawingContext
             ImageBuffer::ImageBuffer
                 if (renderingMode == Accelerated) SkCanvas* createAcceleratedCanvas (WebKit/Source/WebCore/platform/graphics/skia/ImageBufferSkia.cpp)
@@ -179,7 +184,7 @@ gc() in javascript will map to CollectAllGarbage()
                                     GrGpuGL::onGpuDrawNonIndexed
                                         GL_CALL(DrawArrays(gPrimitiveType2GLMode[type], 0, vertexCount));
             CanvasRenderingContext2D::didDraw  // immediate draw
-                RenderBoxModelObject::contentChanged  
+                RenderBoxModelObject::contentChanged
 
 ## composite ##
     RenderWidget::InvalidationCallback
@@ -234,96 +239,96 @@ DEBUG_GL_CALLS 可以设置成1, 用于调试。
                                             GL_CALL(DrawArrays(gPrimitiveType2GLMode[type], 0, vertexCount));  // third_party/skia/src/gpu/gl/GrGpuGL.cpp (这里适合bp)
                                                 GLES2DrawArrays // gpu/command_buffer/client/gles2_c_lib_autogen.h
                                                     GLES2Implementation::DrawArrays // gpu/command_buffer/client_gles2_implementation.cc
-                                                        DrawArrays // gpu/command_buffer_client/gles2_cmd_helper_autogen.h      
+                                                        DrawArrays // gpu/command_buffer_client/gles2_cmd_helper_autogen.h
 
 
 * render process stack
-GrGpuGL::onGpuDrawNonIndexed() at GrGpuGL.cpp:1,730 0xb0c5d1b1	
-GrGpu::onDrawNonIndexed() at GrGpu.cpp:439 0xb0c1f1c1	
-GrDrawTarget::drawNonIndexed() at GrDrawTarget.cpp:793 0xb0c1b17d	
-GrContext::drawRect() at GrContext.cpp:878 0xb0c10d47	
-GrContext::drawPaint() at GrContext.cpp:672 0xb0c1029e	
-SkGpuDevice::drawPaint() at SkGpuDevice.cpp:643 0xb0c359c1	
-SkCanvas::internalDrawPaint() at SkCanvas.cpp:1,444 0xb0b5c3f7	
-SkCanvas::drawPaint() at SkCanvas.cpp:1,437 0xb0b5c330	
-SkPicturePlayback::draw() at SkPicturePlayback.cpp:625 0xb0ba80bd	
-SkPicture::draw() at SkPicture.cpp:195 0xb0ba5024	
-SkDeferredCanvas::DeferredDevice::flushPending() at SkDeferredCanvas.cpp:519 0xb0c920c7	
-SkDeferredCanvas::DeferredDevice::flush() at SkDeferredCanvas.cpp:526 0xb0c92145	
-SkCanvas::flush() at SkCanvas.cpp:526 0xb0b5998c	
-WebCore::Canvas2DLayerBridge::prepareTexture() at Canvas2DLayerBridge.cpp:134 0xabfe1157	
-WebKit::WebExternalTextureLayerImpl::prepareTexture() at WebExternalTextureLayer.cpp:66 0xaaf015bb	
-WebCore::TextureLayerChromium::update() at TextureLayerChromium.cpp:135 0xac0d3c9d	
-WebCore::CCLayerTreeHost::paintLayerContents() at CCLayerTreeHost.cpp:611 0xac0fb2e7	
-WebCore::CCLayerTreeHost::updateLayers() at CCLayerTreeHost.cpp:493 0xac0fab1e	
-WebCore::CCLayerTreeHost::updateLayers() at CCLayerTreeHost.cpp:459 0xac0fa752	
-WebCore::CCSingleThreadProxy::commitAndComposite() at CCSingleThreadProxy.cpp:315 0xac1296fe	
-WebCore::CCSingleThreadProxy::compositeImmediately() at CCSingleThreadProxy.cpp:288 0xac1295a3	
-WebCore::CCLayerTreeHost::composite() at CCLayerTreeHost.cpp:422 0xac0fa5b2	
-WebKit::WebLayerTreeView::composite() at WebLayerTreeView.cpp:160 0xaaf30d3d	
-WebKit::WebViewImpl::composite() at WebViewImpl.cpp:1,660 0xaaf5ccea	
-RenderWidget::DoDeferredUpdate() at render_widget.cc:987 0xb1f369fd	
-RenderWidget::DoDeferredUpdateAndSendInputAck() at render_widget.cc:808 0xb1f3542a	
-RenderWidget::InvalidationCallback() at render_widget.cc:804 0xb1f353fa	
-base::internal::RunnableAdapter<void () at bind_internal.h:134 0xb1f3cb28	
-base::internal::InvokeHelper<false, void, base::internal::RunnableAdapter<void () at bind_internal.h:870 0xb1f3c74b	
-base::internal::Invoker<1, base::internal::BindState<base::internal::RunnableAdapter<void () at bind_internal.h:1,172 0xb1f3c350	
-base::Callback<void () at callback.h:388 0xb4ecbcc8	
-MessageLoop::RunTask() at message_loop.cc:456 0xb4f05c0d	
-MessageLoop::DeferOrRunPendingTask() at message_loop.cc:468 0xb4f05d06	
-MessageLoop::DoWork() at message_loop.cc:644 0xb4f064a9	
-base::MessagePumpDefault::Run() at message_pump_default.cc:28 0xb4f0e3c6	
-MessageLoop::RunInternal() at message_loop.cc:415 0xb4f05908	
-MessageLoop::RunHandler() at message_loop.cc:388 0xb4f057e1	
-base::RunLoop::Run() at run_loop.cc:45 0xb4f36258	
-MessageLoop::Run() at message_loop.cc:299 0xb4f05122	
-RendererMain() at renderer_main.cc:271 0xb1f492d6	
-content::RunZygote() at content_main_runner.cc:330 0xb19c03bd	
-content::RunNamedProcessTypeMain() at content_main_runner.cc:383 0xb19c057b	
-content::ContentMainRunnerImpl::Run() at content_main_runner.cc:630 0xb19c1218	
-content::ContentMain() at content_main.cc:35 0xb19bfc04	
-ChromeMain() at chrome_main.cc:32 0xb53bdfef	
-main() at chrome_exe_main_gtk.cc:18 0xb53bdfa3	
+GrGpuGL::onGpuDrawNonIndexed() at GrGpuGL.cpp:1,730 0xb0c5d1b1
+GrGpu::onDrawNonIndexed() at GrGpu.cpp:439 0xb0c1f1c1
+GrDrawTarget::drawNonIndexed() at GrDrawTarget.cpp:793 0xb0c1b17d
+GrContext::drawRect() at GrContext.cpp:878 0xb0c10d47
+GrContext::drawPaint() at GrContext.cpp:672 0xb0c1029e
+SkGpuDevice::drawPaint() at SkGpuDevice.cpp:643 0xb0c359c1
+SkCanvas::internalDrawPaint() at SkCanvas.cpp:1,444 0xb0b5c3f7
+SkCanvas::drawPaint() at SkCanvas.cpp:1,437 0xb0b5c330
+SkPicturePlayback::draw() at SkPicturePlayback.cpp:625 0xb0ba80bd
+SkPicture::draw() at SkPicture.cpp:195 0xb0ba5024
+SkDeferredCanvas::DeferredDevice::flushPending() at SkDeferredCanvas.cpp:519 0xb0c920c7
+SkDeferredCanvas::DeferredDevice::flush() at SkDeferredCanvas.cpp:526 0xb0c92145
+SkCanvas::flush() at SkCanvas.cpp:526 0xb0b5998c
+WebCore::Canvas2DLayerBridge::prepareTexture() at Canvas2DLayerBridge.cpp:134 0xabfe1157
+WebKit::WebExternalTextureLayerImpl::prepareTexture() at WebExternalTextureLayer.cpp:66 0xaaf015bb
+WebCore::TextureLayerChromium::update() at TextureLayerChromium.cpp:135 0xac0d3c9d
+WebCore::CCLayerTreeHost::paintLayerContents() at CCLayerTreeHost.cpp:611 0xac0fb2e7
+WebCore::CCLayerTreeHost::updateLayers() at CCLayerTreeHost.cpp:493 0xac0fab1e
+WebCore::CCLayerTreeHost::updateLayers() at CCLayerTreeHost.cpp:459 0xac0fa752
+WebCore::CCSingleThreadProxy::commitAndComposite() at CCSingleThreadProxy.cpp:315 0xac1296fe
+WebCore::CCSingleThreadProxy::compositeImmediately() at CCSingleThreadProxy.cpp:288 0xac1295a3
+WebCore::CCLayerTreeHost::composite() at CCLayerTreeHost.cpp:422 0xac0fa5b2
+WebKit::WebLayerTreeView::composite() at WebLayerTreeView.cpp:160 0xaaf30d3d
+WebKit::WebViewImpl::composite() at WebViewImpl.cpp:1,660 0xaaf5ccea
+RenderWidget::DoDeferredUpdate() at render_widget.cc:987 0xb1f369fd
+RenderWidget::DoDeferredUpdateAndSendInputAck() at render_widget.cc:808 0xb1f3542a
+RenderWidget::InvalidationCallback() at render_widget.cc:804 0xb1f353fa
+base::internal::RunnableAdapter<void () at bind_internal.h:134 0xb1f3cb28
+base::internal::InvokeHelper<false, void, base::internal::RunnableAdapter<void () at bind_internal.h:870 0xb1f3c74b
+base::internal::Invoker<1, base::internal::BindState<base::internal::RunnableAdapter<void () at bind_internal.h:1,172 0xb1f3c350
+base::Callback<void () at callback.h:388 0xb4ecbcc8
+MessageLoop::RunTask() at message_loop.cc:456 0xb4f05c0d
+MessageLoop::DeferOrRunPendingTask() at message_loop.cc:468 0xb4f05d06
+MessageLoop::DoWork() at message_loop.cc:644 0xb4f064a9
+base::MessagePumpDefault::Run() at message_pump_default.cc:28 0xb4f0e3c6
+MessageLoop::RunInternal() at message_loop.cc:415 0xb4f05908
+MessageLoop::RunHandler() at message_loop.cc:388 0xb4f057e1
+base::RunLoop::Run() at run_loop.cc:45 0xb4f36258
+MessageLoop::Run() at message_loop.cc:299 0xb4f05122
+RendererMain() at renderer_main.cc:271 0xb1f492d6
+content::RunZygote() at content_main_runner.cc:330 0xb19c03bd
+content::RunNamedProcessTypeMain() at content_main_runner.cc:383 0xb19c057b
+content::ContentMainRunnerImpl::Run() at content_main_runner.cc:630 0xb19c1218
+content::ContentMain() at content_main.cc:35 0xb19bfc04
+ChromeMain() at chrome_main.cc:32 0xb53bdfef
+main() at chrome_exe_main_gtk.cc:18 0xb53bdfa3
 
 
 
-* GPU process stack  
+* GPU process stack
 glDrawArrays(mode, first, count); // 最后调用gl的函数， gpu/command_buffer/service/gles2_cmd_decoder.cc
-gpu::gles2::GLES2DecoderImpl::DoDrawArrays() at gles2_cmd_decoder.cc:5,516 0xa97b4220	
-gpu::gles2::GLES2DecoderImpl::HandleDrawArrays() at gles2_cmd_decoder.cc:5,593 0xa97b467b	
-gpu::gles2::GLES2DecoderImpl::DoCommand() at gles2_cmd_decoder.cc:3,213 0xa97aa702	
-gpu::CommandParser::ProcessCommand() at cmd_parser.cc:72 0xa9793643	
-gpu::GpuScheduler::PutChanged() at gpu_scheduler.cc:81 0xa97d1ec7	
-GpuCommandBufferStub::PutChanged() at gpu_command_buffer_stub.cc:640 0xb1e49234	
-base::internal::RunnableAdapter<void () at bind_internal.h:134 0xb1e50bfe	
-base::internal::InvokeHelper<false, void, base::internal::RunnableAdapter<void () at bind_internal.h:870 0xb1e500dc	
-base::internal::Invoker<1, base::internal::BindState<base::internal::RunnableAdapter<void () at bind_internal.h:1,172 0xb1e4efa5	
-base::Callback<void () at callback.h:388 0xa97944da	
-gpu::CommandBufferService::Flush() at command_buffer_service.cc:88 0xa9793cf8	
-GpuCommandBufferStub::OnAsyncFlush() at gpu_command_buffer_stub.cc:525 0xb1e48a99	
-DispatchToMethod<GpuCommandBufferStub, void () at tuple.h:553 0xb1e4d0e0	
-GpuCommandBufferMsg_AsyncFlush::Dispatch<GpuCommandBufferStub, GpuCommandBufferStub, void () at gpu_messages.h:402 0xb1e4afb1	
-GpuCommandBufferStub::OnMessageReceived() at gpu_command_buffer_stub.cc:153 0xb1e45e0a	
-MessageRouter::RouteMessage() at message_router.cc:47 0xb1e89936	
-GpuChannel::HandleMessage() at gpu_channel.cc:434 0xb1e3abf9	
-base::internal::RunnableAdapter<void () at bind_internal.h:134 0xb1e40068	
-base::internal::InvokeHelper<true, void, base::internal::RunnableAdapter<void () at bind_internal.h:882 0xb1e3f75d	
-base::internal::Invoker<1, base::internal::BindState<base::internal::RunnableAdapter<void () at bind_internal.h:1,172 0xb1e3e945	
-base::Callback<void () at callback.h:388 0xb4f3bcc8	
-MessageLoop::RunTask() at message_loop.cc:456 0xb4f75c0d	
-MessageLoop::DeferOrRunPendingTask() at message_loop.cc:468 0xb4f75d06	
-MessageLoop::DoWork() at message_loop.cc:644 0xb4f764a9	
-base::MessagePumpDefault::Run() at message_pump_default.cc:28 0xb4f7e3c6	
-MessageLoop::RunInternal() at message_loop.cc:415 0xb4f75908	
-MessageLoop::RunHandler() at message_loop.cc:388 0xb4f757e1	
-base::RunLoop::Run() at run_loop.cc:45 0xb4fa6258	
-MessageLoop::Run() at message_loop.cc:299 0xb4f75122	
-GpuMain() at gpu_main.cc:229 0xb1ec5e79	
-content::RunNamedProcessTypeMain() at content_main_runner.cc:375 0xb1a3053c	
-content::ContentMainRunnerImpl::Run() at content_main_runner.cc:630 0xb1a31218	
-content::ContentMain() at content_main.cc:35 0xb1a2fc04	
-ChromeMain() at chrome_main.cc:32 0xb542dfef	
-main() at chrome_exe_main_gtk.cc:18 0xb542dfa3	
+gpu::gles2::GLES2DecoderImpl::DoDrawArrays() at gles2_cmd_decoder.cc:5,516 0xa97b4220
+gpu::gles2::GLES2DecoderImpl::HandleDrawArrays() at gles2_cmd_decoder.cc:5,593 0xa97b467b
+gpu::gles2::GLES2DecoderImpl::DoCommand() at gles2_cmd_decoder.cc:3,213 0xa97aa702
+gpu::CommandParser::ProcessCommand() at cmd_parser.cc:72 0xa9793643
+gpu::GpuScheduler::PutChanged() at gpu_scheduler.cc:81 0xa97d1ec7
+GpuCommandBufferStub::PutChanged() at gpu_command_buffer_stub.cc:640 0xb1e49234
+base::internal::RunnableAdapter<void () at bind_internal.h:134 0xb1e50bfe
+base::internal::InvokeHelper<false, void, base::internal::RunnableAdapter<void () at bind_internal.h:870 0xb1e500dc
+base::internal::Invoker<1, base::internal::BindState<base::internal::RunnableAdapter<void () at bind_internal.h:1,172 0xb1e4efa5
+base::Callback<void () at callback.h:388 0xa97944da
+gpu::CommandBufferService::Flush() at command_buffer_service.cc:88 0xa9793cf8
+GpuCommandBufferStub::OnAsyncFlush() at gpu_command_buffer_stub.cc:525 0xb1e48a99
+DispatchToMethod<GpuCommandBufferStub, void () at tuple.h:553 0xb1e4d0e0
+GpuCommandBufferMsg_AsyncFlush::Dispatch<GpuCommandBufferStub, GpuCommandBufferStub, void () at gpu_messages.h:402 0xb1e4afb1
+GpuCommandBufferStub::OnMessageReceived() at gpu_command_buffer_stub.cc:153 0xb1e45e0a
+MessageRouter::RouteMessage() at message_router.cc:47 0xb1e89936
+GpuChannel::HandleMessage() at gpu_channel.cc:434 0xb1e3abf9
+base::internal::RunnableAdapter<void () at bind_internal.h:134 0xb1e40068
+base::internal::InvokeHelper<true, void, base::internal::RunnableAdapter<void () at bind_internal.h:882 0xb1e3f75d
+base::internal::Invoker<1, base::internal::BindState<base::internal::RunnableAdapter<void () at bind_internal.h:1,172 0xb1e3e945
+base::Callback<void () at callback.h:388 0xb4f3bcc8
+MessageLoop::RunTask() at message_loop.cc:456 0xb4f75c0d
+MessageLoop::DeferOrRunPendingTask() at message_loop.cc:468 0xb4f75d06
+MessageLoop::DoWork() at message_loop.cc:644 0xb4f764a9
+base::MessagePumpDefault::Run() at message_pump_default.cc:28 0xb4f7e3c6
+MessageLoop::RunInternal() at message_loop.cc:415 0xb4f75908
+MessageLoop::RunHandler() at message_loop.cc:388 0xb4f757e1
+base::RunLoop::Run() at run_loop.cc:45 0xb4fa6258
+MessageLoop::Run() at message_loop.cc:299 0xb4f75122
+GpuMain() at gpu_main.cc:229 0xb1ec5e79
+content::RunNamedProcessTypeMain() at content_main_runner.cc:375 0xb1a3053c
+content::ContentMainRunnerImpl::Run() at content_main_runner.cc:630 0xb1a31218
+content::ContentMain() at content_main.cc:35 0xb1a2fc04
+ChromeMain() at chrome_main.cc:32 0xb542dfef
+main() at chrome_exe_main_gtk.cc:18 0xb542dfa3
 
 #<font color="red">[/canvas]</font>#
 
@@ -343,7 +348,7 @@ main() at chrome_exe_main_gtk.cc:18 0xb542dfa3
                     Canvas2DLayerBridge::create  // third_party/WebKit/Source/WebCore/platform/graphics/chromium/Canvas2DLayerBridge.cpp
                     anvas2DLayerBridge::skCanvas
                         new SkDeferredCanvas
- 
+
 #<font color="red">[/deferred_canvas]</font>#
 
 #<font color="red">[FPS]</font>#
@@ -365,20 +370,20 @@ chrome/test/perf/rendering/throughput_tests.cc 计算FPS，是拿总帧数/总�
                 TaskManagerRendererResource::Refresh  // (*iter)->Refresh();
                     render_view_host_->Send(new ChromeViewMsg_GetFPS(render_view_host_->GetRoutingID())); // renderer process will send back fps
                         ChromeRenderViewObserver::OnGetFPS // IPC_MESSAGE_HANDLER(ChromeViewMsg_GetFPS, OnGetFPS)，chrome/renderer/chrome_render_view_observer.cc
-                            float fps = (render_view()->GetFilteredTimePerFrame() > 0.0f)?1.0f / render_view()->GetFilteredTimePerFrame() : 0.0f; 
+                            float fps = (render_view()->GetFilteredTimePerFrame() > 0.0f)?1.0f / render_view()->GetFilteredTimePerFrame() : 0.0f;
                                 GetFilteredTimePerFrame
                                     filtered_time_per_frame
                                         return filtered_time_per_frame_ // 这个值在DoDeferredUpdate时生成，不是那么平均。
-                            Send(new ChromeViewHostMsg_FPS(routing_id(), fps)); 
+                            Send(new ChromeViewHostMsg_FPS(routing_id(), fps));
                                 ChromeRenderMessageFilter::OnFPS // IPC_MESSAGE_HANDLER(ChromeViewHostMsg_FPS, OnFPS), chrome/browser/render_host/chrome_render_message_filter.cc
                                     TaskManagerModel::NotifyFPS
-                                        TaskManagerRendererResource::NotifyFPS  
+                                        TaskManagerRendererResource::NotifyFPS
 
 
 ## RequestionAnimationFrame ##
-    define MinimumAnimationInterval 0.015 // 
+    define MinimumAnimationInterval 0.015 //
     third_party/.../WebCore/dom/ScriptedAnimationController.cpp
-        ScriptedAnimationController::scheduleAnimation() 
+        ScriptedAnimationController::scheduleAnimation()
             double scheduleDelay = max<double>(MinimumAnimationInterval - (currentTime() - m_lastAnimationFrameTime), 0);
             m_animationTimer.startOneShot(scheduleDelay);
 
@@ -422,9 +427,9 @@ chrome/test/perf/rendering/throughput_tests.cc 计算FPS，是拿总帧数/总�
                                 CCSingleThreadProxy::doComposite
                                     CCLayerTreeHostImpl::drawLayers
                                         m_fpsCounter->markBeginningOfFrame(currentTime()); // cc/CCFrameRateCounter.cpp
-                                        CCHeadsUpDisplayLayerImpl::updateHudTexture 
+                                        CCHeadsUpDisplayLayerImpl::updateHudTexture
                                             CCHeadsUpDisplayLayerImpl::drawHudContents
-                                                CCHeadsUpDisplayLayerImpl::drawFPSCounter // 真正画fps counter。用了markBeginningOfFrame()里面记录的值，是真正的平均值，只是硬件加速的值。                                    
+                                                CCHeadsUpDisplayLayerImpl::drawFPSCounter // 真正画fps counter。用了markBeginningOfFrame()里面记录的值，是真正的平均值，只是硬件加速的值。
                             CCLayerTreeHostImpl::swapBuffers
                                 m_fpsCounter->markEndOfFrame();
                                 CCRendererGL::swapBuffers
@@ -432,8 +437,8 @@ chrome/test/perf/rendering/throughput_tests.cc 计算FPS，是拿总帧数/总�
                                         WebGraphicsContext3DCommandBufferImpl::OnSwapBuffersComplete // content/common/gpu/client/webgraphicscontext3d_command_buffer_impl.cc.  command_buffer_->Echo(base::Bind(&WebGraphicsContext3DCommandBufferImpl::OnSwapBuffersComplete
                                             RenderViewImpl::OnViewContextSwapBuffersComplete  // MessageLoop::current()->PostTask(FROM_HERE, base::Bind(&WGC3DSwapClient::OnViewContextSwapBuffersComplete, swap_client_));
                                                 RenderWidget::OnSwapBuffersComplete
-                                                    RenderWidget::DoDeferredUpdateAndSendInputAck 
-                                                        RenderWidget::DoDeferredUpdate				
+                                                    RenderWidget::DoDeferredUpdateAndSendInputAck
+                                                        RenderWidget::DoDeferredUpdate
 
                             CCSingleThreadProxy::didSwapFrame  // if (m_nextFrameIsNewlyCommittedFrame)
                                 didCommitAndDrawFrame

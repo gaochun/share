@@ -9,6 +9,9 @@ dryrun = False
 phases_all = ['aosp-prebuild', 'aosp-build', 'aosp-flash', 'chromium-test']
 phases = []
 
+dir_aosp = ''
+dir_chromium = ''
+
 
 def handle_option():
     global args, args_dict
@@ -28,7 +31,7 @@ examples:
     parser.add_argument('--target-arch', dest='target_arch', help='target arch, such as x86, x86_64', default='x86_64')
     parser.add_argument('--target-device-type', dest='target_device_type', help='target device type, such as baytrail, generic', default='baytrail')
     parser.add_argument('--dir-aosp', dest='dir_aosp', help='dir for aosp', default='aosp-stable')
-    parser.add_argument('--dir-chromium', dest='dir_chromium', help='dir for chromium', default='chromium-android-test')
+    parser.add_argument('--dir-chromium', dest='dir_chromium', help='dir for chromium', default='chromium-android-x64')
     parser.add_argument('--phase', dest='phase', help='phase, including ' + ','.join(phases_all), default='all')
 
     args = parser.parse_args()
@@ -41,15 +44,18 @@ examples:
 
 def setup():
     global target_archs, target_devices_type, phases
+    global dir_aosp, dir_chromium
 
     backup_dir(dir_project)
+    dir_aosp = args.dir_aosp
+    dir_chromium = args.dir_chromium
 
     pkgs = ['android-tools-adb']
     for pkg in pkgs:
         if not package_installed(pkg):
             error('You need to install package ' + pkg)
 
-    projects = ['aosp-stable', 'chromium-android-test', 'depot_tools', 'share']
+    projects = ['depot_tools', 'share']
     for project in projects:
         if not os.path.exists(project):
             error('You need to put project ' + project + ' into ' + dir_project)
@@ -70,8 +76,8 @@ def setup():
     else:
         target_devices_type = args.target_device_type.split(',')
 
-    copy_file(file_aosp, args.dir_aosp, is_sylk=True)
-    copy_file(file_chromium, args.dir_chromium, is_sylk=True)
+    copy_file(file_aosp, dir_aosp, is_sylk=True)
+    copy_file(file_chromium, dir_chromium, is_sylk=True)
 
     if args.phase == 'all':
         phases = phases_all
@@ -83,27 +89,35 @@ def test():
     cmd_aosp = python_aosp + ' --extra-path=/workspace/project/depot_tools '
 
     if 'aosp-prebuild' in phases:
-        backup_dir(args.dir_aosp)
+        if not os.path.exists(dir_aosp):
+            error(dir_aosp + ' does not exist')
+        backup_dir(dir_aosp)
         cmd = cmd_aosp + '--sync aosp --patch --remove-out'
         execute(cmd, interactive=True, abort=True, dryrun=dryrun)
         restore_dir()
 
     if 'aosp-build' in phases:
+        if not os.path.exists(dir_aosp):
+            error(dir_aosp + ' does not exist')
         for arch in target_archs:
-            backup_dir(args.dir_aosp)
+            backup_dir(dir_aosp)
             cmd = cmd_aosp + '--target-arch %s --target-device-type %s --build --backup' % (arch, args.target_device_type)
             execute(cmd, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
 
     for arch in target_archs:
         if 'aosp-flash' in phases:
-            backup_dir(args.dir_aosp)
+            if not os.path.exists(dir_aosp):
+                error(dir_aosp + ' does not exist')
+            backup_dir(dir_aosp)
             cmd = cmd_aosp + '--target-arch %s --target-device-type %s --flash-image' % (arch, args.target_device_type)
             execute(cmd, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
 
         if 'chromium-test' in phases:
-            backup_dir(args.dir_chromium)
+            if not os.path.exists(dir_chromium):
+                error(dir_chromium + ' does not exist')
+            backup_dir(dir_chromium)
             execute(python_chromium + ' --extra-path=/workspace/project/depot_tools --target-arch %s --repo-type x64 --sync --runhooks --build --test-run --test-formal ' % arch, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
 

@@ -2,9 +2,7 @@
 
 from util import *
 
-# crontab -e
-# */30 * * * * python /workspace/project/share/python/server.py
-
+# run with --cron
 # set automatic login
 
 cb_interval = {

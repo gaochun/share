@@ -26,7 +26,10 @@ majorver_info = {
 }
 MAJORVER_INFO_INDEX_REV = 0
 
+# stable: com.android.chrome, beta: com.chrome.beta
 ver_info = {
+    '36.0.1985.128': ['stable', 'end', ['bfa72190-1d52-47be-a7ff-4ad5e683992c', '8a5361bf-31af-4d29-93e2-145ec8e99275']],
+    '36.0.1985.94': ['beta', 'start', ['ce2eeca6-ba35-4dd7-8964-97712a7c8969', '']],
     '36.0.1985.81': ['beta', 'start', ['8c15751f-fe2e-4570-92e0-8f447ae99112', 'df52e853-9c96-41f6-b3b9-7d2e615c356f']],
     '36.0.1985.65':  ['beta', 'start', ['757d2126-de53-4925-b2c4-9c8fe2bd3fea', 'b44048e8-d452-4535-91f2-ac85eff04175']],
     '35.0.1916.141': ['stable', 'start', ['b63d76a9-a8e4-4d2a-ad91-49fe0748a184', '283288f0-3c24-4344-b47a-55088763e809']],
@@ -708,7 +711,11 @@ def postbuild(force=False):
 
         dir_ver = dir_server_chromium + '/android-' + target_arch + '-chrome/' + ver + '-' + ver_type
         dir_chrome = dir_ver + '/Chrome'
-        dir_chrome_lib = dir_chrome + '/lib/%s' % target_arch
+        if target_arch == 'arm':
+            target_arch_temp = 'armeabi-v7a'
+        else:
+            target_arch_temp = target_arch
+        dir_chrome_lib = dir_chrome + '/lib/%s' % target_arch_temp
 
         # unpack
         execute('java -jar %s/apktool.jar d %s/Chrome.apk -o %s' % (dir_tool, dir_ver, dir_chrome), interactive=True)
@@ -720,10 +727,10 @@ def postbuild(force=False):
         file_chrome = result[1].split('/')[-1].strip('\n')
         backup_dir(dir_out + '/Release/lib')
         ## backup the one with symbol
-        execute('cp -f lib*prebuilt.so %s/%s' % (dir_ver, file_chrome), interactive=True, dryrun=True)
+        execute('cp -f lib*prebuilt.so %s/%s' % (dir_ver, file_chrome), interactive=True, dryrun=False)
         ## copy, strip and replace
-        execute('cp -f lib*prebuilt.so %s' % (file_chrome), interactive=True, dryrun=True)
-        execute(dir_tool + '/' + target_arch_strip[target_arch] + ' ' + file_chrome, dryrun=True)
+        execute('cp -f lib*prebuilt.so %s' % (file_chrome), interactive=True, dryrun=False)
+        execute(dir_tool + '/' + target_arch_strip[target_arch] + ' ' + file_chrome, dryrun=False)
         execute('cp -f %s %s/' % (file_chrome, dir_chrome_lib), interactive=True)
         restore_dir()
 

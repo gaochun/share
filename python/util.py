@@ -179,18 +179,20 @@ def get_symbolic_link_dir():
     return os.path.split(script_path)[0]
 
 
-def backup_dir(dir_new):
+def backup_dir(dir_new, verbose=False):
     global dir_stack
     dir_stack.append(os.getcwd())
     os.chdir(dir_new)
-    info('Switched to ' + dir_new)
+    if verbose:
+        info('Switched to ' + dir_new)
 
 
-def restore_dir():
+def restore_dir(verbose=False):
     global dir_stack
     dir_old = dir_stack.pop()
     os.chdir(dir_old)
-    info('Switched to ' + dir_old)
+    if verbose:
+        info('Switched to ' + dir_old)
 
 
 def package_installed(pkg):

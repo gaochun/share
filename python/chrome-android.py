@@ -3,6 +3,7 @@ from chromium import ver_info
 from chromium import VER_INFO_INDEX_TYPE
 from chromium import VER_INFO_INDEX_STAGE
 from chromium import VER_INFO_INDEX_BUILD_ID
+from chromium import target_arch_index
 
 # apk tool is downloaded from https://code.google.com/p/android-apktool/downloads/list
 # http://connortumbleson.com/apktool/test_versions
@@ -96,14 +97,16 @@ def check():
         return
 
     for target_arch, ver, ver_type in [(target_arch, ver, ver_type) for target_arch in target_archs for ver in vers for ver_type in ver_types]:
-        if ver_info[ver][VER_INFO_INDEX_BUILD_ID] == '':
+        if ver_info[ver][VER_INFO_INDEX_BUILD_ID][target_arch_index[target_arch]] == '':
             continue
 
         if ver_type not in ver_info[ver][VER_INFO_INDEX_TYPE]:
             continue
 
-        if not os.path.exists(dir_server_chromium + '/android-%s-chrome/%s-%s/Chromium.apk' % (target_arch, ver, ver_type)):
-            info('%s,%s,%s has not been built' % (target_arch, ver, ver_type))
+        backup_dir(dir_server_chromium + '/android-%s-chrome/%s-%s' % (target_arch, ver, ver_type))
+        if not os.path.exists('Chromium.apk') or not os.path.exists('Chrome.apk') or ver_ge(ver, '33.0.1750.136') and execute('ls *.so', show_command=False)[0]:
+            info('%s,%s,%s is not complete' % (target_arch, ver, ver_type))
+        restore_dir()
 
 
 def _get_cmd(phase, ver, target_arch='', ver_type=''):

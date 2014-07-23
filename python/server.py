@@ -5,10 +5,12 @@ from util import *
 # run with --cron
 # set automatic login
 
+interval_cron = 30  # minutes
+
 cb_interval = {
     'update_share': 1800,
-    'test_x64_all': 24 * 3600,
-    'test_x64_aosp_build': 24 * 3600,
+    'test_x64_all': 24 * 3600 - interval_cron * 60,
+    'test_x64_aosp_build': 24 * 3600 - interval_cron * 60,
 }
 
 
@@ -46,7 +48,7 @@ def cron():
     else:
         execute('sudo cp ' + file_cron + ' /tmp/temp', interactive=True)
         execute('sudo chmod 777 /tmp/temp', interactive=True)
-        execute('sudo echo "*/30 * * * * python /workspace/project/share/python/server.py --start" >> /tmp/temp', interactive=True)
+        execute('sudo echo "*/%s * * * * python /workspace/project/share/python/server.py --start" >> /tmp/temp' % interval_cron, interactive=True)
         execute('sudo chmod 600 /tmp/temp', interactive=True)
         execute('sudo mv /tmp/temp ' + file_cron, interactive=True)
 

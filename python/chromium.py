@@ -95,7 +95,7 @@ rev_envsetup = 252034
 
 # Form this rev, envsetup would no longer set OS=android, we need to define it using GYP_DEFINES='OS=android'
 rev_gyp_defines = 260548
-ver_gyp_defines = '37.0.0.0'
+ver_gyp_defines = '34.0.0.0'
 
 # From this rev, android_gyp is no longer supported. Use gyp_chromium instead.
 rev_no_android_gyp = 262292

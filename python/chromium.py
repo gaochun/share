@@ -487,7 +487,7 @@ def setup():
             backup_dir(dir_src)
             shell_source('build/android/envsetup.sh --target-arch=' + target_arch, use_bash=True)
             restore_dir()
-            if not os.getenv('ANDROID_SDK_ROOT'):
+            if not getenv('ANDROID_SDK_ROOT'):
                 error('Environment is not well set')
 
         if rev < rev_gyp_defines or repo_type == 'chrome-android' and ver_ge(ver_gyp_defines, ver):
@@ -502,7 +502,7 @@ http_proxy=%(http_proxy)s
 https_proxy=%(http_proxy)s
 no_proxy=%(no_proxy)s
 ========== Configuration End ==========
-    ''' % {'path': os.getenv('PATH'), 'http_proxy': os.getenv('http_proxy'), 'https_proxy': os.getenv('https_proxy'), 'no_proxy': os.getenv('no_proxy')}
+    ''' % {'path': getenv('PATH'), 'http_proxy': getenv('http_proxy'), 'https_proxy': getenv('https_proxy'), 'no_proxy': getenv('no_proxy')}
 
     # Setup test_suite
     for command in _setup_list('test_command'):
@@ -623,7 +623,8 @@ def makefile(force=False):
             if soname == '':
                 error('Please download prebuilt first')
             # gyp file must be in src dir, and contained in one level of directory
-            cmd = 'GYP_DEFINES="$GYP_DEFINES libpeer_target_type=loadable_module OS=android host_os=linux" CHROMIUM_GYP_FILE="prebuilt-%s/%s_target.gyp"' % (target_arch, soname) + ' build/gyp_chromium -Dtarget_arch='
+
+            cmd = 'GYP_DEFINES="%s libpeer_target_type=loadable_module host_os=linux" CHROMIUM_GYP_FILE="prebuilt-%s/%s_target.gyp"' % (getenv('GYP_DEFINES'), target_arch, soname) + ' build/gyp_chromium -Dtarget_arch='
             if ver_ge(ver_no_android_gyp, ver):
                 cmd += target_arch
             else:

@@ -103,10 +103,18 @@ def check():
         if ver_type not in ver_info[ver][VER_INFO_INDEX_TYPE]:
             continue
 
-        backup_dir(dir_server_chromium + '/android-%s-chrome/%s-%s' % (target_arch, ver, ver_type))
-        if not os.path.exists('Chromium.apk') or not os.path.exists('Chrome.apk') or ver_ge(ver, '33.0.1750.136') and execute('ls *.so', show_command=False)[0]:
+        is_complete = True
+        dir_server_ver = dir_server_chromium + '/android-%s-chrome/%s-%s' % (target_arch, ver, ver_type)
+        if not os.path.exists(dir_server_ver):
+            is_complete = False
+        else:
+            backup_dir(dir_server_ver)
+            if not os.path.exists('Chromium.apk') or not os.path.exists('Chrome.apk') or ver_ge(ver, '33.0.1750.136') and execute('ls *.so', show_command=False)[0]:
+                is_complete = False
+            restore_dir()
+
+        if not is_complete:
             info('%s,%s,%s is not complete' % (target_arch, ver, ver_type))
-        restore_dir()
 
 
 def _get_cmd(phase, ver, target_arch='', ver_type=''):

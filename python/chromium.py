@@ -1030,7 +1030,7 @@ def _test_run_device(index_device, results):
     if args.test_formal:
         # Backup
         backup_dir(dir_test)
-        backup_smb('//ubuntu-ygu5-02.sh.intel.com/chromium64', 'test', timestamp + '-' + device_name)
+        backup_smb('//wp-03.sh.intel.com/chromium-x64', 'test', timestamp + '-' + device_name)
         restore_dir()
 
         # Send mail

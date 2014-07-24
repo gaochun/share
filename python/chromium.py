@@ -1295,6 +1295,21 @@ def _get_hash():
         error('_get_hash should not be called for REV_MAX')
 
     backup_dir(dir_src)
+    hash_temp = _get_hash_one()
+    if hash_temp != 0:
+        return hash_temp
+
+    execute('git fetch')
+    hash_temp = _get_hash_one()
+    restore_dir()
+    if hash_temp != 0:
+        return hash_temp
+
+    error('Could not find hash for revision ' + str(rev))
+
+
+# Return 0 if failed to find
+def _get_hash_one():
     execute('git log origin master >git_log')
     f = open('git_log')
     lines = f.readlines()
@@ -1314,9 +1329,7 @@ def _get_hash():
             if rev_temp == rev:
                 return hash_temp
             elif rev_temp < rev:
-                error('Could not find hash for rev ' + rev)
-
-    restore_dir()
+                return 0
 
 
 def _install_apk(device, apks, force=False):

@@ -1,3 +1,4 @@
+import urllib2
 from util import *
 from chromium import ver_info
 from chromium import VER_INFO_INDEX_TYPE
@@ -96,6 +97,10 @@ def check():
     if not args.check:
         return
 
+    _check_track()
+
+    # Check how many builds left
+    combos_incomplete = []
     for target_arch, ver, ver_type in [(target_arch, ver, ver_type) for target_arch in target_archs for ver in vers for ver_type in ver_types]:
         if ver_info[ver][VER_INFO_INDEX_BUILD_ID][target_arch_index[target_arch]] == '':
             continue
@@ -103,18 +108,60 @@ def check():
         if ver_type not in ver_info[ver][VER_INFO_INDEX_TYPE]:
             continue
 
-        is_complete = True
         dir_server_ver = dir_server_chromium + '/android-%s-chrome/%s-%s' % (target_arch, ver, ver_type)
         if not os.path.exists(dir_server_ver):
-            is_complete = False
+            combos_incomplete.append((ver, ver_type, target_arch))
         else:
             backup_dir(dir_server_ver)
-            if not os.path.exists('Chromium.apk') or not os.path.exists('Chrome.apk') or ver_ge(ver, '33.0.1750.136') and execute('ls *.so', show_command=False)[0]:
-                is_complete = False
+            if not os.path.exists('Chromium.apk') or not os.path.exists('Chrome.apk') or ver_ge(ver, '34.0.0.0') and execute('ls *.so', show_command=False)[0]:
+                combos_incomplete.append((ver, ver_type, target_arch))
             restore_dir()
 
-        if not is_complete:
-            info('%s,%s,%s is not complete' % (target_arch, ver, ver_type))
+    if len(combos_incomplete) > 0:
+        info('The following builds are not complete: ' + str(combos_incomplete))
+    else:
+        info('All the tracked versions are complete')
+
+    # Check if some stage is marked wrongly
+    vers_incomplete = []
+    for combo in combos_incomplete:
+        ver = combo[0]
+        if ver not in vers_incomplete:
+            vers_incomplete.append(ver)
+
+    vers_stage_error = []
+    for ver in ver_info:
+        if ver_info[ver][VER_INFO_INDEX_STAGE] == 'end' and ver in vers_incomplete:
+            vers_stage_error.append(ver)
+
+    if len(vers_stage_error) > 0:
+        info('The following versions has incorrect stage: ' + ','.join(vers_stage_error))
+    else:
+        info('The stage of all versions are marked correctly')
+
+
+def _check_track():
+    url = 'http://www.hiapphere.org/app-chrome_beta'
+    try:
+        u = urllib2.urlopen(url)
+    except BadStatusLine:
+        warning('Failed to open ' + url)
+        return
+
+    html = u.read()
+    pattern = re.compile('Version(\d+\.\d+\.\d+\.\d+)')
+    vers_exist = pattern.findall(html)
+    vers_track = ver_info.keys()
+    vers_miss = []
+    ver_min = vers_track[-1]
+    for ver in vers_exist:
+        if ver_ge(ver, ver_min) and ver not in vers_track:
+            vers_miss.append(ver)
+
+    if len(vers_miss) > 0:
+        info('Please add following versions to ver_info: ' + ','.join(vers_miss))
+    else:
+        info('All existed versions have been fully tracked')
 
 
 def _get_cmd(phase, ver, target_arch='', ver_type=''):

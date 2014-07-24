@@ -6,7 +6,7 @@ target_archs = ''
 target_devices_type = ''
 dryrun = False
 
-phases_all = ['aosp-prebuild', 'aosp-build', 'aosp-flash', 'chromium-test']
+phases_all = ['aosp-prebuild', 'aosp-build', 'aosp-flash', 'chromium-x64']
 phases = []
 
 dir_aosp = ''
@@ -114,7 +114,7 @@ def test():
             execute(cmd, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
 
-        if 'chromium-test' in phases:
+        if 'chromium-x64' in phases:
             if not os.path.exists(dir_chromium):
                 error(dir_chromium + ' does not exist')
             backup_dir(dir_chromium)

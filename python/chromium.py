@@ -29,7 +29,8 @@ MAJORVER_INFO_INDEX_REV = 0
 # stable: com.android.chrome, beta: com.chrome.beta
 ver_info = {
     '36.0.1985.128': ['stable', 'end', ['bfa72190-1d52-47be-a7ff-4ad5e683992c', '8a5361bf-31af-4d29-93e2-145ec8e99275']],
-    '36.0.1985.94': ['beta', 'start', ['ce2eeca6-ba35-4dd7-8964-97712a7c8969', '']],
+    '36.0.1985.122': ['stable', 'start', ['', '32de7f58-692c-477f-acde-6d52bda05505']],
+    '36.0.1985.94': ['beta', 'start', ['', 'ce2eeca6-ba35-4dd7-8964-97712a7c8969']],
     '36.0.1985.81': ['beta', 'end', ['8c15751f-fe2e-4570-92e0-8f447ae99112', 'df52e853-9c96-41f6-b3b9-7d2e615c356f']],
     '36.0.1985.65':  ['beta', 'end', ['757d2126-de53-4925-b2c4-9c8fe2bd3fea', 'b44048e8-d452-4535-91f2-ac85eff04175']],
     '35.0.1916.141': ['stable', 'start', ['b63d76a9-a8e4-4d2a-ad91-49fe0748a184', '283288f0-3c24-4344-b47a-55088763e809']],
@@ -49,6 +50,7 @@ ver_info = {
     '34.0.1847.76': ['beta', 'start', ['f8480155-7e4b-49dc-907a-04124848695d', 'a43bcb82-b121-41b9-a8be-60ce309171ca']],
     '33.0.1750.166': ['stable', 'end', ['bc468ba0-d60e-44a7-ab8a-46a92af3eb95', '0e5b0784-1010-4ca5-9efc-2697ba93a6c8']],
     '34.0.1847.62': ['beta', 'start', ['f7e92034-f602-4e2d-a483-8b5f034ab199', '2efbe11b-f0b2-4e6d-9374-b1906e68c782']],
+    '34.0.1847.45': ['beta', 'start', ['', 'da6688dc-d769-4a16-bdd0-230def75453d']],
     '33.0.1750.136': ['stable', 'end', ['', '582969eb-6f20-4ee1-88f2-8252611c1e60']],  # No IA version
     '33.0.1750.132': ['beta,stable', 'end', ['b1c0cc3c-e397-4a22-83ea-c2fbde2a78dc', 'd63a51d9-67b6-4122-b838-5c375b8a8114']],
 }

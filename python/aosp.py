@@ -278,6 +278,9 @@ def build():
         return
 
     for arch, device_type, module in [(arch, device_type, module) for arch in target_archs for device_type in target_devices_type for module in target_modules]:
+        name_build = get_caller_name() + '-' + arch + '-' + device_type + '-' + module
+        timer_start(name_build)
+
         combo = _get_combo(arch, device_type)
         if repo_type == 'upstream':
             dir_backup = '/workspace/topic/android/backup'
@@ -285,7 +288,7 @@ def build():
             # Check proprietary binaries.
             dir_backup_spec_driver = dir_backup_driver + '/' + device + '/' + version + '/vendor'
             if not os.path.exists(dir_backup_spec_driver):
-                error('Proprietary binaries dont exist')
+                error('Proprietary binaries do not exist')
                 quit()
             execute('rm -rf vendor')
             execute('cp -rf ' + dir_backup_spec_driver + ' ./')
@@ -330,6 +333,9 @@ def build():
             result = execute(cmd, interactive=True)
             if result[0]:
                 error('Failed to build %s emulator' % arch)
+
+        timer_end(name_build)
+        info('Time for ' + name_build + ': ' + timer_diff(name_build))
 
 
 def backup():

@@ -28,6 +28,7 @@ MAJORVER_INFO_INDEX_REV = 0
 
 # stable: com.android.chrome, beta: com.chrome.beta
 ver_info = {
+    '37.0.2062.39': ['beta', 'start', ['', 'f74a8980-294c-42a3-98b3-282b286ee0f6']],
     '36.0.1985.128': ['stable', 'end', ['bfa72190-1d52-47be-a7ff-4ad5e683992c', '8a5361bf-31af-4d29-93e2-145ec8e99275']],
     '36.0.1985.122': ['stable', 'start', ['', '32de7f58-692c-477f-acde-6d52bda05505']],
     '36.0.1985.94': ['beta', 'start', ['', 'ce2eeca6-ba35-4dd7-8964-97712a7c8969']],

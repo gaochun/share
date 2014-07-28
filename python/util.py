@@ -609,7 +609,7 @@ def singleton(lock):
     try:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except:
-        print 'ho'
+	info(str(lock) + ' is already running..')
         exit(0)
 ################################################################################
 

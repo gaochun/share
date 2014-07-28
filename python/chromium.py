@@ -95,6 +95,7 @@ REV_MAX = 9999999
 # From this rev, do not append --target-arch to envsetup.sh, instead, use android_gyp -Dtarget_arch.
 # From rev 252166, envsetup.sh --target-arch would report an error.
 rev_envsetup = 252034
+ver_envsetup = '35.0.0.0'
 
 # Form this rev, envsetup would no longer set OS=android, we need to define it using GYP_DEFINES='OS=android'
 rev_gyp_defines = 260548
@@ -648,7 +649,7 @@ def makefile(force=False):
 
     if re.search('source', cmd):
         cmd = bashify(cmd)
-    result = execute(cmd, interactive=True)
+    result = execute(cmd, interactive=True, dryrun=False)
     restore_dir()
     if result[0]:
         error('Fail to generate makefile')
@@ -1237,8 +1238,13 @@ def _run_gclient(cmd_type):
     cmd = 'gclient ' + cmd_type
     if cmd_type != 'runhooks' and cmd_type != 'fetch':
         cmd += ' -n'
-
     cmd += ' -j' + number_cpu
+
+    if repo_type == 'chrome-android' and ver_ge(ver_envsetup, ver):
+        cmd = 'source src/build/android/envsetup.sh --target-arch=' + target_arch + ' && ' + cmd
+
+    if re.search('source', cmd):
+        cmd = bashify(cmd)
     result = execute(cmd, interactive=True)
     if result[0]:
         error('Failed to execute cmd: ' + cmd)

@@ -1240,7 +1240,7 @@ def _run_gclient(cmd_type):
         cmd += ' -n'
     cmd += ' -j' + number_cpu
 
-    if repo_type == 'chrome-android' and ver_ge(ver_envsetup, ver):
+    if repo_type == 'chrome-android' and cmd_type == 'runhooks' and ver_ge(ver_envsetup, ver):
         cmd = 'source src/build/android/envsetup.sh --target-arch=' + target_arch + ' && ' + cmd
 
     if re.search('source', cmd):

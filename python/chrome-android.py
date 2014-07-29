@@ -80,11 +80,11 @@ def run():
         if ver_info[ver][VER_INFO_INDEX_STAGE] == 'end':
             info('%s has been marked as built' % ver)
             continue
-        for phase in ['init', 'sync', 'runhooks']:
+        for phase in ['init', 'sync']:
             if phase in phases:
                 execute(_get_cmd(phase, ver), interactive=True)
         for target_arch in target_archs:
-            for phase in ['prebuild', 'makefile', 'build']:
+            for phase in ['runhooks', 'prebuild', 'makefile', 'build']:
                 if phase in phases:
                     execute(_get_cmd(phase, ver, target_arch), interactive=True)
             for ver_type in ver_types:

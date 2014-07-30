@@ -2,6 +2,7 @@
 # sudo apt-get install hostapd dnsmasq
 # cp dnsmasq.conf /etc
 # cp hostapd.conf /etc/hostapd
+# uncomment net.ipv4.ip_forward=1 in /etc/sysctl.conf
 # sudo ./ap.sh
 
 # To stop the ap

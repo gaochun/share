@@ -1,3 +1,6 @@
+# pip install selenium
+# TODO: backup Chrome.apk
+
 import urllib2
 from util import *
 from chromium import ver_info
@@ -5,6 +8,10 @@ from chromium import VER_INFO_INDEX_TYPE
 from chromium import VER_INFO_INDEX_STAGE
 from chromium import VER_INFO_INDEX_BUILD_ID
 from chromium import target_arch_index
+from chromium import chrome_android_dir_server_todo
+
+from selenium import webdriver
+from selenium.webdriver.support.wait import WebDriverWait
 
 # apk tool is downloaded from https://code.google.com/p/android-apktool/downloads/list
 # http://connortumbleson.com/apktool/test_versions
@@ -15,9 +22,24 @@ dir_root = ''
 vers = []
 ver_types = []
 target_archs = []
+pkg_name = {
+    'stable': 'com.android.chrome',
+    'beta': 'com.chrome.beta',
+    'example': 'com.example.chromium',
+}
 
-phases = []
-phases_all = ['init', 'sync', 'runhooks', 'prebuild', 'makefile', 'build', 'postbuild']
+# download: download Chrome.apk and put into todo
+# buildid: install Chrome.apk to device to check version, version type, arch, and create README to record build id and stage.
+# init: init the source code repo. depends on ver.
+# sync: sync source code. depends on ver.
+# runhooks: runhooks to make source code directory ready to build. depends on ver and parts of them rely on target_arch.
+# prebuild: extra things to prepare for prebuild. depends on ver and target_arch.
+# makefile: generate makefile. depends on ver and target_arch.
+# build: build. depends on ver and target_arch.
+# postbuild: generate new package, so with symbol, etc. depends on ver, target_arch and ver_type.
+# verify: install new package to device to verify its correctness.  depends on ver, target_arch and ver_type.
+# notify: send out email notification.  depends on ver, target_arch and ver_type.
+phase_all = ['buildid', 'init', 'sync', 'runhooks', 'prebuild', 'makefile', 'build', 'postbuild', 'verify', 'backup', 'notify']
 
 
 def parse_arg():
@@ -31,9 +53,10 @@ examples:
     parser.add_argument('--ver', dest='ver', help='version', default='all')
     parser.add_argument('--ver-type', dest='ver_type', help='ver type', default='all')
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', default='all')
-    parser.add_argument('--phase', dest='phase', help='phase, including ' + ','.join(phases_all), default='all')
-    parser.add_argument('--check', dest='check', help='check', action='store_true')
+    parser.add_argument('--phase', dest='phase', help='phase, including ' + ','.join(phase_all), default='all')
     parser.add_argument('--run', dest='run', help='run', action='store_true')
+    parser.add_argument('--buildid', dest='buildid', help='buildid', action='store_true')
+    parser.add_argument('--check', dest='check', help='check', action='store_true')
 
     args = parser.parse_args()
     args_dict = vars(args)
@@ -44,7 +67,7 @@ examples:
 
 
 def setup():
-    global dir_root, vers, ver_types, target_archs, phases
+    global dir_root, vers, ver_types, target_archs
 
     if not args.ver:
         error('You must designate version using --ver option')
@@ -66,31 +89,143 @@ def setup():
     else:
         target_archs = args.target_arch.split(',')
 
-    if args.phase == 'all':
-        phases = phases_all
-    else:
-        phases = args.phase.split(',')
+
+def buildid(force=False):
+    if not args.buildid and not force:
+        return
+
+    # find a device for each target_arch
+    (devices, devices_name, devices_type, devices_target_arch) = setup_device()
+    target_arch_device = {}
+    for index, device in enumerate(devices):
+        target_arch_temp = devices_target_arch[index]
+        if not target_arch_temp in target_arch_device:
+            target_arch_device[target_arch_temp] = devices[index]
+
+    if not os.path.exists(chrome_android_dir_server_todo):
+        os.makedirs(chrome_android_dir_server_todo)
+        return
+    backup_dir(chrome_android_dir_server_todo)
+    files_todo = os.listdir('.')
+    for file_todo in files_todo:
+        # skip the directory
+        if not os.path.isfile(file_todo):
+            continue
+        # get the target arch
+        execute('unzip "%s" -d temp' % file_todo, show_command=True)
+        if os.path.exists('temp/lib/armeabi-v7a'):
+            target_arch_temp = 'arm'
+        elif os.path.exists('temp/lib/x86'):
+            target_arch_temp = 'x86'
+        else:
+            error('Arch is not supported for ' + todo)
+        execute('rm -rf temp', show_command=False)
+
+        # get the version type
+        if target_arch_temp not in target_arch_device:
+            android_start_emu(target_arch_temp)
+            android_unlock_screen(target_arch_device[target_arch_temp])
+            (devices, devices_name, devices_type, devices_target_arch) = setup_device()
+            target_arch_device = {}
+            for index, device in enumerate(devices):
+                target_arch_temp = devices_target_arch[index]
+                if not target_arch_temp in target_arch_device:
+                    target_arch_device[target_arch_temp] = devices[index]
+            if not target_arch_temp not in target_arch_device:
+                continue
+
+        device = target_arch_device[target_arch_temp]
+        chrome_android_cleanup(device)
+        execute(adb(cmd='install -r "%s"' % file_todo, device=device), interactive=True, dryrun=False)
+        ver_type_temp = chrome_android_get_ver_type(device)
+        # get version and build id
+        if has_process('chromedriver'):
+            execute('sudo killall chromedriver', show_command=False)
+        subprocess.Popen(dir_root + '/tool/chromedriver', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        time.sleep(1)  # Sleep a bit to make sure driver is ready
+
+        env_http_proxy = getenv('http_proxy')
+        unsetenv('http_proxy')
+
+        capabilities = {
+            'chromeOptions': {
+                'androidPackage': chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG],
+                'androidDeviceSerial': device,
+            }
+        }
+
+        driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
+        driver.get('chrome://version')
+        WebDriverWait(driver, 30, 1).until(_has_element_ver)
+
+        pattern_version = re.compile('(Chrome|Chrome Beta) (\d+\.\d+\.\d+\.\d+)')
+        match = pattern_version.search(driver.find_elements_by_class_name('version')[0].get_attribute('innerText'))
+        ver_temp = match.group(2)
+
+        pattern_build_id = re.compile('Build ID\s+(.*)')
+        match = pattern_build_id.search(driver.find_elements_by_id('build-id-section')[0].get_attribute('innerText'))
+        build_id_temp = match.group(1)
+        driver.quit()
+        execute(adb('uninstall ' + chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG], device=device))
+
+        setenv('http_proxy', env_http_proxy)
+
+        dir_todo = '%s/%s-%s' % (target_arch_temp, ver_temp, ver_type_temp)
+        if os.path.exists(dir_todo):
+            warning('The todo directory already exists for ' + file_todo)
+            continue
+        os.makedirs(dir_todo)
+        execute('mv "%s" %s/Chrome.apk' % (file_todo, dir_todo))
+        execute('echo "phase=buildid\nbuild-id=%s" >%s/README' % (build_id_temp, dir_todo), show_command=False)
 
 
 def run():
     if not args.run:
         return
 
-    for ver in vers:
-        if ver_info[ver][VER_INFO_INDEX_STAGE] == 'end':
-            info('%s has been marked as built' % ver)
+    buildid(force=True)
+
+    dirs_target_arch = os.listdir(chrome_android_dir_server_todo)
+    for target_arch_temp in dirs_target_arch:
+        # skip the file
+        if os.path.isfile(target_arch_temp):
             continue
-        for phase in ['init', 'sync']:
-            if phase in phases:
-                execute(_get_cmd(phase, ver), interactive=True)
-        for target_arch in target_archs:
-            for phase in ['runhooks', 'prebuild', 'makefile', 'build']:
-                if phase in phases:
-                    execute(_get_cmd(phase, ver, target_arch), interactive=True)
-            for ver_type in ver_types:
-                for phase in ['postbuild']:
-                    if phase in phases:
-                        execute(_get_cmd(phase, ver, target_arch, ver_type), interactive=True)
+        if target_arch_temp not in target_arch_all:
+            continue
+
+        dirs_todo = os.listdir(chrome_android_dir_server_todo + '/' + target_arch_temp)
+        for dir_todo in dirs_todo:
+            info = dir_todo.split('-')
+            ver_temp = info[0]
+            ver_type_temp = info[1]
+            file_readme = chrome_android_dir_server_todo + '/' + target_arch_temp + '/' + dir_todo + '/README'
+            if not os.path.exists(file_readme):
+                warning('Could not find README in ' + dir_todo)
+                continue
+            f = open(file_readme)
+            lines = f.readlines()
+            f.close()
+
+            pattern = re.compile('phase=(.*)')
+            match = pattern.search(lines[0])
+            if not match:
+                warning('Could not find phase in README of ' + dir_todo)
+                continue
+
+            phase = match.group(1)
+            index_phase = phase_all.index(phase)
+            for index in range(index_phase + 1, len(phase_all)):
+                phase_temp = phase_all[index]
+                cmd = python_chromium + ' --repo-type chrome-android --target-os android --target-module chrome --' + phase_temp
+                cmd += ' --dir-root ' + dir_root + '/' + ver_temp
+                cmd += ' --target-arch ' + target_arch_temp
+                cmd += ' --ver-type ' + ver_type_temp
+                if phase_temp == 'build':
+                    cmd += ' --build-skip-mk --build-fail-max 1'
+                result = execute(cmd, interactive=True)
+                if result[0]:
+                    warning('Failed to finish phase %s for %s %s' % (phase_temp, target_arch_temp, dir_todo))
+                    break
 
 
 def check():
@@ -140,6 +275,13 @@ def check():
         info('The stage of all versions are marked correctly')
 
 
+def _has_element_ver(driver):
+    if driver.find_elements_by_class_name('version'):
+        return True
+    else:
+        return False
+
+
 def _check_track():
     url = 'http://www.hiapphere.org/app-chrome_beta'
     try:
@@ -164,20 +306,9 @@ def _check_track():
         info('All existed versions have been fully tracked')
 
 
-def _get_cmd(phase, ver, target_arch='', ver_type=''):
-    cmd = python_chromium + ' --repo-type chrome-android --target-os android --target-module chrome --dir-root ' + dir_root + '/' + ver + ' --' + phase
-    if target_arch != '':
-        cmd += ' --target-arch ' + target_arch
-    if ver_type != '':
-        cmd += ' --ver-type ' + ver_type
-
-    if phase == 'build':
-        cmd += ' --build-skip-mk'
-
-    return cmd
-
 if __name__ == "__main__":
     parse_arg()
     setup()
-    check()
+    buildid()
     run()
+    check()

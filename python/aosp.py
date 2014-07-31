@@ -24,6 +24,7 @@ target_modules = []
 devices = []
 devices_name = []
 devices_type = []
+devices_target_arch = []
 chromium_version = ''
 ip = '192.168.42.1'
 timestamp = ''
@@ -111,7 +112,8 @@ examples:
 
 
 def setup():
-    global dir_root, dir_chromium, dir_out, target_archs, target_devices_type, target_modules, chromium_version, devices, devices_name, devices_type, timestamp, use_upstream_chromium, patches_build
+    global dir_root, dir_chromium, dir_out, target_archs, target_devices_type, target_modules, chromium_version
+    global devices, devices_name, devices_type, devices_target_arch, timestamp, use_upstream_chromium, patches_build
     global repo_type, repo_date, file_log, variant
 
     if args.dir_root:
@@ -124,7 +126,7 @@ def setup():
     dir_chromium = dir_root + '/external/chromium_org'
     dir_out = dir_root + '/out'
 
-    (devices, devices_name, devices_type) = setup_device()
+    (devices, devices_name, devices_type, devices_target_arch) = setup_device()
 
     os.chdir(dir_root)
 
@@ -505,14 +507,10 @@ def flash_image():
     time.sleep(60)
 
     if repo_type == 'stable':
-        # Ensure screen stays on
-        execute(adb(cmd='shell svc power stayon usb'))
-
-        # Try to unlock the screen if needed
-        execute(adb(cmd='shell input keyevent 82'))
-
+        android_keep_screen_on()
+        android_unlock_screen()
         # After system boots up, it will show guide screen and never lock or turn off screen.
-        set_screen_lock_none()
+        android_set_screen_lock_none()
 
 
 def start_emu():

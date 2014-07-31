@@ -29,6 +29,14 @@ args = argparse.Namespace()
 dir_stack = []
 timer = {}
 
+chrome_android_ver_type_info = {
+    'stable': ['com.android.chrome', ''],
+    'beta': ['com.chrome.beta', ''],
+    'example': ['com.example.chromium', 'com.google.android.apps.chrome.Main'],
+}
+CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG = 0
+CHROME_ANDROID_VER_TYPE_INFO_INDEX_ACT = 1
+
 
 def _get_real_dir(path):
     return os.path.split(os.path.realpath(path))[0]
@@ -50,11 +58,17 @@ dir_server_aosp = dir_server + '/aosp'
 dir_server_chromium = dir_server + '/chromium'
 dir_server_log = dir_server + '/log'
 dir_project = dir_workspace + '/project'
+dir_project_chrome_android = dir_project + '/chrome-android'
+dir_tool = dir_workspace + '/tool'
+
+path_web = 'http://wp-03.sh.intel.com'
+path_web_chromium = path_web + '/chromium'
+path_server_backup = '//wp-02/backup'
 
 dir_home = os.getenv('HOME')
 
 target_os_all = ['android', 'linux']
-target_arch_all = ['x86', 'arm']
+target_arch_all = ['x86', 'arm', 'x86_64']
 target_module_all = ['webview', 'chrome', 'content_shell', 'chrome_stable', 'chrome_beta', 'webview_shell', 'chrome_shell', 'stock_browser']
 
 
@@ -221,8 +235,9 @@ def send_mail(sender, to, subject, content, type='plain'):
     msg.attach(MIMEText(content, type))
 
     try:
-        smtp = smtplib.SMTP('127.0.0.1')
+        smtp = smtplib.SMTP('localhost')
         smtp.sendmail(sender, to, msg.as_string())
+        print msg.as_string()
         info('Email was sent successfully')
     except Exception:
         error('Failed to send mail at ' + host_name, abort=False)
@@ -304,6 +319,7 @@ def setup_device(devices_limit=[]):
     devices = []
     devices_name = []
     devices_type = []
+    devices_target_arch = []
     cmd = adb('devices -l', device='')
     device_lines = commands.getoutput(cmd).split('\n')
     for device_line in device_lines:
@@ -332,7 +348,10 @@ def setup_device(devices_limit=[]):
                 del devices_name[index]
                 del devices_type[index]
 
-    return (devices, devices_name, devices_type)
+    for device in devices:
+        devices_target_arch.append(get_target_arch(device=device))
+
+    return (devices, devices_name, devices_type, devices_target_arch)
 
 
 def timer_start(tag):
@@ -480,28 +499,16 @@ def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/work
                 break
 
 
-def set_screen_lock_none():
-    execute_adb_shell(cmd='am start -n com.android.settings/.SecuritySettings && sleep 5 && input tap 200 150 && sleep 5 && input tap 200 100 && am force-stop com.android.settings')
-
-
-def is_screen_on(device='192.168.42.1'):
-    result = execute(adb(cmd='shell dumpsys power', device=device) + ' |grep mScreenOn=true')
-    if result[0]:
-        return False
+def get_target_arch(device='192.168.42.1'):
+    abi = android_get_info(key='ro.product.cpu.abi', device=device)
+    if abi == 'armeabi-v7a':
+        arch = 'arm'
+    elif abi == 'x86':
+        arch = 'x86'
     else:
-        return True
+        error('Could not get correct target arch for device ' + device)
 
-
-def ensure_screen_on(device='192.168.42.1'):
-    if not is_screen_on(device):
-        # Bring up screen by pressing power
-        execute(adb('shell input keyevent 26'), device=device)
-
-
-def get_android_info(key, device='192.168.42.1'):
-    cmd = adb(cmd='shell grep %s= system/build.prop' % key, device=device)
-    result = execute(cmd, return_output=True, show_command=False)
-    return result[1].replace(key + '=', '')
+    return arch
 
 
 # is_sylk: If true, just copy as a symbolic link
@@ -609,8 +616,68 @@ def singleton(lock):
     try:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except:
-	info(str(lock) + ' is already running..')
+        info(str(lock) + ' is already running..')
         exit(0)
+
+
+def chrome_android_cleanup(device):
+    for key in chrome_android_ver_type_info:
+        execute(adb('uninstall ' + chrome_android_ver_type_info[key][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG], device=device))
+
+
+def chrome_android_get_ver_type(device):
+    ver_type = ''
+    for key in chrome_android_ver_type_info:
+        if execute_adb_shell(cmd='pm -l |grep ' + chrome_android_ver_type_info[key][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG], device=device):
+            ver_type = key
+            break
+
+    return ver_type
+
+
+##### android related functions begin #####
+def android_unlock_screen(device):
+    execute(adb(cmd='shell input keyevent 82', device=device))
+
+
+def android_set_screen_lock_none():
+    execute_adb_shell(cmd='am start -n com.android.settings/.SecuritySettings && sleep 5 && input tap 200 150 && sleep 5 && input tap 200 100 && am force-stop com.android.settings')
+
+
+def android_is_screen_on(device='192.168.42.1'):
+    result = execute(adb(cmd='shell dumpsys power', device=device) + ' |grep mScreenOn=true')
+    if result[0]:
+        return False
+    else:
+        return True
+
+
+# Just trigger once
+def android_trigger_screen_on(device='192.168.42.1'):
+    if not android_is_screen_on(device):
+        # Bring up screen by pressing power
+        execute(adb('shell input keyevent 26'), device=device)
+
+
+# Make screen on when charging
+def android_keep_screen_on(device='192.168.42.1'):
+    execute(adb(cmd='shell svc power stayon usb', device=device))
+
+
+def android_get_info(key, device='192.168.42.1'):
+    cmd = adb(cmd='shell grep %s= system/build.prop' % key, device=device)
+    result = execute(cmd, return_output=True, show_command=False)
+    return result[1].replace(key + '=', '').rstrip('\r\n')
+
+
+def android_start_emu(target_arch):
+    cmd = 'LD_LIBRARY_PATH=%s/adt/sdk/tools/lib %s/adt/sdk/tools/emulator64-%s -avd %s -no-audio &' % (dir_tool, dir_tool, target_arch, target_arch)
+    execute(cmd)
+    info('Starting emulator for ' + target_arch)
+    time.sleep(60)
+
+
+##### android related functions begin #####
 ################################################################################
 
 

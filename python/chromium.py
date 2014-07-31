@@ -3,6 +3,8 @@
 import fileinput
 from multiprocessing import Pool
 from util import *
+from selenium import webdriver
+from selenium.webdriver.support.wait import WebDriverWait
 
 target_arch_index = {'x86': 0, 'arm': 1, 'x86_64': 2, 'arm64': 3}
 target_arch_strip = {
@@ -52,7 +54,7 @@ ver_info = {
     '33.0.1750.166': ['stable', 'end', ['bc468ba0-d60e-44a7-ab8a-46a92af3eb95', '0e5b0784-1010-4ca5-9efc-2697ba93a6c8']],
     '34.0.1847.62': ['beta', 'start', ['f7e92034-f602-4e2d-a483-8b5f034ab199', '2efbe11b-f0b2-4e6d-9374-b1906e68c782']],
     '34.0.1847.45': ['beta', 'start', ['', 'da6688dc-d769-4a16-bdd0-230def75453d']],
-    '33.0.1750.136': ['stable', 'end', ['', '582969eb-6f20-4ee1-88f2-8252611c1e60']],  # No IA version
+    '33.0.1750.136': ['stable', 'end', ['', '582969eb-6f20-4ee1-88f2-8252611c1e60']],
     '33.0.1750.132': ['beta,stable', 'end', ['b1c0cc3c-e397-4a22-83ea-c2fbde2a78dc', 'd63a51d9-67b6-4122-b838-5c375b8a8114']],
 }
 VER_INFO_INDEX_TYPE = 0
@@ -86,6 +88,7 @@ file_log = ''
 devices = []
 devices_name = []
 devices_type = []
+devices_target_arch = []
 
 # rev related
 rev = 0
@@ -103,11 +106,16 @@ ver_gyp_defines = '34.0.0.0'
 
 # From this rev, android_gyp is no longer supported. Use gyp_chromium instead.
 rev_no_android_gyp = 262292
-ver_no_android_gyp = '34.0.1847.62'
+ver_no_android_gyp = '34.0.1847.61'
 
 # repo type specific variables
+# chrome-android
 ver = ''
-soname = ''
+ver_type = ''
+chrome_android_soname = ''
+chrome_android_dir_server_todo = dir_server_chromium + '/android-chrome-todo'
+chrome_android_dir_server_root = ''
+chrome_android_file_readme = ''
 
 test_command_default = [
     'gtest',
@@ -309,7 +317,7 @@ examples:
   0 1 * * * cd /workspace/project/chromium64-android && python %(prog)s -s --extra-path=/workspace/project/depot_tools
 ''')
     group_common = parser.add_argument_group('common')
-    group_common.add_argument('--repo-type', dest='repo_type', help='repo type to indicate its usage', default='default')
+    group_common.add_argument('--repo-type', dest='repo_type', help='repo type. default for upstream, x64 for x64 test, chrome-android for "Chrome for Android"', default='default')
     #dir: <arch>-<target-os>/out/<build_type>, example: x86-linux/out/Release
     group_common.add_argument('--target-os', dest='target_os', help='target os', choices=['android', 'linux'])
     group_common.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'arm', 'x86_64', 'arm64'], default='x86')
@@ -331,6 +339,7 @@ examples:
     group_gclient.add_argument('--runhooks', dest='runhooks', help='runhooks', action='store_true')
 
     group_basic = parser.add_argument_group('basic')
+    group_basic.add_argument('--download', dest='download', help='download', action='store_true')
     group_basic.add_argument('--init', dest='init', help='init', action='store_true')
     group_basic.add_argument('--patch', dest='patch', help='apply patches', action='store_true')
     group_basic.add_argument('--prebuild', dest='prebuild', help='prebuild', action='store_true')
@@ -340,6 +349,9 @@ examples:
     group_basic.add_argument('--build-fail-max', dest='build_fail_max', help='allow n build failures before it stops', default='0')
     group_basic.add_argument('--build-verbose', dest='build_verbose', help='output verbose info. Find log at out/Release/.ninja_log', action='store_true')
     group_basic.add_argument('--postbuild', dest='postbuild', help='postbuild', action='store_true')
+    group_basic.add_argument('--verify', dest='verify', help='verify', action='store_true')
+    group_basic.add_argument('--backup', dest='backup', help='backup', action='store_true')
+    group_basic.add_argument('--notify', dest='notify', help='notify', action='store_true')
     group_basic.add_argument('--install', dest='install', help='install chrome for android', choices=['release', 'debug'])
     group_basic.add_argument('--run', dest='run', help='run', action='store_true')
     group_basic.add_argument('--run-option', dest='run_option', help='option to run')
@@ -376,9 +388,9 @@ examples:
 def setup():
     global dir_root, dir_src, dir_out_build_type, dir_test, dir_test_timestamp
     global target_os, target_arch, target_module
-    global devices, devices_name, devices_type
+    global devices, devices_name, devices_type, devices_target_arch
     global file_log, timestamp, test_suite, build_type, rev, dir_patches, patches, test_filter, repo_type
-    global ver, soname
+    global ver, ver_type, chrome_android_soname, chrome_android_dir_server_root, chrome_android_file_readme
 
     if args.dir_root:
         dir_root = args.dir_root
@@ -463,7 +475,7 @@ def setup():
             devices_limit = []
 
         connect_device()
-        (devices, devices_name, devices_type) = setup_device(devices_limit=devices_limit)
+        (devices, devices_name, devices_type, devices_target_arch) = setup_device(devices_limit=devices_limit)
 
         _hack_app_process()
 
@@ -474,7 +486,10 @@ def setup():
     # repo type specific variables
     if repo_type == 'chrome-android':
         ver = dir_root.split('/')[-1]
-        soname = _get_soname()
+        ver_type = args.ver_type
+        chrome_android_soname = _get_soname()
+        chrome_android_dir_server_root = chrome_android_dir_server_todo + '/' + target_arch + '/' + ver + '-' + ver_type
+        chrome_android_file_readme = chrome_android_dir_server_root + '/README'
 
     if target_os == 'windows':
         setenv('GYP_DEFINES', 'werror= disable_nacl=1 component=shared_library enable_svg=0 windows_sdk_path="d:/user/ygu5/project/chromium/win_toolchain/win8sdk"')
@@ -520,10 +535,9 @@ def init(force=False):
         return
 
     if repo_type == 'chrome-android':
-        cmd = 'gclient config https://src.chromium.org/chrome/releases/' + ver
-        execute(cmd)
-        cmd = 'echo "target_os = [\'android\']" >> .gclient'
-        execute(cmd)
+        execute('gclient config https://src.chromium.org/chrome/releases/' + ver, abort=True)
+        execute('echo "target_os = [\'android\']" >> .gclient', abort=True)
+        _update_phase(get_caller_name())
 
 
 def revert(force=False):
@@ -565,12 +579,18 @@ def sync(force=False):
         cmd_type += ' --revision src@' + _get_hash()
     _run_gclient(cmd_type)
 
+    if repo_type == 'chrome-android':
+        _update_phase(get_caller_name())
+
 
 def runhooks(force=False):
     if not args.runhooks and not force:
         return
 
     _run_gclient('runhooks')
+
+    if repo_type == 'chrome-android':
+        _update_phase(get_caller_name())
 
 
 def patch(force=False):
@@ -581,7 +601,7 @@ def patch(force=False):
 
 
 def prebuild(force=False):
-    global soname
+    global chrome_android_soname
 
     if not args.prebuild and not force:
         return
@@ -597,16 +617,18 @@ def prebuild(force=False):
 
         backup_dir(dir_prebuilt)
         cmd = 'wget -c -i http://storage.googleapis.com/chrome-browser-components/' + build_id + '/index.html'
-        execute(cmd, interactive=True)
+        execute(cmd, interactive=True, abort=True)
 
         dir_release = dir_src + '/out-' + target_arch + '/out/Release'
         ensure_dir(dir_release)
         cmd = 'cp *.a ' + dir_release
-        execute(cmd)
+        execute(cmd, abort=True)
 
-        soname = _get_soname()
+        chrome_android_soname = _get_soname()
 
         restore_dir()
+
+        _update_phase(get_caller_name())
 
 
 def makefile(force=False):
@@ -624,11 +646,11 @@ def makefile(force=False):
             target_arch_temp = target_arch
 
         if repo_type == 'chrome-android':
-            if soname == '':
+            if chrome_android_soname == '':
                 error('Please download prebuilt first')
             # gyp file must be in src dir, and contained in one level of directory
 
-            cmd = 'GYP_DEFINES="%s libpeer_target_type=loadable_module host_os=linux" CHROMIUM_GYP_FILE="prebuilt-%s/%s_target.gyp"' % (getenv('GYP_DEFINES'), target_arch, soname) + ' build/gyp_chromium -Dtarget_arch='
+            cmd = 'GYP_DEFINES="%s libpeer_target_type=loadable_module host_os=linux" CHROMIUM_GYP_FILE="prebuilt-%s/%s_target.gyp"' % (getenv('GYP_DEFINES'), target_arch, chrome_android_soname) + ' build/gyp_chromium -Dtarget_arch='
             if ver_ge(ver_no_android_gyp, ver):
                 cmd += target_arch
             else:
@@ -653,6 +675,9 @@ def makefile(force=False):
     restore_dir()
     if result[0]:
         error('Fail to generate makefile')
+
+    if repo_type == 'chrome-android':
+        _update_phase(get_caller_name())
 
 
 def build(force=False):
@@ -686,9 +711,9 @@ def build(force=False):
     elif target_os == 'android' and target_module == 'content_shell':
         cmd_ninja += ' content_shell_apk'
     elif target_os == 'android' and target_module == 'chrome':
-        if soname == '':
+        if chrome_android_soname == '':
             error('Please download prebuilt first')
-        cmd_ninja += ' lib%s_prebuilt' % soname
+        cmd_ninja += ' lib%s_prebuilt' % chrome_android_soname
     else:
         cmd_ninja += ' ' + target_module
 
@@ -701,6 +726,9 @@ def build(force=False):
     if result[0]:
         error('Failed to execute command: ' + cmd_ninja)
 
+    if repo_type == 'chrome-android':
+        _update_phase(get_caller_name())
+
 
 def postbuild(force=False):
     if not args.postbuild and not force:
@@ -709,7 +737,6 @@ def postbuild(force=False):
     if repo_type == 'chrome-android':
         ver_type = args.ver_type
         dir_out = dir_src + '/out-' + target_arch + '/out'
-        dir_tool = get_dir(dir_root) + '/tool'
 
         if not ver_type in ver_info[ver][VER_INFO_INDEX_TYPE].split(','):
             return
@@ -723,34 +750,131 @@ def postbuild(force=False):
         dir_chrome_lib = dir_chrome + '/lib/%s' % target_arch_temp
 
         # unpack
-        execute('java -jar %s/apktool.jar d %s/Chrome.apk -o %s' % (dir_tool, dir_ver, dir_chrome), interactive=True)
+        execute('java -jar %s/apktool.jar d %s/Chrome.apk -o %s' % (dir_tool, dir_ver, dir_chrome), interactive=True, abort=True)
         # rename
-        execute('python %s/prebuilt-%s/change_chromium_package.py -u %s' % (dir_src, target_arch, dir_chrome), interactive=True)
+        execute('python %s/prebuilt-%s/change_chromium_package.py -u %s' % (dir_src, target_arch, dir_chrome), interactive=True, abort=True)
 
         # replace libchrome(view).so
         result = execute('ls %s/libchrome*.so' % dir_chrome_lib, return_output=True)
         file_chrome = result[1].split('/')[-1].strip('\n')
         backup_dir(dir_out + '/Release/lib')
         ## backup the one with symbol
-        execute('cp -f lib*prebuilt.so %s/%s' % (dir_ver, file_chrome), interactive=True, dryrun=False)
+        execute('cp -f lib*prebuilt.so %s/%s' % (dir_ver, file_chrome), interactive=True, abort=True, dryrun=False)
         ## copy, strip and replace
-        execute('cp -f lib*prebuilt.so %s' % (file_chrome), interactive=True, dryrun=False)
-        execute(dir_tool + '/' + target_arch_strip[target_arch] + ' ' + file_chrome, dryrun=False)
-        execute('cp -f %s %s/' % (file_chrome, dir_chrome_lib), interactive=True)
+        execute('cp -f lib*prebuilt.so %s' % (file_chrome), interactive=True, abort=True, dryrun=False)
+        execute(dir_tool + '/' + target_arch_strip[target_arch] + ' ' + file_chrome, abort=True, dryrun=False)
+        execute('cp -f %s %s/' % (file_chrome, dir_chrome_lib), interactive=True, abort=True)
         restore_dir()
 
         # replace libpeerconnection.so
         cmd = 'cp -f %s/prebuilt-%s/libpeerconnection_prebuilt.so %s/libpeerconnection.so' % (dir_src, target_arch, dir_chrome_lib)
-        execute(cmd, interactive=True)
+        execute(cmd, interactive=True, abort=True)
 
         # repackage the new chromium.apk
         # --zipalign: can be found in SDK
         backup_dir(dir_ver)
-        execute('java -jar %s/apktool.jar b Chrome -o Chromium_unaligned.apk' % dir_tool, interactive=True)
-        execute('jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s/debug.keystore -storepass android Chromium_unaligned.apk androiddebugkey' % dir_tool, interactive=True)
-        execute('%s/zipalign -f -v 4 Chromium_unaligned.apk Chromium.apk' % dir_tool, interactive=True)
-        execute('rm -f Chromium_unaligned.apk')
+        execute('java -jar %s/apktool.jar b Chrome -o Chromium_unaligned.apk' % dir_tool, interactive=True, abort=True)
+        execute('jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s/debug.keystore -storepass android Chromium_unaligned.apk androiddebugkey' % dir_tool, interactive=True, abort=True)
+        execute('%s/zipalign -f -v 4 Chromium_unaligned.apk Chromium.apk' % dir_tool, interactive=True, abort=True)
+        execute('rm -f Chromium_unaligned.apk', abort=True)
         restore_dir()
+
+        _update_phase(get_caller_name())
+
+
+def verify():
+    if not args.verify:
+        return
+
+    if repo_type == 'chrome-android':
+        # find a device that matches target_arch
+        (devices, devices_name, devices_type, devices_target_arch) = setup_device()
+        device = ''
+        for index, device in enumerate(devices):
+            target_arch_temp = devices_target_arch[index]
+            if target_arch_temp == target_arch:
+                device = devices[index]
+        if device == '':
+            error('No suitable device is found')
+
+        execute(adb(cmd='install -r %s/Chromium.apk' % chrome_android_dir_server_root, device=device), interactive=True, dryrun=False)
+        ver_type_temp = ''
+        for key in chrome_android_ver_type_info:
+            if execute_adb_shell(cmd='pm -l |grep ' + chrome_android_ver_type_info[key][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG], device=device):
+                ver_type_temp = key
+                break
+        if ver_type_temp == '':
+            error('Failed to install package')
+
+        result = execute_adb_shell(cmd='am start -n %s/%s -d "chrome://version"' % (chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG], chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_ACT]), device=device)
+        execute(adb('uninstall ' + chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG], device=device), dryrun=True)
+        if not result:
+            error('Verification failed')
+
+        _update_phase(get_caller_name())
+        return
+
+        # The following code does not work as webdriver.Remote() would hang.
+        # adb shell input tap 400 1040
+        # adb shell input tap 400 1070
+        # get version and build id
+        if has_process('chromedriver'):
+            execute('sudo killall chromedriver', show_command=False)
+        subprocess.Popen(dir_project_chrome_android + '/tool/chromedriver', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        time.sleep(1)  # Sleep a bit to make sure driver is ready
+
+        env_http_proxy = getenv('http_proxy')
+        unsetenv('http_proxy')
+        capabilities = {
+            'chromeOptions': {
+                'androidPackage': chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG],
+                'androidActivity': chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_ACT],
+                'androidDeviceSerial': device,
+            }
+        }
+
+        driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
+        WebDriverWait(driver, 30, 1).until(_has_element_ver)
+        pattern_version = re.compile('(Chrome|Chrome Beta|Example Chromium) (\d+\.\d+\.\d+\.\d+)')
+        match = pattern_version.search(driver.find_elements_by_class_name('version')[0].get_attribute('innerText'))
+        ver_temp = match.group(2)
+
+        pattern_build_id = re.compile('Build ID\s+(.*)')
+        match = pattern_build_id.search(driver.find_elements_by_id('build-id-section')[0].get_attribute('innerText'))
+        build_id_temp = match.group(1)
+        driver.quit()
+        setenv('http_proxy', env_http_proxy)
+
+        print ver_temp, build_id_temp
+
+
+def backup():
+    if not args.backup:
+        return
+
+    if repo_type == 'chrome-android':
+        if host_name == 'wp-02':
+            dir_chrome = 'chromium/android-%s-chrome/%s-%s' % (target_arch, ver, ver_type)
+            execute('smbclient %s -N -c "prompt; recurse; mkdir %s;"' % (path_server_backup, dir_chrome))
+            backup_dir(chrome_android_dir_server_todo + '/%s/%s-%s' % (target_arch, ver, ver_type))
+            backup_smb(path_server_backup, dir_chrome, 'Chrome.apk')
+            restore_dir()
+
+        _update_phase(get_caller_name())
+
+
+def notify():
+    if not args.notify:
+        return
+
+    if repo_type == 'chrome-android':
+        content = '''
+Browser Team is excited to announce the %s %s release of Chrome %s for Android has been prepared for you at %s/android-%s-chrome/%s-%s. Enjoy it!
+        ''' % (target_arch, ver_type, ver, path_web_chromium, target_arch, ver, ver_type)
+        send_mail('webperf@intel.com', 'yang.gu@intel.com', 'Chrome for Android New Release', content, type='html')
+
+        #_update_phase(get_caller_name())
+        #execute('mv %s/%s/%s-%s %s/android-%s-chrome/%s-%s' % (chrome_android_dir_server_todo, target_arch, ver, ver_type, dir_server_chromium, target_arch, ver, ver_type))
 
 
 def run():
@@ -1047,7 +1171,7 @@ def _test_sendmail(index_device, html):
     else:
         to = 'webperf@intel.com'
 
-    send_mail('x64-noreply@intel.com', to, report_name + '-' + timestamp + '-' + device_name, html, type='html')
+    send_mail('webperf@intel.com', to, report_name + '-' + timestamp + '-' + device_name, html, type='html')
 
 
 def _test_gen_report(index_device, results):
@@ -1081,7 +1205,7 @@ def _test_gen_report(index_device, results):
           <ul>
             <li>Chromium Revision: ''' + str(rev) + '''</li>
             <li>Target Device: ''' + device_name + '''</li>
-            <li>Target Image: ''' + get_android_info(key='ro.build.display.id', device=device) + '''</li>
+            <li>Target Image: ''' + android_get_info(key='ro.build.display.id', device=device) + '''</li>
             <li>Build Duration: ''' + timer_diff('build') + '''</li>
             <li>Test Build Duration: ''' + timer_diff('test_build') + '''</li>
             <li>Test Run Duration: ''' + timer_diff('test_run_' + str(index_device)) + '''</li>
@@ -1093,7 +1217,7 @@ def _test_gen_report(index_device, results):
     html_end = '''
           <h2>Log</h2>
           <ul>
-            <li>http://ubuntu-ygu5-02.sh.intel.com/chromium64/test/''' + timestamp + '-' + device_name + '''</li>
+            <li>http://wp-03.sh.intel.com/chromium-x64/test/''' + timestamp + '-' + device_name + '''</li>
           </ul>
         </div>
       </div>
@@ -1374,6 +1498,13 @@ def _get_soname():
             soname = ''
 
     return soname
+
+
+def _update_phase(phase):
+    for line in fileinput.input(chrome_android_file_readme, inplace=1):
+        if re.search('phase=', line):
+            line = 'phase=' + phase + '\n'
+        sys.stdout.write(line)
 ########## Internal function end ##########
 
 
@@ -1392,6 +1523,9 @@ if __name__ == '__main__':
     makefile()
     build()
     postbuild()
+    verify()
+    backup()
+    notify()
     run()
     # test
     test_build()

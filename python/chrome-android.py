@@ -1,5 +1,6 @@
+# Preparation:
 # pip install selenium
-# TODO: backup Chrome.apk
+# create x86 and arm emulator (use host GPU)
 
 import urllib2
 from util import *
@@ -124,7 +125,6 @@ def buildid(force=False):
         # get the version type
         if target_arch_temp not in target_arch_device:
             android_start_emu(target_arch_temp)
-            android_unlock_screen(target_arch_device[target_arch_temp])
             (devices, devices_name, devices_type, devices_target_arch) = setup_device()
             target_arch_device = {}
             for index, device in enumerate(devices):
@@ -135,13 +135,14 @@ def buildid(force=False):
                 continue
 
         device = target_arch_device[target_arch_temp]
+        android_unlock_screen(target_arch_device[target_arch_temp])
         chrome_android_cleanup(device)
         execute(adb(cmd='install -r "%s"' % file_todo, device=device), interactive=True, dryrun=False)
         ver_type_temp = chrome_android_get_ver_type(device)
         # get version and build id
         if has_process('chromedriver'):
             execute('sudo killall chromedriver', show_command=False)
-        subprocess.Popen(dir_root + '/tool/chromedriver', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.Popen(dir_tool + '/chromedriver', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         time.sleep(1)  # Sleep a bit to make sure driver is ready
 
         env_http_proxy = getenv('http_proxy')

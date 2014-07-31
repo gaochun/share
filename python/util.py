@@ -671,10 +671,17 @@ def android_get_info(key, device='192.168.42.1'):
 
 
 def android_start_emu(target_arch):
-    cmd = 'LD_LIBRARY_PATH=%s/adt/sdk/tools/lib %s/adt/sdk/tools/emulator64-%s -avd %s -no-audio &' % (dir_tool, dir_tool, target_arch, target_arch)
-    execute(cmd)
-    info('Starting emulator for ' + target_arch)
-    time.sleep(60)
+
+    pid = os.fork()
+    if pid == 0:
+        cmd = 'LD_LIBRARY_PATH=%s/adt/sdk/tools/lib %s/adt/sdk/tools/emulator64-%s -avd %s -no-audio' % (dir_tool, dir_tool, target_arch, target_arch)
+        execute(cmd)
+    else:
+        info('Starting emulator for ' + target_arch)
+        if target_arch == 'x86':
+            time.sleep(15)
+        else:
+            time.sleep(60)
 
 
 ##### android related functions begin #####

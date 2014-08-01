@@ -33,9 +33,17 @@ chrome_android_ver_type_info = {
     'stable': ['com.android.chrome', ''],
     'beta': ['com.chrome.beta', ''],
     'example': ['com.example.chromium', 'com.google.android.apps.chrome.Main'],
+    'example_stable': ['com.chromium.stable', 'com.google.android.apps.chrome.Main'],
+    'example_beta': ['com.chromium.beta', 'com.google.android.apps.chrome.Main'],
 }
 CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG = 0
 CHROME_ANDROID_VER_TYPE_INFO_INDEX_ACT = 1
+
+target_arch_index = {'x86': 0, 'arm': 1, 'x86_64': 2, 'arm64': 3}
+target_arch_strip = {
+    'x86': 'i686-linux-android-strip',
+    'arm': 'arm-linux-androideabi-strip',
+}
 
 
 def _get_real_dir(path):
@@ -56,6 +64,7 @@ dir_workspace = '/workspace'
 dir_server = dir_workspace + '/server'
 dir_server_aosp = dir_server + '/aosp'
 dir_server_chromium = dir_server + '/chromium'
+chrome_android_dir_server_todo = dir_server_chromium + '/android-chrome-todo'
 dir_server_log = dir_server + '/log'
 dir_project = dir_workspace + '/project'
 dir_project_chrome_android = dir_project + '/chrome-android'
@@ -69,6 +78,14 @@ dir_home = os.getenv('HOME')
 
 target_os_all = ['android', 'linux']
 target_arch_all = ['x86', 'arm', 'x86_64']
+target_arch_info = {
+    'x86': ['x86'],
+    'arm': ['armeabi-v7a'],
+    'x86_64': ['x86_64'],
+}
+TARGET_ARCH_INFO_INDEX_ABI = 0
+
+
 target_module_all = ['webview', 'chrome', 'content_shell', 'chrome_stable', 'chrome_beta', 'webview_shell', 'chrome_shell', 'stock_browser']
 
 
@@ -349,7 +366,7 @@ def setup_device(devices_limit=[]):
                 del devices_type[index]
 
     for device in devices:
-        devices_target_arch.append(get_target_arch(device=device))
+        devices_target_arch.append(android_get_target_arch(device=device))
 
     return (devices, devices_name, devices_type, devices_target_arch)
 
@@ -499,18 +516,6 @@ def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/work
                 break
 
 
-def get_target_arch(device='192.168.42.1'):
-    abi = android_get_info(key='ro.product.cpu.abi', device=device)
-    if abi == 'armeabi-v7a':
-        arch = 'arm'
-    elif abi == 'x86':
-        arch = 'x86'
-    else:
-        error('Could not get correct target arch for device ' + device)
-
-    return arch
-
-
 # is_sylk: If true, just copy as a symbolic link
 def copy_file(file_src, dir_dest, is_sylk=False):
     if not os.path.exists(file_src):
@@ -624,6 +629,9 @@ def chrome_android_cleanup(device):
     for key in chrome_android_ver_type_info:
         execute(adb('uninstall ' + chrome_android_ver_type_info[key][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG], device=device))
 
+    execute(adb('shell rm -rf /data/data/com.example.chromium', device=device))
+    #execute(adb('shell rm -rf /data/dalvik-cache/*', device=device))
+
 
 def chrome_android_get_ver_type(device):
     ver_type = ''
@@ -670,6 +678,20 @@ def android_get_info(key, device='192.168.42.1'):
     return result[1].replace(key + '=', '').rstrip('\r\n')
 
 
+def android_get_target_arch(device='192.168.42.1'):
+    abi = android_get_info(key='ro.product.cpu.abi', device=device)
+    target_arch = ''
+    for key in target_arch_info:
+        if abi == target_arch_info[key][TARGET_ARCH_INFO_INDEX_ABI]:
+            target_arch = key
+            break
+
+    if target_arch == '':
+        error('Could not get correct target arch for device ' + device)
+
+    return target_arch
+
+
 def android_start_emu(target_arch):
 
     pid = os.fork()
@@ -679,7 +701,7 @@ def android_start_emu(target_arch):
     else:
         info('Starting emulator for ' + target_arch)
         if target_arch == 'x86':
-            time.sleep(15)
+            time.sleep(20)
         else:
             time.sleep(60)
 

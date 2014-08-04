@@ -1,18 +1,14 @@
-# todo: check, remove ver_info, verify not work for emulator
 # write down how to config
-
 # Preparation:
 # pip install selenium
 # create x86 and arm emulator (use host GPU)
-
-import urllib2
-from util import *
-
-
+# history in readme
 # apk tool is downloaded from https://code.google.com/p/android-apktool/downloads/list
 # http://connortumbleson.com/apktool/test_versions
 
-# tools: android-sdk-linux/build-tools/20.0.0
+
+import urllib2
+from util import *
 
 dir_root = ''
 vers = []
@@ -23,19 +19,35 @@ pkg_name = {
     'beta': 'com.chrome.beta',
     'example': 'com.example.chromium',
 }
-
-# download: download Chrome.apk and put into todo
-# buildid: install Chrome.apk to device to check version, version type, arch, and create README to record build id and phase.
-# init: init the source code repo. depends on ver.
-# sync: sync source code. depends on ver.
-# runhooks: runhooks to make source code directory ready to build. depends on ver and parts of them rely on target_arch.
-# prebuild: extra things to prepare for prebuild. depends on ver and target_arch.
-# makefile: generate makefile. depends on ver and target_arch.
-# build: build. depends on ver and target_arch.
-# postbuild: generate new package, so with symbol, etc. depends on ver, target_arch and ver_type.
-# verify: install new package to device to verify its correctness.  depends on ver, target_arch and ver_type.
-# notify: send out email notification.  depends on ver, target_arch and ver_type.
-phase_all = ['buildid', 'init', 'sync', 'runhooks', 'prebuild', 'makefile', 'build', 'postbuild', 'verify', 'backup', 'notify']
+ver_info = {
+    '37.0.2062.39': ['46d1e50f-8dc1-44df-ad64-4fbb7bb7d505', 'f74a8980-294c-42a3-98b3-282b286ee0f6'],
+    '36.0.1985.131': ['29bc34f3-d495-4c03-b90e-d07ae3c78345', '14fa9249-9c76-438a-a756-1bca21629e15'],
+    '36.0.1985.128': ['bfa72190-1d52-47be-a7ff-4ad5e683992c', '8a5361bf-31af-4d29-93e2-145ec8e99275'],
+    '36.0.1985.122': ['', '32de7f58-692c-477f-acde-6d52bda05505'],
+    '36.0.1985.94': ['', 'ce2eeca6-ba35-4dd7-8964-97712a7c8969'],
+    '36.0.1985.81': ['8c15751f-fe2e-4570-92e0-8f447ae99112', 'df52e853-9c96-41f6-b3b9-7d2e615c356f'],
+    '36.0.1985.65':  ['757d2126-de53-4925-b2c4-9c8fe2bd3fea', 'b44048e8-d452-4535-91f2-ac85eff04175'],
+    '35.0.1916.141': ['b63d76a9-a8e4-4d2a-ad91-49fe0748a184', '283288f0-3c24-4344-b47a-55088763e809'],
+    '36.0.1985.49': ['f2a6afcb-d1ff-4091-9c66-53dee36e44bb', '54b722b8-e2ec-4efd-adc9-57cbf07906bb'],
+    '36.0.1985.36': ['68c033b2-f7c4-405f-8c81-b2cb952d3613', '79abd906-96e0-47cf-8ba4-19d4c878c340'],
+    '35.0.1916.138': ['e78542a8-1914-4d66-8254-1e56ea1cd5b5', 'b8d5fccd-5008-46cb-b277-dc767429742a'],
+    '35.0.1916.122': ['870cde07-60a9-4a21-b72a-859755afaad2', '9cc8db74-d0a6-4a6f-9bf9-352164051a64'],
+    '35.0.1916.117': ['08d4d390-3072-49ea-81bb-4b195b8d0507', '11af04e2-4f92-4083-90d1-56d20521ce4d'],
+    '35.0.1916.99': ['37882d6c-4608-4051-82fe-9259b4c585dc', '58ccef2a-816e-41a8-9805-1994252ac132'],
+    '35.0.1916.86': ['3f060e3f-15b6-4258-a153-d518e1d79151', 'd19af173-64f0-44e2-a6a7-1acef91fa83e'],
+    '35.0.1916.69': ['c0ecaab6-d6dd-410b-a8c6-474d34b6991c', '7495204a-ceb1-47cf-8fff-d4974953a7f3'],
+    '35.0.1916.48': ['cab313ba-8627-4d7c-b22e-4df70744c6eb', '20568323-6508-493c-89db-f6943c312d7a'],
+    '35.0.1916.34': ['fed698ad-f0e9-41a9-8f85-6fe2caa89426', '117432fb-185f-4fe6-a8ba-392a16094a5b'],
+    '34.0.1847.114': ['ef9f635c-379d-4300-a5b8-dc18c1f14782', 'a59c168c-e8ad-4532-9e58-5712bb0f8ed6'],
+    '33.0.1750.170': ['3559af61-f333-42bb-b1f9-d0df30aa44d6', '6b9b54fc-48aa-4beb-973a-fcf61504e34e'],
+    '34.0.1847.99': ['47f1b631-812d-4c32-8fb9-dbe312dc64ae', '663c3465-afe8-4abb-94d0-44656d11b313'],
+    '34.0.1847.76': ['f8480155-7e4b-49dc-907a-04124848695d', 'a43bcb82-b121-41b9-a8be-60ce309171ca'],
+    '33.0.1750.166': ['bc468ba0-d60e-44a7-ab8a-46a92af3eb95', '0e5b0784-1010-4ca5-9efc-2697ba93a6c8'],
+    '34.0.1847.62': ['f7e92034-f602-4e2d-a483-8b5f034ab199', '2efbe11b-f0b2-4e6d-9374-b1906e68c782'],
+    '34.0.1847.45': ['', 'da6688dc-d769-4a16-bdd0-230def75453d'],
+    '33.0.1750.136': ['', '582969eb-6f20-4ee1-88f2-8252611c1e60'],
+    '33.0.1750.132': ['b1c0cc3c-e397-4a22-83ea-c2fbde2a78dc', 'd63a51d9-67b6-4122-b838-5c375b8a8114'],
+}
 
 
 def parse_arg():
@@ -44,13 +56,15 @@ def parse_arg():
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog='''
 examples:
-  python %(prog)s --ver 36.0.1985.81 --phase all
+  python %(prog)s --ver 36.0.1985.81 --ver-type stable --target-arch x86
 ''')
     parser.add_argument('--ver', dest='ver', help='version', default='all')
     parser.add_argument('--ver-type', dest='ver_type', help='ver type', default='all')
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', default='all')
     parser.add_argument('--run', dest='run', help='run', action='store_true')
+    parser.add_argument('--buildid', dest='buildid', help='buildid', action='store_true')
     parser.add_argument('--check', dest='check', help='check', action='store_true')
+    parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
 
     args = parser.parse_args()
     args_dict = vars(args)
@@ -62,9 +76,6 @@ examples:
 
 def setup():
     global dir_root, vers, ver_types, target_archs
-
-    if not args.ver:
-        error('You must designate version using --ver option')
 
     dir_root = get_symbolic_link_dir()
 
@@ -90,6 +101,7 @@ def run():
     cmd_common = python_chromium + ' --repo-type chrome-android --target-os android --target-module chrome'
     backup_dir(chrome_android_dir_server_todo)
     todos = os.listdir('.')
+    execute('rm -rf temp')
     for todo in todos:
         if os.path.isfile(todo):
             cmd = cmd_common + ' --dir-root ' + chrome_android_dir_server_todo
@@ -121,57 +133,7 @@ def check():
     if not args.check:
         return
 
-    _check_track()
-
-    # Check how many builds left
-    combos_incomplete = []
-    for target_arch, ver, ver_type in [(target_arch, ver, ver_type) for target_arch in target_archs for ver in vers for ver_type in ver_types]:
-        if ver_info[ver][VER_INFO_INDEX_BUILD_ID][target_arch_index[target_arch]] == '':
-            continue
-
-        if ver_type not in ver_info[ver][VER_INFO_INDEX_TYPE]:
-            continue
-
-        dir_server_ver = dir_server_chromium + '/android-%s-chrome/%s-%s' % (target_arch, ver, ver_type)
-        if not os.path.exists(dir_server_ver):
-            combos_incomplete.append((ver, ver_type, target_arch))
-        else:
-            backup_dir(dir_server_ver)
-            if not os.path.exists('Chromium.apk') or not os.path.exists('Chrome.apk') or ver_ge(ver, '34.0.0.0') and execute('ls *.so', show_command=False)[0]:
-                combos_incomplete.append((ver, ver_type, target_arch))
-            restore_dir()
-
-    if len(combos_incomplete) > 0:
-        info('The following builds are not complete: ' + str(combos_incomplete))
-    else:
-        info('All the tracked versions are complete')
-
-    # Check if some phase is marked wrongly
-    vers_incomplete = []
-    for combo in combos_incomplete:
-        ver = combo[0]
-        if ver not in vers_incomplete:
-            vers_incomplete.append(ver)
-
-    vers_stage_error = []
-    for ver in ver_info:
-        if ver_info[ver][VER_INFO_INDEX_STAGE] == 'end' and ver in vers_incomplete:
-            vers_stage_error.append(ver)
-
-    if len(vers_stage_error) > 0:
-        info('The following versions has incorrect stage: ' + ','.join(vers_stage_error))
-    else:
-        info('The stage of all versions are marked correctly')
-
-
-def _has_element_ver(driver):
-    if driver.find_elements_by_class_name('version'):
-        return True
-    else:
-        return False
-
-
-def _check_track():
+    # get all the combos
     url = 'http://www.hiapphere.org/app-chrome_beta'
     try:
         u = urllib2.urlopen(url)
@@ -181,18 +143,70 @@ def _check_track():
 
     html = u.read()
     pattern = re.compile('Version(\d+\.\d+\.\d+\.\d+)')
-    vers_exist = pattern.findall(html)
-    vers_track = ver_info.keys()
-    vers_miss = []
-    ver_min = vers_track[-1]
-    for ver in vers_exist:
-        if ver_ge(ver, ver_min) and ver not in vers_track:
-            vers_miss.append(ver)
+    vers_all = pattern.findall(html)
+    combos_all = []
+    for ver in vers_all:
+        if not ver_ge(ver, '33.0.1750.132'):
+            continue
+        for target_arch in target_arch_chrome_android:
+            combos_all.append((target_arch, ver))
 
-    if len(vers_miss) > 0:
-        info('Please add following versions to ver_info: ' + ','.join(vers_miss))
-    else:
-        info('All existed versions have been fully tracked')
+    # get all combos done
+    combos_done = []
+    for target_arch in target_arch_chrome_android:
+        dirs_done = os.listdir(dir_server_chromium + '/android-%s-chrome' % target_arch)
+        dirs_done += os.listdir(dir_server_chromium + '/android-%s-chrome/archive' % target_arch)
+        combos_done += _get_combos(dirs_done, target_arch)
+
+    # get all combos todo
+    combos_todo = []
+    for target_arch in target_arch_chrome_android:
+        dirs_todo = os.listdir(chrome_android_dir_server_todo + '/%s' % target_arch)
+        combos_todo += _get_combos(dirs_todo, target_arch)
+
+    combos_new = sorted(list_diff(combos_all, list_union(combos_done, combos_todo)))
+    info('The following combos need to be downloaded: ' + ','.join(str(i) for i in combos_new))
+
+
+def backup():
+    if not args.backup:
+        return
+
+    for target_arch in target_arch_chrome_android:
+        dirs = os.listdir(dir_server_chromium + '/android-%s-chrome' % target_arch)
+        for dir_temp in dirs:
+            if dir_temp == 'archive':
+                continue
+
+            info_temp = dir_temp.split('-')
+            ver_temp = info_temp[0]
+            ver_type_temp = info_temp[1]
+
+            dir_chrome = 'chromium/android-%s-chrome/%s-%s' % (target_arch, ver_temp, ver_type_temp)
+            execute('smbclient %s -N -c "prompt; recurse; mkdir %s;"' % (path_server_backup, dir_chrome))
+            backup_dir(dir_server + '/' + dir_chrome)
+            if os.path.exists('Chrome.apk'):
+                backup_smb(path_server_backup, dir_chrome, 'Chrome.apk')
+                backup_smb(path_server_backup, dir_chrome, 'Chromium.apk')
+                backup_smb(path_server_backup, dir_chrome, 'README')
+            else:
+                backup_smb(path_server_backup, dir_chrome, 'Null.apk')
+            restore_dir()
+
+
+def _get_combos(dirs_check, target_arch):
+    combos = []
+    pattern = re.compile('(\d+\.\d+\.\d+\.\d+)-(stable|beta)')
+
+    for dir_check in dirs_check:
+        match = pattern.search(dir_check)
+        if not match:
+            continue
+        ver_temp = match.group(1)
+
+        combos.append((target_arch, ver_temp))
+
+    return combos
 
 
 if __name__ == "__main__":
@@ -200,3 +214,4 @@ if __name__ == "__main__":
     setup()
     run()
     check()
+    backup()

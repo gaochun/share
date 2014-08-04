@@ -78,6 +78,7 @@ dir_home = os.getenv('HOME')
 
 target_os_all = ['android', 'linux']
 target_arch_all = ['x86', 'arm', 'x86_64']
+target_arch_chrome_android = target_arch_all[0:2]
 target_arch_info = {
     'x86': ['x86'],
     'arm': ['armeabi-v7a'],
@@ -706,7 +707,20 @@ def android_start_emu(target_arch):
             time.sleep(60)
 
 
-##### android related functions begin #####
+##### android related functions end #####
+
+
+def list_union(a, b):
+    return list(set(a).union(set(b)))
+
+
+def list_intersect(a, b):
+    return list(set(a).intersection(set(b)))
+
+
+def list_diff(a, b):
+    return list(set(a).difference(set(b)))
+
 ################################################################################
 
 

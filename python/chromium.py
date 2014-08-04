@@ -20,39 +20,6 @@ majorver_info = {
 }
 MAJORVER_INFO_INDEX_REV = 0
 
-# stable: com.android.chrome, beta: com.chrome.beta
-ver_info = {
-    '37.0.2062.39': ['beta', 'start', ['46d1e50f-8dc1-44df-ad64-4fbb7bb7d505', 'f74a8980-294c-42a3-98b3-282b286ee0f6']],
-    '36.0.1985.128': ['stable', 'end', ['bfa72190-1d52-47be-a7ff-4ad5e683992c', '8a5361bf-31af-4d29-93e2-145ec8e99275']],
-    '36.0.1985.122': ['stable', 'start', ['', '32de7f58-692c-477f-acde-6d52bda05505']],
-    '36.0.1985.94': ['beta', 'start', ['', 'ce2eeca6-ba35-4dd7-8964-97712a7c8969']],
-    '36.0.1985.81': ['beta', 'end', ['8c15751f-fe2e-4570-92e0-8f447ae99112', 'df52e853-9c96-41f6-b3b9-7d2e615c356f']],
-    '36.0.1985.65':  ['beta', 'end', ['757d2126-de53-4925-b2c4-9c8fe2bd3fea', 'b44048e8-d452-4535-91f2-ac85eff04175']],
-    '35.0.1916.141': ['stable', 'start', ['b63d76a9-a8e4-4d2a-ad91-49fe0748a184', '283288f0-3c24-4344-b47a-55088763e809']],
-    '36.0.1985.49': ['beta', 'end', ['f2a6afcb-d1ff-4091-9c66-53dee36e44bb', '54b722b8-e2ec-4efd-adc9-57cbf07906bb']],
-    '36.0.1985.36': ['beta', 'end', ['68c033b2-f7c4-405f-8c81-b2cb952d3613', '79abd906-96e0-47cf-8ba4-19d4c878c340']],
-    '35.0.1916.138': ['stable', 'start', ['e78542a8-1914-4d66-8254-1e56ea1cd5b5', 'b8d5fccd-5008-46cb-b277-dc767429742a']],
-    '35.0.1916.122': ['stable', 'start', ['870cde07-60a9-4a21-b72a-859755afaad2', '9cc8db74-d0a6-4a6f-9bf9-352164051a64']],
-    '35.0.1916.117': ['beta', 'start', ['08d4d390-3072-49ea-81bb-4b195b8d0507', '11af04e2-4f92-4083-90d1-56d20521ce4d']],
-    '35.0.1916.99': ['beta', 'end', ['37882d6c-4608-4051-82fe-9259b4c585dc', '58ccef2a-816e-41a8-9805-1994252ac132']],
-    '35.0.1916.86': ['beta', 'end', ['3f060e3f-15b6-4258-a153-d518e1d79151', 'd19af173-64f0-44e2-a6a7-1acef91fa83e']],
-    '35.0.1916.69': ['beta', 'end', ['c0ecaab6-d6dd-410b-a8c6-474d34b6991c', '7495204a-ceb1-47cf-8fff-d4974953a7f3']],
-    '35.0.1916.48': ['beta', 'end', ['cab313ba-8627-4d7c-b22e-4df70744c6eb', '20568323-6508-493c-89db-f6943c312d7a']],
-    '35.0.1916.34': ['beta', 'start', ['fed698ad-f0e9-41a9-8f85-6fe2caa89426', '117432fb-185f-4fe6-a8ba-392a16094a5b']],
-    '34.0.1847.114': ['stable', 'start', ['ef9f635c-379d-4300-a5b8-dc18c1f14782', 'a59c168c-e8ad-4532-9e58-5712bb0f8ed6']],
-    '33.0.1750.170': ['stable', 'end', ['3559af61-f333-42bb-b1f9-d0df30aa44d6', '6b9b54fc-48aa-4beb-973a-fcf61504e34e']],
-    '34.0.1847.99': ['beta', 'start', ['47f1b631-812d-4c32-8fb9-dbe312dc64ae', '663c3465-afe8-4abb-94d0-44656d11b313']],
-    '34.0.1847.76': ['beta', 'start', ['f8480155-7e4b-49dc-907a-04124848695d', 'a43bcb82-b121-41b9-a8be-60ce309171ca']],
-    '33.0.1750.166': ['stable', 'end', ['bc468ba0-d60e-44a7-ab8a-46a92af3eb95', '0e5b0784-1010-4ca5-9efc-2697ba93a6c8']],
-    '34.0.1847.62': ['beta', 'start', ['f7e92034-f602-4e2d-a483-8b5f034ab199', '2efbe11b-f0b2-4e6d-9374-b1906e68c782']],
-    '34.0.1847.45': ['beta', 'start', ['', 'da6688dc-d769-4a16-bdd0-230def75453d']],
-    '33.0.1750.136': ['stable', 'end', ['', '582969eb-6f20-4ee1-88f2-8252611c1e60']],
-    '33.0.1750.132': ['beta,stable', 'end', ['b1c0cc3c-e397-4a22-83ea-c2fbde2a78dc', 'd63a51d9-67b6-4122-b838-5c375b8a8114']],
-}
-VER_INFO_INDEX_TYPE = 0
-VER_INFO_INDEX_STAGE = 1
-VER_INFO_INDEX_BUILD_ID = 2
-
 args = ''
 args_dict = []
 repo_type = ''
@@ -102,6 +69,18 @@ ver_no_android_gyp = '34.0.1847.61'
 
 # repo type specific variables
 # chrome-android
+
+# download: download Chrome.apk and put into todo
+# buildid: install Chrome.apk to device to check version, version type, arch, and create README to record build id and phase.
+# init: init the source code repo. depends on ver.
+# sync: sync source code. depends on ver.
+# runhooks: runhooks to make source code directory ready to build. depends on ver and parts of them rely on target_arch.
+# prebuild: extra things to prepare for prebuild. depends on ver and target_arch.
+# makefile: generate makefile. depends on ver and target_arch.
+# build: build. depends on ver and target_arch.
+# postbuild: generate new package, so with symbol, etc. depends on ver, target_arch and ver_type.
+# verify: install new package to device to verify its correctness.  depends on ver, target_arch and ver_type.
+# notify: send out email notification.  depends on ver, target_arch and ver_type.
 chrome_android_phase_all = ['buildid', 'init', 'sync', 'runhooks', 'prebuild', 'makefile', 'build', 'postbuild', 'verify', 'backup', 'notify']
 ver = ''
 ver_type = ''
@@ -335,6 +314,7 @@ examples:
 
     group_basic = parser.add_argument_group('basic')
     group_basic.add_argument('--download', dest='download', help='download', action='store_true')
+    group_basic.add_argument('--buildid', dest='buildid', help='buildid', action='store_true')
     group_basic.add_argument('--init', dest='init', help='init', action='store_true')
     group_basic.add_argument('--patch', dest='patch', help='apply patches', action='store_true')
     group_basic.add_argument('--prebuild', dest='prebuild', help='prebuild', action='store_true')
@@ -507,7 +487,7 @@ def setup():
             if not getenv('ANDROID_SDK_ROOT'):
                 error('Environment is not well set')
 
-        if rev < rev_gyp_defines or repo_type == 'chrome-android' and ver_ge(ver_gyp_defines, ver):
+        if rev < rev_gyp_defines or repo_type == 'chrome-android' and not args.chrome_android_apk and ver_ge(ver_gyp_defines, ver):
             setenv('GYP_DEFINES', 'werror= disable_nacl=1 enable_svg=0')
         else:
             setenv('GYP_DEFINES', 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os)
@@ -544,13 +524,20 @@ def buildid(force=False):
     execute('rm -rf temp', show_command=False)
 
     (ver_temp, ver_type_temp, build_id_temp) = _chrome_android_get_info(target_arch_temp, chrome_android_apk)
-
-    dir_todo = '%s/%s-%s' % (target_arch_temp, ver_temp, ver_type_temp)
-    if os.path.exists(dir_todo):
-        error('The todo directory already exists for ' + file_todo)
+    info('build id is ' + build_id_temp)
+    dir_todo = '%s/%s/%s-%s' % (chrome_android_dir_server_todo, target_arch_temp, ver_temp, ver_type_temp)
+    dirs_check = [
+        dir_todo,
+        '%s/android-%s-chrome/%s-%s' % (dir_server_chromium, target_arch_temp, ver_temp, ver_type_temp),
+        '%s/android-%s-chrome/archive/%s-%s' % (dir_server_chromium, target_arch_temp, ver_temp, ver_type_temp),
+    ]
+    for dir_check in dirs_check:
+        print dir_check
+        if os.path.exists(dir_todo):
+            error('The todo directory already exists at ' + dir_check)
 
     os.makedirs(dir_todo)
-    execute('mv "%s" %s/Chrome.apk' % (file_todo, dir_todo))
+    execute('mv "%s" %s/Chrome.apk' % (chrome_android_apk, dir_todo))
     execute('echo "phase=buildid\nbuild-id=%s" >%s/README' % (build_id_temp, dir_todo), show_command=False)
 
 
@@ -811,7 +798,7 @@ def verify(force=False):
         return
 
     if repo_type == 'chrome-android':
-        _chrome_android_get_info(target_arch, chrome_android_dir_server_root + '/Chromium.apk', bypass=True)
+        #_chrome_android_get_info(target_arch, chrome_android_dir_server_root + '/Chromium.apk', bypass=True)
         _update_phase(get_caller_name())
 
 
@@ -820,11 +807,16 @@ def backup(force=False):
         return
 
     if repo_type == 'chrome-android':
-        if host_name == 'wp-02':
+        if host_name == 'wp-03':
             dir_chrome = 'chromium/android-%s-chrome/%s-%s' % (target_arch, ver, ver_type)
             execute('smbclient %s -N -c "prompt; recurse; mkdir %s;"' % (path_server_backup, dir_chrome))
             backup_dir(chrome_android_dir_server_root)
-            backup_smb(path_server_backup, dir_chrome, 'Chrome.apk')
+            if os.path.exists('Chrome.apk'):
+                backup_smb(path_server_backup, dir_chrome, 'Chrome.apk')
+                backup_smb(path_server_backup, dir_chrome, 'Chromium.apk')
+                backup_smb(path_server_backup, dir_chrome, 'README')
+            else:
+                backup_smb(path_server_backup, dir_chrome, 'Null.apk')
             restore_dir()
 
         _update_phase(get_caller_name())
@@ -1524,7 +1516,9 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         target_arch_device = _get_target_arch_device()
     if not target_arch in target_arch_device:
         error('Failed to get device for target arch ' + target_arch)
+
     device = target_arch_device[target_arch]
+    info('Use device %s with target_arch %s' % (device, target_arch))
     android_unlock_screen(device)
     chrome_android_cleanup(device)
 
@@ -1550,10 +1544,12 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         capabilities = {
             'chromeOptions': {
                 'androidPackage': chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG],
-                'androidActivity': chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_ACT],
                 'androidDeviceSerial': device,
             }
         }
+        activity = chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_ACT]
+        if not activity == '':
+            capabilities['chromeOptions']['androidActivity'] = activity
         driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
         driver.get('chrome://version')
         WebDriverWait(driver, 30, 1).until(_has_element_ver)
@@ -1594,12 +1590,20 @@ def _get_target_arch_device():
             target_arch_device[target_arch_temp] = devices[index]
 
     return target_arch_device
+
+
+def _has_element_ver(driver):
+    if driver.find_elements_by_class_name('version'):
+        return True
+    else:
+        return False
 ########## Internal function end ##########
 
 
 if __name__ == '__main__':
     parse_arg()
     setup()
+    buildid()
     init()
     # gclient
     revert()

@@ -1574,8 +1574,13 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
 
 
 def _update_phase(phase):
+    pattern = re.compile('phase=(.*)')
     for line in fileinput.input(chrome_android_file_readme, inplace=1):
-        if re.search('phase=', line):
+        match= pattern.search(line)
+        if match:
+            phase_old = match.group(1)
+            if chrome_android_phase_all.index(phase_old) + 1 != chrome_android_phase_all.index(phase):
+                error('Phase can not be set discontinuously')
             line = 'phase=' + phase + '\n'
         sys.stdout.write(line)
 

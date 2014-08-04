@@ -321,7 +321,7 @@ examples:
     group_basic.add_argument('--makefile', dest='makefile', help='generate makefile', action='store_true')
     group_basic.add_argument('--build', dest='build', help='build', action='store_true')
     group_basic.add_argument('--build-skip-mk', dest='build_skip_mk', help='skip the generation of makefile', action='store_true')
-    group_basic.add_argument('--build-fail-max', dest='build_fail_max', help='allow n build failures before it stops', default='0')
+    group_basic.add_argument('--build-fail-max', dest='build_fail_max', help='allow n build failures before it stops', type=int, default=0)
     group_basic.add_argument('--build-verbose', dest='build_verbose', help='output verbose info. Find log at out/Release/.ninja_log', action='store_true')
     group_basic.add_argument('--postbuild', dest='postbuild', help='postbuild', action='store_true')
     group_basic.add_argument('--verify', dest='verify', help='verify', action='store_true')
@@ -722,7 +722,7 @@ def build(force=False):
     if need_makefile:
         makefile(force=True)
 
-    cmd_ninja = 'ninja -k' + build_fail_max + ' -j' + number_cpu + ' -C ' + dir_out_build_type
+    cmd_ninja = 'ninja -k' + str(build_fail_max) + ' -j' + number_cpu + ' -C ' + dir_out_build_type
     if target_os == 'android' and target_module == 'webview':
         cmd_ninja += ' android_webview_apk libwebviewchromium'
     elif target_os == 'android' and target_module == 'content_shell':

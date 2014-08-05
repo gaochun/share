@@ -626,7 +626,7 @@ def singleton(lock):
         exit(0)
 
 
-def chrome_android_cleanup(device):
+def chrome_android_cleanup(device='192.168.42.1'):
     for key in chrome_android_ver_type_info:
         execute(adb('uninstall ' + chrome_android_ver_type_info[key][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG], device=device))
 
@@ -634,7 +634,7 @@ def chrome_android_cleanup(device):
     #execute(adb('shell rm -rf /data/dalvik-cache/*', device=device))
 
 
-def chrome_android_get_ver_type(device):
+def chrome_android_get_ver_type(device='192.168.42.1'):
     ver_type = ''
     for key in chrome_android_ver_type_info:
         if execute_adb_shell(cmd='pm -l |grep ' + chrome_android_ver_type_info[key][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG], device=device):
@@ -645,7 +645,7 @@ def chrome_android_get_ver_type(device):
 
 
 ##### android related functions begin #####
-def android_unlock_screen(device):
+def android_unlock_screen(device='192.168.42.1'):
     execute(adb(cmd='shell input keyevent 82', device=device))
 
 

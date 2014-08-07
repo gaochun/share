@@ -1,3 +1,7 @@
+# todo
+# logger
+# try with cron jobs
+
 # write down how to config
 # Preparation:
 # pip install selenium
@@ -5,8 +9,10 @@
 # history in readme
 # apk tool is downloaded from https://code.google.com/p/android-apktool/downloads/list
 # http://connortumbleson.com/apktool/test_versions
+# 32761AAE6636D2A3
 
-
+from selenium import webdriver
+from selenium.webdriver.support.wait import WebDriverWait
 import urllib2
 from util import *
 
@@ -31,6 +37,7 @@ examples:
     parser.add_argument('--buildid', dest='buildid', help='buildid', action='store_true')
     parser.add_argument('--check', dest='check', help='check', action='store_true')
     parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
+    parser.add_argument('--download', dest='download', help='download', action='store_true')
 
     args = parser.parse_args()
     args_dict = vars(args)
@@ -56,8 +63,8 @@ def setup():
         target_archs = args.target_arch.split(',')
 
 
-def run():
-    if not args.run:
+def run(force=False):
+    if not args.run and not force:
         return
 
     if not os.path.exists(chrome_android_dir_server_todo):
@@ -160,6 +167,61 @@ def backup():
             restore_dir()
 
 
+def download():
+    if not args.download:
+        return
+
+    dir_download = chrome_android_dir_server_todo + '/download'
+    execute('rm -rf %s/*' % dir_download)
+
+    # download the apk
+    env_http_proxy = getenv('http_proxy')
+    unsetenv('http_proxy')
+    options = webdriver.ChromeOptions()
+    options.add_experimental_option('excludeSwitches', ['ignore-certificate-errors', 'disable-default-apps', 'user-data-dir'])
+    options.add_argument('user-data-dir=%s' % (dir_tool + '/chrome-profile'))
+    options.add_argument('start-maximized')
+    driver = webdriver.Chrome(executable_path=dir_tool + '/chromedriver', chrome_options=options, service_args=['--verbose', '--log-path=/dev/null'])
+    driver.get('https://play.google.com/store/apps/details?id=com.android.chrome')
+    WebDriverWait(driver, 30, 1).until(_has_element)
+    mouse_move(1370, 70)
+    mouse_click()
+    while True:
+        files = os.listdir(dir_download)
+        if files and not re.search('crdownload', files[0]):
+            break
+        time.sleep(3)
+    driver.quit()
+    setenv('http_proxy', env_http_proxy)
+
+    # check with existed build
+    apk_new = files[0]
+    dirs_check = os.listdir(dir_server_chromium + '/android-arm-chrome') + os.listdir(chrome_android_dir_server_todo + '/arm')
+    pattern = '\d+\.\d+\.(\d+)\.(\d+)'
+    for dir_check in dirs_check:
+        match = re.search(pattern, dir_check)
+        if not match:
+            continue
+
+        ver_build_patch = match.group(1) + match.group(2)
+        if ver_build_patch == apk_new:
+            info('The downloaded apk ' + apk_new + ' has been there at ' + dir_check)
+            execute('rm -f %s/%s' % (dir_download, apk_new))
+            return
+
+    content = 'A new Chrome for Android apk %s has been found at Google Play.' % apk_new
+    send_mail('webperf@intel.com', 'yang.gu@intel.com', 'New Chrome for Android at Google Play', content, type='html')
+    execute('mv %s/%s %s' % (dir_download, apk_new, chrome_android_dir_server_todo), dryrun=False)
+    run(force=True)
+
+
+def _has_element(driver):
+    if driver.find_elements_by_class_name('document-title'):
+        return True
+    else:
+        return False
+
+
 def _get_combos(dirs_check, target_arch):
     combos = []
     pattern = re.compile('(\d+\.\d+\.\d+\.\d+)-(stable|beta)')
@@ -181,3 +243,4 @@ if __name__ == "__main__":
     run()
     check()
     backup()
+    download()

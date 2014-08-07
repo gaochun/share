@@ -721,6 +721,26 @@ def list_intersect(a, b):
 def list_diff(a, b):
     return list(set(a).difference(set(b)))
 
+
+def mouse_move(x, y):
+    from Xlib.display import Display
+    from Xlib import X
+    from Xlib.ext.xtest import fake_input
+    d = Display()
+    fake_input(d, X.MotionNotify, x=x, y=y)
+    d.flush()
+
+
+def mouse_click(button=1):
+    from Xlib import X
+    from Xlib.display import Display
+    from Xlib.ext.xtest import fake_input
+
+    d = Display()
+    fake_input(d, X.ButtonPress, button)
+    d.sync()
+    fake_input(d, X.ButtonRelease, button)
+    d.sync()
 ################################################################################
 
 

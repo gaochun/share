@@ -495,6 +495,7 @@ def flash_image():
         android_unlock_screen()
         # After system boots up, it will show guide screen and never lock or turn off screen.
         android_set_screen_lock_none()
+        android_set_display_sleep_30mins()
 
 
 def start_emu():

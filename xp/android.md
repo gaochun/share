@@ -178,3 +178,30 @@ input keyevent 82 // unlock
 
 </input>
 
+<tethering>
+desktop shares the connection of android device
+
+192.168.42.51
+
+* wireless & networks -> More... -> Tethering & portable hotspot -> usb tethering
+* bridge the interface (usb0 is the new network intreface, eth0 is the main interface connected to internet)
+sudo ifconfig eth0 0.0.0.0
+sudo ifconfig usb0 0.0.0.0
+sudo brctl addbr br0
+sudo brctl addif br0 eth0
+sudo brctl addif br0 usb0
+sudo ifconfig br0 up
+sudo dhclient br0
+
+
+
+*
+./adb shell netcfg usb0 dhcp
+
+<tethering>
+
+<reverse_tethering>
+android device shares the connection of desktop
+
+
+</reverse_tethering>

@@ -486,22 +486,6 @@ def flash_image():
     if not is_connected:
         error('Can not connect to device after system boots up')
 
-    # Boot up again to workaround issue that it can't boot to GUI right after image flash
-    execute('timeout 5s ' + adb(cmd='reboot'))
-    # Wait until system is up
-    is_connected = False
-    for i in range(0, 60):
-        if not connect_device():
-            info('Sleeping %s seconds' % str(sleep_sec))
-            time.sleep(sleep_sec)
-            continue
-        else:
-            is_connected = True
-            break
-
-    if not is_connected:
-        error('Can not connect to device after system boots up')
-
     # It will take about 45s to boot to GUI
     info('Sleeping 60 seconds until system fully boots up..')
     time.sleep(60)

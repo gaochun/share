@@ -292,7 +292,7 @@ examples:
     #dir: <arch>-<target-os>/out/<build_type>, example: x86-linux/out/Release
     group_common.add_argument('--target-os', dest='target_os', help='target os', choices=['android', 'linux'])
     group_common.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'arm', 'x86_64', 'arm64'], default='x86')
-    group_common.add_argument('--target-module', dest='target_module', help='target module to build', choices=['chrome', 'webview', 'content_shell'], default='webview')
+    group_common.add_argument('--target-module', dest='target_module', help='target module to build', choices=['chrome', 'webview', 'content_shell', 'chromedriver'], default='webview')
     group_common.add_argument('--devices', dest='devices', help='device id list separated by ","', default='')
     group_common.add_argument('--dir-root', dest='dir_root', help='set root directory')
     group_common.add_argument('--just-out', dest='just_out', help='stick to out, instead of out-x86_64/out', action='store_true')
@@ -743,11 +743,10 @@ def build(force=False):
     if result[0]:
         error('Failed to execute command: ' + cmd_ninja)
 
-    result = execute('ls %s/lib/lib*prebuilt.so' % dir_out_build_type)
-    if result[0]:
-        error('Failed to execute build')
-
     if repo_type == 'chrome-android':
+        result = execute('ls %s/lib/lib*prebuilt.so' % dir_out_build_type)
+        if result[0]:
+            error('Failed to execute build')
         _update_phase(get_caller_name())
 
 

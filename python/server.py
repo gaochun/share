@@ -11,6 +11,7 @@ cb_interval = {
     'update_share': 1800,
     'test_x64_all': 24 * 3600 - interval_cron * 60,
     'test_x64_aosp_build': 24 * 3600 - interval_cron * 60,
+    'chrome_android': 3600,
 }
 
 
@@ -66,7 +67,7 @@ def start():
 
     elif host_name == 'wp-03':
         _run_one('update_share')
-        # chrome-android build
+        _run_one('chrome_android')
 
     elif host_name == 'ubuntu-ygu5-02':
         _run_one('test_x64_aosp_build')
@@ -85,6 +86,10 @@ def test_x64_all():
 
 def test_x64_aosp_build():
     execute('python ' + dir_python + '/test-x64.py --target-arch x86_64,x86 --phase aosp-prebuild,aosp-build --dir-aosp aosp-stable-daily', interactive=True)
+
+
+def chrome_android():
+    execute('python ' + dir_python + '/chrome-android.py --run')
 
 
 # If callback does not start within interval, start it

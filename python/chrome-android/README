@@ -1,0 +1,24 @@
+Naming Rules for MOUDLE_COMBO (top level):
+MODULE_COMBO: <TARGET_OS>-<TARGET_ARCH>-<MODULE>
+TARGET_OS: android, linux, etc.
+TARGET_ARCH: x86, arm, x86_64, etc.
+MODULE: chrome, content_shell, webview, etc.
+For example, if you want to find MODULE_COMBO such as "x86 Chrome for Android", you just need to pay a visit at android-x86-chrome.
+
+
+Naming Rules for MODULE_COMBO "Chrome for Android":
+VERSION_COMBO: <VERSION>-<VERSION_TYPE>
+VERSION: An combination of <MAJOR>.<MINOR>.<BUILD>.<PATCH>. E.g.,
+36.0.1985.128.
+<VERSION_TYPE>: stable, beta, etc.
+In each VERSION_COMBO directory, Chrome.apk is the one acquired directly from Google Play, Chromium.apk is the one repacked by ourselves, while libchromexxx.so is the one with symbols.
+
+
+If the specific apk is missed (might happen for x86 as we can not get old apks), a simple Null.apk will be placed at the specific directory.
+
+
+
+
+history:
+
+20140807: Skip the build of arm/34.0.1847.45-beta, arm/34.0.1847.114-stable and x86/34.0.1847.62-beta due to build issues. These are quite old versions so we don't put more effort on them. 

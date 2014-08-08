@@ -1,0 +1,37 @@
+{
+  "name": "APK Downloader",
+  "description": "Download APK from Google Play Store (Android Market).",
+  "version": "2.1",
+  "manifest_version": 2,
+  "homepage_url": "https://lekensteyn.nl/apk-downloader/",
+  "update_url": "https://lekensteyn.nl/apk-downloader/updates.xml",
+  "icons": {
+      "16": "icon_16.png",
+      "48": "icon_48.png",
+      "128": "icon_128.png"
+  },
+  "page_action": {
+    "default_icon": "page_action.png",
+    "default_title": "APK Downloader"
+  },
+  "content_scripts": [{
+      "matches": [
+          "*://play.google.com/*"
+      ],
+      "run_at": "document_end",
+      "js": ["market.js"]
+  }],
+
+  "options_page": "options.html",
+  "background": {
+      "scripts": ["jsxcompressor.min.js", "protocol.js", "progress.js", "background.js" ],
+      "persistent": false
+  },
+  "permissions": [
+    "cookies",
+    "downloads",
+    "webNavigation",
+    "https://www.google.com/accounts/ClientLogin",
+    "*://*.android.clients.google.com/*"
+  ]
+}

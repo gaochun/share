@@ -1,0 +1,191 @@
+body.options
+{
+	background: #FBFBFB;
+	min-width: 0;
+	font-family: sans-serif;
+	font-size: 12px;
+	line-height: 1.4em;
+	color:#333;
+}
+
+a
+{
+	text-decoration:none;
+}
+
+#info_form, #login_form
+{
+	display:none;
+}
+
+#options
+{
+	width: 400px;
+	padding: 80px 400px 0px 0;
+	margin: auto;
+}
+
+#options h1
+{
+	margin:0px 0px 15px 8px;
+	text-align: center;
+}
+
+#options form
+{
+	margin-left: 8px;
+	padding: 26px 24px 26px;
+	font-weight: normal;
+	background: white;
+	border: 1px solid #E5E5E5;
+	-webkit-box-shadow: rgba(200,200,200,0.7) 0 4px 10px -1px;
+	box-shadow: rgba(200,200,200,0.7) 0 4px 10px -1p
+}
+
+#options label
+{
+	color: #777;
+	font-size: 14px;
+}
+
+#options label span
+{
+	color:#555;
+	display:block;
+	font-weight: 200;
+	font-size: 24px;
+	line-height: 1;
+	width: 100%;
+	padding: 3px;
+	margin-top: 2px;
+	margin-right: 6px;
+	margin-bottom: 16px;
+	font-family: "HelveticaNeue-Light","Helvetica Neue Light","Helvetica Neue",sans-serif;
+}
+
+#options form .input
+{
+	color:#555;
+	font-family: "HelveticaNeue-Light","Helvetica Neue Light","Helvetica Neue",sans-serif;
+	font-weight: 200;
+	font-size: 24px;
+	line-height: 1;
+	width: 100%;
+	padding: 3px;
+	margin-top: 2px;
+	margin-right: 6px;
+	margin-bottom: 16px;
+	border: 1px solid #E5E5E5;
+	background: #FBFBFB;
+	outline: none;
+	-webkit-box-shadow: inset 1px 1px 2px rgba(200,200,200,0.2);
+	box-shadow: inset 1px 1px 2px rgba(200,200,200,0.2);
+	float: left;
+}
+
+#options form .button-primary
+{
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 14px;
+	color: #ffffff;
+	padding: 10px 20px;
+	background: -webkit-gradient(
+		linear, left top, left bottom,
+		from(#6b6b6b),
+		to(#000000));
+	border-radius: 30px;
+	-webkit-border-radius: 30px;
+	border: 1px solid #000000;
+	-webkit-box-shadow:
+		0px 1px 3px rgba(000,000,000,0.5),
+		inset 0px 0px 1px rgba(255,255,255,0.7);
+	text-shadow:
+		0px -1px 0px rgba(000,000,000,0.4),
+		0px 1px 0px rgba(255,255,255,0.3);
+}
+
+#options form .button-primary:hover
+{
+	background: -webkit-gradient(
+		linear, left top, left bottom,
+		from(#ff3333),
+		to(#b80000));
+	border: 1px solid #d11313;
+	cursor: pointer;
+}
+
+#options form .button-primary:active
+{
+	background: -webkit-gradient(
+		linear, left top, left bottom,
+		from(#bf0000),
+		to(#fa0000));
+	border: 1px solid #d10000;
+}
+
+#options form p.submit
+{
+	text-align:right;
+}
+
+#slt_country, #slt_operator
+{
+	width: 45%;
+}
+#user_device_id, #device_id {
+	text-transform: uppercase;
+}
+#login_form input.input:invalid {
+	box-shadow: 0 0 1.5px 1px red;
+}
+.show-advanced .btn-advanced-settings.expander {
+	display: none;
+}
+.hide-advanced .btn-advanced-settings.collapser, .hide-advanced #advanced-settings {
+	display: none;
+}
+.btn-advanced-settings {
+	margin-top: 8px;
+	border: none;
+	background: none;
+	color: rgb(0, 102, 204);
+	cursor: pointer;
+}
+.btn-advanced-settings:hover {
+	text-decoration: underline;
+}
+
+.help-msg {
+	margin-left: 8px;
+	padding-left: 8px;
+	left: 100%;
+	position: relative;
+	display: none;
+	background-image:
+		-webkit-linear-gradient(315deg, transparent 50%, #747474 50%),
+		-webkit-linear-gradient(45deg, transparent 50%, #747474 50%);
+	background-position: 0 0, 0 8px;
+	background-repeat: no-repeat;
+	background-size: 8px 8px;
+	height: 16px;
+}
+.help-msg p {
+	position: absolute;
+	border: 1px solid #747474;
+	background: white;
+	padding: 1em;
+	font-size: larger;
+	margin: 0;
+}
+input:focus + .help-msg {
+	display: block;
+}
+
+footer {
+	margin: 20px auto;
+	padding-right: 400px;
+	width: 400px;
+}
+footer p {
+	margin-left: 8px;
+}

@@ -532,9 +532,9 @@ def buildid(force=False):
         '%s/android-%s-chrome/archive/%s-%s' % (dir_server_chromium, target_arch_temp, ver_temp, ver_type_temp),
     ]
     for dir_check in dirs_check:
-        print dir_check
-        if os.path.exists(dir_todo):
-            error('The todo directory already exists at ' + dir_check)
+        if os.path.exists(dir_check):
+            execute('mv %s trash' % chrome_android_apk)
+            error('The apk %s/%s-%s has been tracked, so will be moved to trash' % (target_arch_temp, ver_temp, ver_type_temp))
 
     os.makedirs(dir_todo)
     execute('mv "%s" %s/Chrome.apk' % (chrome_android_apk, dir_todo))

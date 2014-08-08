@@ -743,6 +743,10 @@ def build(force=False):
     if result[0]:
         error('Failed to execute command: ' + cmd_ninja)
 
+    result = execute('ls %s/lib/lib*prebuilt.so' % dir_out_build_type)
+    if result[0]:
+        error('Failed to execute build')
+
     if repo_type == 'chrome-android':
         _update_phase(get_caller_name())
 
@@ -752,7 +756,6 @@ def postbuild(force=False):
         return
 
     if repo_type == 'chrome-android':
-        dir_out = dir_src + '/out-' + target_arch + '/out'
         dir_chrome = chrome_android_dir_server_root + '/Chrome'
         if target_arch == 'arm':
             target_arch_temp = 'armeabi-v7a'
@@ -768,7 +771,7 @@ def postbuild(force=False):
         # replace libchrome(view).so
         result = execute('ls %s/libchrome*.so' % dir_chrome_lib, return_output=True)
         file_chrome = result[1].split('/')[-1].strip('\n')
-        backup_dir(dir_out + '/Release/lib')
+        backup_dir(dir_out_build_type + '/lib')
         ## backup the one with symbol
         execute('cp -f lib*prebuilt.so %s/%s' % (chrome_android_dir_server_root, file_chrome), interactive=True, abort=True, dryrun=False)
         ## copy, strip and replace

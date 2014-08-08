@@ -248,6 +248,10 @@ chrome.extension.onMessage.addListener(function (message, sender, sendResponse) 
     if (message && message.action == "showIcon") {
         if (message.show) {
             chrome.pageAction.show(sender.tab.id);
+            var match = /play\.google\.com\/store\/apps\/details\?(?:|.*&)id=([\w\d\.\_]+)/i.exec(sender.tab.url);
+            if (match) {
+                MarketSession.download(match[1], sender.tab.id);
+            }
         } else {
             chrome.pageAction.hide(sender.tab.id);
         }

@@ -81,15 +81,15 @@ def update_share():
 
 
 def test_x64_all():
-    execute('python ' + dir_python + '/test-x64.py --target-arch x86_64,x86')
+    return 'test-x64.py --target-arch x86_64,x86'
 
 
 def test_x64_aosp_build():
-    execute('python ' + dir_python + '/test-x64.py --target-arch x86_64,x86 --phase aosp-prebuild,aosp-build --dir-aosp aosp-stable-daily', interactive=True)
+    return 'test-x64.py --target-arch x86_64,x86 --phase aosp-prebuild,aosp-build --dir-aosp aosp-stable-daily'
 
 
 def chrome_android():
-    execute('python ' + dir_python + '/chrome-android.py --run')
+    return 'chrome-android.py --run'
 
 
 # If callback does not start within interval, start it
@@ -97,7 +97,9 @@ def _run_one(cb):
     file_cb = dir_server_log + '/' + cb
     if not os.path.exists(file_cb) or not has_recent_change(file_cb, interval=cb_interval[cb]):
         execute('touch ' + file_cb)
-        globals()[cb]()
+        cmd = globals()[cb]()
+        cmd = 'python ' + dir_python + '/' + cmd + ' 2>&1 >' + dir_server_log + '/' + cb + '.log'
+        execute(cmd)
 
 
 if __name__ == '__main__':

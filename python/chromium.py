@@ -800,7 +800,7 @@ def verify(force=False):
         return
 
     if repo_type == 'chrome-android':
-        #_chrome_android_get_info(target_arch, chrome_android_dir_server_root + '/Chromium.apk', bypass=True)
+        _chrome_android_get_info(target_arch, chrome_android_dir_server_root + '/Chromium.apk', bypass=True)
         _update_phase(get_caller_name())
 
 

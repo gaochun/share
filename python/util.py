@@ -72,7 +72,7 @@ dir_tool = dir_workspace + '/tool'
 
 path_web = 'http://wp-03.sh.intel.com'
 path_web_chromium = path_web + '/chromium'
-path_server_backup = '//wp-02/backup'
+path_server_backup = '//wp-01/backup'
 
 dir_home = os.getenv('HOME')
 

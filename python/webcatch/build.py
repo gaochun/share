@@ -431,7 +431,7 @@ def patch_before_build(target_os, target_arch, target_module, rev):
 
     # For 7c849b3d759fa9fedd7d4aea73577d643465918d (rev 253545)
     # http://comments.gmane.org/gmane.comp.web.chromium.devel/50482
-    execute('rm -f ' + dir_repo + '/src/out/Release/gen/templates/org/chromium/base/ActivityState.java')
+    execute('rm -f ' + dir_repo + '/src/out-%s/out/Release/gen/templates/org/chromium/base/ActivityState.java' % target_arch)
 
 
 def move_to_server(file, target_os, target_arch, target_module):
@@ -498,10 +498,11 @@ def build_one(build_next):
         if target_os == 'android':
             execute('sudo ' + dir_repo + '/src/build/install-build-deps-android.sh', interactive=True, dryrun=DRYRUN)
         if result[0] and not args.keep_out:
-            execute('rm -rf ' + dir_repo + '/src/out', dryrun=DRYRUN)
+            execute('rm -rf ' + dir_repo + '/src/out*', dryrun=DRYRUN)
 
         result = execute(cmd_build, dryrun=DRYRUN)
 
+    dir_out_build_type = dir_repo + '/src/out-%s/out/Release' % target_arch
     # Handle result, either success or failure. TODO: Need to handle other comb.
     if target_os == 'android' and target_module == 'content_shell':
         if result[0]:
@@ -509,7 +510,7 @@ def build_one(build_next):
             execute('touch ' + file_final)
         else:
             file_final = dir_comb + '/' + str(rev) + '.apk'
-            execute('cp ' + dir_repo + '/src/out/Release/apks/ContentShell.apk ' + file_final, dryrun=DRYRUN)
+            execute('cp ' + dir_out_build_type + '/apks/ContentShell.apk ' + file_final, dryrun=DRYRUN)
             execute('rm -f ' + file_log)
     elif target_os == 'android' and target_module == 'webview':
         if result[0]:
@@ -517,16 +518,15 @@ def build_one(build_next):
             execute('touch ' + file_final)
         else:
             file_final = dir_comb + '/' + str(rev) + '.apk'
-            execute('cp ' + dir_repo + '/src/out/Release/apks/AndroidWebView.apk ' + file_final, dryrun=DRYRUN)
+            execute('cp ' + dir_out_build_type + '/apks/AndroidWebView.apk ' + file_final, dryrun=DRYRUN)
             execute('rm -f ' + file_log)
     elif target_os == 'linux' and target_module == 'chrome':
-        dest_dir = dir_comb + '/' + str(rev)
+        dir_test = dir_comb + '/' + str(rev)
         if result[0]:
-            file_final = dest_dir + '.FAIL'
+            file_final = dir_test + '.FAIL'
             execute('touch ' + file_final)
         else:
-            os.mkdir(dest_dir)
-            src_dir = dir_repo + '/src/out/Release'
+            os.mkdir(dir_test)
             config_file = dir_repo + '/src/chrome/tools/build/' + target_os + '/FILES.cfg'
             file = open(config_file)
             lines = file.readlines()
@@ -535,19 +535,19 @@ def build_one(build_next):
             files = []
             for line in lines:
                 match = pattern.search(line)
-                if match and os.path.exists(src_dir + '/' + match.group(1)):
+                if match and os.path.exists(dir_out_build_type + '/' + match.group(1)):
                     files.append(match.group(1))
 
             # This file is not included in FILES.cfg. Bug?
             files.append('lib/*.so')
 
             for file_name in files:
-                dest_dir_temp = os.path.dirname(dest_dir + '/' + file_name)
-                if not os.path.exists(dest_dir_temp):
-                    execute('mkdir -p ' + dest_dir_temp)
+                dir_test_temp = os.path.dirname(dir_test + '/' + file_name)
+                if not os.path.exists(dir_test_temp):
+                    execute('mkdir -p ' + dir_test_temp)
 
                 # Some are just dir, so we need -r option
-                execute('cp -rf ' + src_dir + '/' + file_name + ' ' + dest_dir_temp)
+                execute('cp -rf ' + dir_out_build_type + '/' + file_name + ' ' + dir_test_temp)
 
             backup_dir(dir_comb)
             # It's strange some builds have full debug info

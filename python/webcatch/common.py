@@ -6,10 +6,9 @@ dir_log = dir_root + '/log'
 servers = [
     'wp-02',
     'wp-03',
-    'ubuntu-ygu5-02',
 ]
 server_main = servers[0]
-dir_out_server = '/workspace/server/webcatch/out'
+dir_out_server = '/workspace/server/chromium'
 
 # comb: [binary_format, rev_min_built, rev_max_built]
 comb_valid = {

@@ -656,8 +656,12 @@ PROMPT='%F{blue}%M%F{green}%/
 DIR_PROJECT=/workspace/project
 DIR_SHARE=$DIR_PROJECT/share
 DIR_PYTHON=$DIR_SHARE/python
+DIR_LINUX=$DIR_SHARE/linux
+DIR_APACHE2=$DIR_LINUX/apache2
 DIR_COMMON=$DIR_SHARE/common
 DIR_SUBLIME=$DIR_COMMON/sublime
+
+DIR_ETC=/etc
 
 # ln -s $DIR_SHARE/linux/.zshrc ~/.zshrc
 
@@ -675,8 +679,13 @@ function symbolic_link() {
 
   if [ -d $3 ]; then
     if [ ! -L $3/$dest_file ] || [ ! "$(readlink $3/$dest_file)" = "$1/$2" ]; then
-      rm -f $3/$dest_file
-      ln -s $1/$2 $3/$dest_file
+      if [[ $3 = $DIR_ETC* ]]; then
+        sudo rm -f $3/$dest_file
+        sudo ln -s $1/$2 $3/$dest_file
+      else
+        rm -f $3/$dest_file
+        ln -s $1/$2 $3/$dest_file
+      fi
     fi
   fi
 }
@@ -706,6 +715,9 @@ alias st='sublime_text'
 symbolic_link $DIR_SUBLIME Preferences.sublime-settings ~/.config/sublime-text-2/Packages/User
 symbolic_link $DIR_SUBLIME SublimeLinter.sublime-settings ~/.config/sublime-text-2/Packages/User
 
+# apache2
+symbolic_link $DIR_APACHE2 apache2.conf $DIR_ETC/apache2
+symbolic_link $DIR_APACHE2 000-default.conf $DIR_ETC/apache2/sites-available
 
 complete () {
         emulate -L zsh

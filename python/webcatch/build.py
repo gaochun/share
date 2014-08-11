@@ -630,7 +630,6 @@ def get_rev_next(target_os, index):
             continue
 
         # Does not exist from here
-
         if rev in revs:
             return rev
 
@@ -688,9 +687,9 @@ def update_git_info_one(target_os):
     file.close()
 
     is_max_rev = True
-    pattern_rev = re.compile('git-svn-id: .*@(.*) (.*)')
+    pattern_rev = re.compile('^git-svn-id: .*@(.*) (.*)')
     for line in lines:
-        match = pattern_rev.search(line)
+        match = pattern_rev.match(line.lstrip())
         if match:
             rev = int(match.group(1))
 

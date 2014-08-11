@@ -1432,14 +1432,14 @@ def _get_hash_one():
     f.close()
 
     pattern_hash = re.compile('^commit (.*)')
-    pattern_rev = re.compile('git-svn-id: .*@(.*) (.*)')
+    pattern_rev = re.compile('^git-svn-id: .*@(.*) (.*)')
     for line in lines:
         match = pattern_hash.search(line)
         if match:
             hash_temp = match.group(1)
             continue
 
-        match = pattern_rev.search(line)
+        match = pattern_rev.search(line.lstrip())
         if match:
             rev_temp = int(match.group(1))
             if rev_temp == rev:

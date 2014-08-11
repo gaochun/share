@@ -718,7 +718,7 @@ def update_git_info(fetch=True):
     for target_os in target_os_info:
         if fetch:
             dir_repo = dir_project + '/chromium-' + target_os
-            execute(run_chromium_script + ' --fetch --root-dir ' + dir_repo, dryrun=DRYRUN)
+            execute(run_chromium_script + ' --fetch --dir-root ' + dir_repo, dryrun=DRYRUN)
             target_os_info[target_os][TARGET_OS_INFO_INDEX_TIME] = get_time()
         update_git_info_one(target_os)
 

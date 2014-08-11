@@ -118,7 +118,7 @@ def test():
             if not os.path.exists(dir_chromium):
                 error(dir_chromium + ' does not exist')
             backup_dir(dir_chromium)
-            execute(python_chromium + ' --extra-path=/workspace/project/depot_tools --target-arch %s --repo-type x64 --sync --runhooks --build --test-run --test-formal ' % arch, abort=True, interactive=True, dryrun=dryrun)
+            execute(python_chromium + ' --extra-path=/workspace/project/depot_tools --target-arch %s --repo-type x64 --sync --runhooks --patch --build --test-run --test-formal ' % arch, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
 
 

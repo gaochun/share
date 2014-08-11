@@ -68,6 +68,11 @@ def setup():
     else:
         target_archs = args.target_arch.split(',')
 
+    for target_arch in target_archs:
+        dir_temp = dir_server_chromium + '/android-%s-chrome/archive' % target_arch
+        if not os.path.exists(dir_temp):
+            os.makedirs(dir_temp)
+
 
 def run(force=False, act=ACT_ALL):
     if not args.run and not force:

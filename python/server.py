@@ -16,7 +16,7 @@ from util import *
 # run with --cron
 # set automatic login
 
-interval_cron = 30  # minutes
+interval_cron = 20  # minutes
 
 cb_interval = {
     'update_share': 1800,
@@ -80,6 +80,9 @@ def start():
         _run_one('update_share')
         _run_one('chrome_android')
 
+    elif host_name == 'ubuntu-ygu5-01':
+        pass
+
     elif host_name == 'ubuntu-ygu5-02':
         _run_one('test_x64_aosp_build')
 
@@ -103,6 +106,11 @@ def chrome_android():
     return 'chrome-android.py --run'
 
 
+def daemon():
+    if device_connected():
+        android_keep_screen_on()
+
+
 # If callback does not start within interval, start it
 def _run_one(cb):
     file_cb = dir_server_log + '/' + cb
@@ -114,6 +122,7 @@ def _run_one(cb):
 
 
 if __name__ == '__main__':
+    daemon()
     lock = open(os.path.realpath(__file__), 'r')
     singleton(lock)
     parse_arg()

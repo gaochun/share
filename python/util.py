@@ -652,8 +652,10 @@ def android_unlock_screen(device='192.168.42.1'):
 def android_set_screen_lock_none(device='192.168.42.1'):
     execute_adb_shell(cmd='am start -n com.android.settings/.SecuritySettings && sleep 5 && input tap 200 150 && sleep 5 && input tap 200 100 && am force-stop com.android.settings', device=device)
 
+
 def android_set_display_sleep_30mins(device='192.168.42.1'):
     execute_adb_shell(cmd='am start -n com.android.settings/.DisplaySettings && sleep 5 && input tap 200 250 && sleep 5 && input tap 500 550 && am force-stop com.android.settings', device=device)
+
 
 def android_is_screen_on(device='192.168.42.1'):
     result = execute(adb(cmd='shell dumpsys power', device=device) + ' |grep mScreenOn=true')
@@ -696,7 +698,6 @@ def android_get_target_arch(device='192.168.42.1'):
 
 
 def android_start_emu(target_arch):
-
     pid = os.fork()
     if pid == 0:
         cmd = 'LD_LIBRARY_PATH=%s/adt/sdk/tools/lib %s/adt/sdk/tools/emulator64-%s -avd %s -no-audio' % (dir_tool, dir_tool, target_arch, target_arch)

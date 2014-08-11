@@ -454,8 +454,6 @@ def setup():
 
         _hack_app_process()
 
-    target_module = args.target_module
-
     file_log = dir_root + '/log-' + timestamp + '.txt'
 
     # repo type specific variables

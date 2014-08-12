@@ -4,9 +4,12 @@
 # wp-01
 # build: x64 daily test, webcatch
 # backup: chrome-android, webcatch archive
+# web server: benchmark
+
 # wp-02
 # build: webcatch
 # web server: webcatch (android-x86-content_shell, linux_x86_chrome)
+
 # wp-03
 # build: chrome-android, webcatch
 # web server: aosp-stable, chrome-android

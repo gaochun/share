@@ -182,9 +182,9 @@ def download():
     driver = webdriver.Chrome(executable_path=dir_tool + '/chromedriver', chrome_options=options, service_args=['--verbose', '--log-path=%s/log/chromedriver.log' % dir_root])
 
     if args.download_type == 'all' or args.download_type == 'stable':
-        driver.get('https://play.google.com/store/apps/details?id=' + chrome_android_ver_type_info['stable'][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG])
+        driver.get('https://play.google.com/store/apps/details?id=' + chromium_android_info['stable'][CHROMIUM_ANDROID_INFO_INDEX_PKG])
     if args.download_type == 'all' or args.download_type == 'beta':
-        driver.get('https://play.google.com/store/apps/details?id=' + chrome_android_ver_type_info['beta'][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG])
+        driver.get('https://play.google.com/store/apps/details?id=' + chromium_android_info['beta'][CHROMIUM_ANDROID_INFO_INDEX_PKG])
 
     finished = False
     while not finished:

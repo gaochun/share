@@ -1530,7 +1530,7 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
     if bypass:
         ver_temp = ''
         build_id_temp = ''
-        execute_adb_shell(cmd='am start -n %s/%s -d "chrome://version"' % (chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG], chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_ACT]), device=device)
+        execute_adb_shell(cmd='am start -n %s/%s -d "chrome://version"' % (chromium_android_info[ver_type_temp][CHROMIUM_ANDROID_INFO_INDEX_PKG], chromium_android_info[ver_type_temp][CHROMIUM_ANDROID_INFO_INDEX_ACT]), device=device)
     else:
         #The following code does not work for com.example.chromium as webdriver.Remote() would hang.
         #adb shell input tap 400 1040
@@ -1543,11 +1543,11 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         unsetenv('http_proxy')
         capabilities = {
             'chromeOptions': {
-                'androidPackage': chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG],
+                'androidPackage': chromium_android_info[ver_type_temp][CHROMIUM_ANDROID_INFO_INDEX_PKG],
                 'androidDeviceSerial': device,
             }
         }
-        activity = chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_ACT]
+        activity = chromium_android_info[ver_type_temp][CHROMIUM_ANDROID_INFO_INDEX_ACT]
         if not activity == '':
             capabilities['chromeOptions']['androidActivity'] = activity
         driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
@@ -1568,7 +1568,7 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         build_id_temp = match.group(1)
         driver.quit()
         setenv('http_proxy', env_http_proxy)
-    execute(adb('uninstall ' + chrome_android_ver_type_info[ver_type_temp][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG], device=device))
+    execute(adb('uninstall ' + chromium_android_info[ver_type_temp][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device))
 
     return (ver_temp, ver_type_temp, build_id_temp)
 

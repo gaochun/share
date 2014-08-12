@@ -29,15 +29,19 @@ args = argparse.Namespace()
 dir_stack = []
 timer = {}
 
-chrome_android_ver_type_info = {
-    'stable': ['com.android.chrome', ''],
-    'beta': ['com.chrome.beta', ''],
+# src/build/android/pylib/constants.py
+chromium_android_info = {
+    'chrome_stable': ['com.android.chrome', ''],
+    'chrome_beta': ['com.chrome.beta', ''],
     'example': ['com.example.chromium', 'com.google.android.apps.chrome.Main'],
     'example_stable': ['com.chromium.stable', 'com.google.android.apps.chrome.Main'],
     'example_beta': ['com.chromium.beta', 'com.google.android.apps.chrome.Main'],
+    'content_shell': ['org.chromium.content_shell_apk', ''],
+    #'webview_shell': 'com.android.webview_shell_apk?',
+    'stock_browser': ['com.android.browser', 'com.android.browser.BrowserActivity'],
 }
-CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG = 0
-CHROME_ANDROID_VER_TYPE_INFO_INDEX_ACT = 1
+CHROMIUM_ANDROID_INFO_INDEX_PKG = 0
+CHROMIUM_ANDROID_INFO_INDEX_ACT = 1
 
 target_arch_index = {'x86': 0, 'arm': 1, 'x86_64': 2, 'arm64': 3}
 target_arch_strip = {
@@ -558,7 +562,7 @@ def copy_file(file_src, dir_dest, is_sylk=False):
 def apply_patch(patches, dir_patches):
     for dir_repo in patches:
         if not os.path.exists(dir_repo):
-            error(dir_repo + 'does not exist')
+            error(dir_repo + ' does not exist')
 
         for patch in patches[dir_repo]:
             path_patch = dir_patches + '/' + patch
@@ -627,8 +631,8 @@ def singleton(lock):
 
 
 def chrome_android_cleanup(device='192.168.42.1'):
-    for key in chrome_android_ver_type_info:
-        execute(adb('uninstall ' + chrome_android_ver_type_info[key][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG], device=device))
+    for key in chromium_android_info:
+        execute(adb('uninstall ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device))
 
     execute(adb('shell rm -rf /data/data/com.example.chromium', device=device))
     #execute(adb('shell rm -rf /data/dalvik-cache/*', device=device))
@@ -636,8 +640,8 @@ def chrome_android_cleanup(device='192.168.42.1'):
 
 def chrome_android_get_ver_type(device='192.168.42.1'):
     ver_type = ''
-    for key in chrome_android_ver_type_info:
-        if execute_adb_shell(cmd='pm -l |grep ' + chrome_android_ver_type_info[key][CHROME_ANDROID_VER_TYPE_INFO_INDEX_PKG], device=device):
+    for key in chromium_android_info:
+        if execute_adb_shell(cmd='pm -l |grep ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device):
             ver_type = key
             break
 

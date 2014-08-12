@@ -39,6 +39,7 @@ pkgs_common = [
     'openjdk-7-jdk',
     'dconf-editor',
     'dnsmasq', 'lighttpd',
+    'meld',
 
     # Package used at home
     'openconnect',

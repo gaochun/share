@@ -215,7 +215,7 @@ sudo iptables -A FORWARD -i $INTERNAL -o $EXTERNAL -j ACCEPT
 
 Target:
 # Add routing
-route add default gw 192.168.42.2 dev $eth0
+route add default gw 192.168.42.2 dev eth0
 # Add DNS
 /system/bin/dnsmasq -2 -x -i lo -S 10.248.2.5 --pid-file
 

@@ -1412,16 +1412,14 @@ def _get_hash():
 
     backup_dir(dir_src)
     hash_temp = _get_hash_one()
-    if hash_temp != 0:
-        return hash_temp
-
-    execute('git fetch')
-    hash_temp = _get_hash_one()
+    if hash_temp == 0:
+        execute('git fetch')
+        hash_temp = _get_hash_one()
     restore_dir()
-    if hash_temp != 0:
-        return hash_temp
 
-    error('Could not find hash for revision ' + str(rev))
+    if hash_temp == 0:
+        error('Could not find hash for revision ' + str(rev))
+    return hash_temp
 
 
 # Return 0 if failed to find

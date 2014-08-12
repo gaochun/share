@@ -193,8 +193,6 @@ sudo brctl addif br0 usb0
 sudo ifconfig br0 up
 sudo dhclient br0
 
-
-
 *
 ./adb shell netcfg usb0 dhcp
 
@@ -203,5 +201,22 @@ sudo dhclient br0
 <reverse_tethering>
 android device shares the connection of desktop
 
+Host:
+# configurate interface
+# ifconfig eth1 inet 192.168.42.2
+# enable ip forwarding
+# echo 1 > /proc/sys/net/ipv4/ip_forward
+# configurate NAT
+INTERNAL=eth1 
+EXTERNAL=eth2
+sudo iptables -t nat -A POSTROUTING -o $EXTERNAL -j MASQUERADE
+sudo iptables -A FORWARD -i $EXTERNAL -o $INTERNAL -m state --state RELATED,ESTABLISHED -j ACCEPT
+sudo iptables -A FORWARD -i $INTERNAL -o $EXTERNAL -j ACCEPT
+
+Target:
+# Add routing
+route add default gw 192.168.42.2 dev $eth0
+# Add DNS
+/system/bin/dnsmasq -2 -x -i lo -S 10.248.2.5 --pid-file
 
 </reverse_tethering>

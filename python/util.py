@@ -678,7 +678,8 @@ def android_trigger_screen_on(device='192.168.42.1'):
 
 # Make screen on when charging
 def android_keep_screen_on(device='192.168.42.1'):
-    execute(adb(cmd='shell svc power stayon usb', device=device))
+    #execute(adb(cmd='shell svc power stayon usb', device=device))
+    execute(adb(cmd='shell input tap 5 600', device=device))
 
 
 def android_get_info(key, device='192.168.42.1'):

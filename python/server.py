@@ -23,6 +23,7 @@ cb_interval = {
     'test_x64_all': 24 * 3600 - interval_cron * 60,
     'test_x64_aosp_build': 24 * 3600 - interval_cron * 60,
     'chrome_android': 3600,
+    'daemon': 1200,
 }
 
 
@@ -109,6 +110,7 @@ def chrome_android():
 def daemon():
     if device_connected():
         android_keep_screen_on()
+    return ''
 
 
 # If callback does not start within interval, start it
@@ -117,12 +119,13 @@ def _run_one(cb):
     if not os.path.exists(file_cb) or not has_recent_change(file_cb, interval=cb_interval[cb]):
         execute('touch ' + file_cb)
         cmd = globals()[cb]()
-        cmd = 'python ' + dir_python + '/' + cmd + ' 2>&1 >' + dir_server_log + '/' + cb + '.log'
-        execute(cmd)
+        if cmd != '':
+            cmd = 'python ' + dir_python + '/' + cmd + ' 2>&1 >' + dir_server_log + '/' + cb + '.log'
+            execute(cmd)
 
 
 if __name__ == '__main__':
-    daemon()
+    _run_one('daemon')
     lock = open(os.path.realpath(__file__), 'r')
     singleton(lock)
     parse_arg()

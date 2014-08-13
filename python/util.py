@@ -33,9 +33,9 @@ timer = {}
 chromium_android_info = {
     'chrome_stable': ['com.android.chrome', ''],
     'chrome_beta': ['com.chrome.beta', ''],
-    'example': ['com.example.chromium', 'com.google.android.apps.chrome.Main'],
-    'example_stable': ['com.chromium.stable', 'com.google.android.apps.chrome.Main'],
-    'example_beta': ['com.chromium.beta', 'com.google.android.apps.chrome.Main'],
+    'chrome_example': ['com.example.chromium', 'com.google.android.apps.chrome.Main'],
+    'chrome_example_stable': ['com.chromium.stable', 'com.google.android.apps.chrome.Main'],
+    'chrome_example_beta': ['com.chromium.beta', 'com.google.android.apps.chrome.Main'],
     'content_shell': ['org.chromium.content_shell_apk', ''],
     #'webview_shell': 'com.android.webview_shell_apk?',
     'stock_browser': ['com.android.browser', 'com.android.browser.BrowserActivity'],
@@ -641,6 +641,8 @@ def chrome_android_cleanup(device='192.168.42.1'):
 def chrome_android_get_ver_type(device='192.168.42.1'):
     ver_type = ''
     for key in chromium_android_info:
+        if not re.match('^chrome', key):
+            continue
         if execute_adb_shell(cmd='pm -l |grep ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device):
             ver_type = key
             break

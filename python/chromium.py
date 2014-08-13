@@ -1521,14 +1521,15 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
     chrome_android_cleanup(device)
 
     execute(adb(cmd='install -r "%s"' % file_apk, device=device), interactive=True, dryrun=False)
-    ver_type_temp = chrome_android_get_ver_type(device)
-    if ver_type_temp == '':
+    chromium_android_type = chrome_android_get_ver_type(device)
+    if chromium_android_type == '':
         error('Failed to install package')
 
     if bypass:
         ver_temp = ''
+        ver_type_temp = ''
         build_id_temp = ''
-        execute_adb_shell(cmd='am start -n %s/%s -d "chrome://version"' % (chromium_android_info[ver_type_temp][CHROMIUM_ANDROID_INFO_INDEX_PKG], chromium_android_info[ver_type_temp][CHROMIUM_ANDROID_INFO_INDEX_ACT]), device=device)
+        execute_adb_shell(cmd='am start -n %s/%s -d "chrome://version"' % (chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_PKG], chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_ACT]), device=device)
     else:
         #The following code does not work for com.example.chromium as webdriver.Remote() would hang.
         #adb shell input tap 400 1040
@@ -1541,11 +1542,11 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         unsetenv('http_proxy')
         capabilities = {
             'chromeOptions': {
-                'androidPackage': chromium_android_info[ver_type_temp][CHROMIUM_ANDROID_INFO_INDEX_PKG],
+                'androidPackage': chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_PKG],
                 'androidDeviceSerial': device,
             }
         }
-        activity = chromium_android_info[ver_type_temp][CHROMIUM_ANDROID_INFO_INDEX_ACT]
+        activity = chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_ACT]
         if not activity == '':
             capabilities['chromeOptions']['androidActivity'] = activity
         driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
@@ -1566,7 +1567,7 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         build_id_temp = match.group(1)
         driver.quit()
         setenv('http_proxy', env_http_proxy)
-    execute(adb('uninstall ' + chromium_android_info['chrome_' + ver_type_temp][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device))
+    execute(adb('uninstall ' + chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device))
 
     return (ver_temp, ver_type_temp, build_id_temp)
 

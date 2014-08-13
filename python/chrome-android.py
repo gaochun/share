@@ -87,15 +87,20 @@ def run(force=False, act=ACT_ALL):
 
     cmd_common = python_chromium + ' --repo-type chrome-android --target-os android --target-module chrome'
     backup_dir(chrome_android_dir_server_todo)
-    todos = os.listdir('.')
     execute('rm -rf temp', show_command=False)
+
+    # use two loops as dir would be handled before file, then new dir created from buildid phase would not be handled
+    todos = os.listdir('.')
     for todo in todos:
         if os.path.isfile(todo) and act & ACT_FILE:
             cmd = cmd_common + ' --dir-root ' + chrome_android_dir_server_todo
             cmd += ' --chrome-android-apk ' + todo
             cmd += ' --buildid'
             execute(cmd, interactive=True)
-        elif os.path.isdir(todo) and act & ACT_DIR:
+
+    todos = os.listdir('.')
+    for todo in todos:
+        if os.path.isdir(todo) and act & ACT_DIR:
             target_arch_temp = todo
             if target_arch_temp not in target_arch_all:
                 continue

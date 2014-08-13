@@ -112,7 +112,7 @@ def chrome_android():
 
 def daemon():
     if device_connected():
-        android_keep_screen_on()
+        android_tap()
     return ''
 
 

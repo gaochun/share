@@ -493,6 +493,8 @@ def flash_image():
     if repo_type == 'stable':
         android_keep_screen_on()
         android_unlock_screen()
+        # Remove guide screen
+        android_tap()
         # After system boots up, it will show guide screen and never lock or turn off screen.
         android_set_screen_lock_none()
         android_set_display_sleep_30mins()

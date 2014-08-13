@@ -828,13 +828,26 @@ def notify(force=False):
         return
 
     if repo_type == 'chrome-android':
-        content = '''
-Browser Team is excited to announce the %s %s release of Chrome %s for Android has been prepared for you at %s/android-%s-chrome/%s-%s. Enjoy it!
-        ''' % (target_arch, ver_type, ver, path_web_chromium, target_arch, ver, ver_type)
-        send_mail('webperf@intel.com', 'yang.gu@intel.com', 'Chrome for Android New Release', content, type='html')
-
         _update_phase(get_caller_name())
         execute('mv %s %s/android-%s-chrome/%s-%s' % (chrome_android_dir_server_root, dir_server_chromium, target_arch, ver, ver_type))
+
+        target_arch_done = {}
+        all_done = True
+        for target_arch_temp in target_arch_chrome_android:
+            target_arch_done[target_arch_temp] = os.path.exists('%s/android-%s-chrome/%s-%s' % (dir_server_chromium, target_arch_temp, ver, ver_type))
+            if not target_arch_done[target_arch_temp]:
+                all_done = False
+
+        if all_done:
+            subject = 'Chrome for Android New Release %s-%s' % (ver, ver_type)
+            content = 'Browser Team is excited to announce the %s release of Chrome %s for Android has been prepared for you!<br>' % (ver_type, ver)
+            for target_arch_temp in target_arch_chrome_android:
+                content += '%s version: %s/android-%s-chrome/%s-%s.<br>' % (target_arch_temp, path_web_chromium, target_arch_temp, ver, ver_type)
+            content += 'Enjoy them!<br>'
+        else:
+            subject = 'Chrome for Android New Release %s-%s-%s' % (target_arch, ver, ver_type)
+            content = 'New Chrome for Android has been prepared at %s/android-%s-chrome/%s-%s.' % (path_web_chromium, target_arch, ver, ver_type)
+        send_mail('webperf@intel.com', 'yang.gu@intel.com', subject, content, type='html')
 
 
 def phase_continue():

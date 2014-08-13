@@ -1566,7 +1566,7 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         build_id_temp = match.group(1)
         driver.quit()
         setenv('http_proxy', env_http_proxy)
-    execute(adb('uninstall ' + chromium_android_info[ver_type_temp][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device))
+    execute(adb('uninstall ' + chromium_android_info['chrome_' + ver_type_temp][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device))
 
     return (ver_temp, ver_type_temp, build_id_temp)
 

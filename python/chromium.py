@@ -164,6 +164,7 @@ repo_type_info = {
                     # Status: Verified with stable image
                     'BaselinePolicy.CreateThread',
                     'BaselinePolicy.DisallowedCloneFlagCrashes',
+                    'BaselinePolicy.PrctlSigsys',
                     'BrokerProcess.RecvMsgDescriptorLeak',
 
                     # The following cases are due to https://codereview.chromium.org/290143006

@@ -5,7 +5,8 @@
 # Download:
 #    Install Chrome
 #    Set its download directory as /workspace/server/chromium/android-chrome-todo/download
-#    Open it with google-chrome --user-data-dir /workspace/tool/chrome-profile
+#    Open it with google-chrome --user-data-dir=/workspace/tool/arm/chrome-profile
+#    Open it with google-chrome --user-data-dir=/workspace/tool/x86/chrome-profile
 #    Install extension SwitchySharp
 #    Install extension at share/python/apk-downloader
 #    Login extension with: webperf0@gmail.com and 32761AAE6636D2A3(arm)/376FCD341892D871(x86) as device id.
@@ -94,7 +95,7 @@ def run(force=False, act=ACT_ALL):
     for todo in todos:
         if os.path.isfile(todo) and act & ACT_FILE:
             cmd = cmd_common + ' --dir-root ' + chrome_android_dir_server_todo
-            cmd += ' --chrome-android-apk ' + todo
+            cmd += ' --chrome-android-apk "' + todo + '"'
             cmd += ' --buildid'
             execute(cmd, interactive=True)
 
@@ -181,32 +182,35 @@ def download():
     # download the apk
     env_http_proxy = getenv('http_proxy')
     unsetenv('http_proxy')
-    options = webdriver.ChromeOptions()
-    options.add_experimental_option('excludeSwitches', ['user-data-dir', 'ignore-certificate-errors', 'disable-default-apps'])
-    options.add_argument('user-data-dir=%s' % (dir_tool + '/chrome-profile'))
-    driver = webdriver.Chrome(executable_path=dir_tool + '/chromedriver', chrome_options=options, service_args=['--verbose', '--log-path=%s/log/chromedriver.log' % dir_root])
 
-    if args.download_type == 'all' or args.download_type == 'stable':
-        driver.get('https://play.google.com/store/apps/details?id=' + chromium_android_info['chrome_stable'][CHROMIUM_ANDROID_INFO_INDEX_PKG])
-    if args.download_type == 'all' or args.download_type == 'beta':
-        driver.get('https://play.google.com/store/apps/details?id=' + chromium_android_info['chrome_beta'][CHROMIUM_ANDROID_INFO_INDEX_PKG])
+    for target_arch in target_arch_chrome_android:
+        options = webdriver.ChromeOptions()
+        options.add_experimental_option('excludeSwitches', ['user-data-dir', 'ignore-certificate-errors', 'disable-default-apps'])
+        options.add_argument('user-data-dir=%s' % (dir_tool + '/' + target_arch + '/chrome-profile'))
+        driver = webdriver.Chrome(executable_path=dir_tool + '/chromedriver', chrome_options=options, service_args=['--verbose', '--log-path=%s/log/chromedriver.log' % dir_root])
 
-    finished = False
-    while not finished:
-        finished = True
-        files = os.listdir(dir_download)
-        if not files:
-            finished = False
-        else:
-            for f in files:
-                if re.search('crdownload', f):
-                    finished = False
-                    break
+        if args.download_type == 'all' or args.download_type == 'stable':
+            driver.get('https://play.google.com/store/apps/details?id=' + chromium_android_info['chrome_stable'][CHROMIUM_ANDROID_INFO_INDEX_PKG])
+        time.sleep(3)
+        if args.download_type == 'all' or args.download_type == 'beta':
+            driver.get('https://play.google.com/store/apps/details?id=' + chromium_android_info['chrome_beta'][CHROMIUM_ANDROID_INFO_INDEX_PKG])
 
-        if not finished:
-            time.sleep(3)
+        finished = False
+        while not finished:
+            finished = True
+            files = os.listdir(dir_download)
+            if not files:
+                finished = False
+            else:
+                for f in files:
+                    if re.search('crdownload', f):
+                        finished = False
+                        break
 
-    driver.quit()
+            if not finished:
+                time.sleep(3)
+
+        driver.quit()
     setenv('http_proxy', env_http_proxy)
 
     execute('mv %s/* %s' % (dir_download, chrome_android_dir_server_todo), dryrun=False)

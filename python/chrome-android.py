@@ -8,7 +8,7 @@
 #    Open it with google-chrome --user-data-dir /workspace/tool/chrome-profile
 #    Install extension SwitchySharp
 #    Install extension at share/python/apk-downloader
-#    Login extension with: webperf0@gmail.com and 32761AAE6636D2A3 as device id.
+#    Login extension with: webperf0@gmail.com and 32761AAE6636D2A3(arm)/376FCD341892D871(x86) as device id.
 
 from selenium import webdriver
 import urllib2

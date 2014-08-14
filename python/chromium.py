@@ -67,6 +67,9 @@ ver_gyp_defines = '34.0.0.0'
 rev_no_android_gyp = 262292
 ver_no_android_gyp = '34.0.1847.61'
 
+# From this rev, clang becomes default compiler.
+rev_clang = 287416
+
 # repo type specific variables
 # chrome-android
 
@@ -140,11 +143,11 @@ repo_type_info = {
         'test_filter': {},
     },
     'x64': {
-        'rev': 284889,
+        'rev': 289473,
         'dir_patches': dir_python + '/chromium-patches/x64',
         'patches': {
             'src': [
-                '0001-Enlarge-kThreadLocalStorageSize-to-satisfy-test.patch',
+                #'0001-Enlarge-kThreadLocalStorageSize-to-satisfy-test.patch',
             ],
         },
         'test_filter': {
@@ -490,6 +493,10 @@ def setup():
             setenv('GYP_DEFINES', 'werror= disable_nacl=1 enable_svg=0')
         else:
             setenv('GYP_DEFINES', 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os)
+
+        if rev >= rev_clang and not os.path.exists('src/third_party/llvm-build'):
+            info('From revision %s, llvm is used for build. Now will download it for you.')
+            execute('src/tools/clang/scripts/update.sh')
 
     print '''
 ========== Configuration Begin ==========

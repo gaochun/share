@@ -60,40 +60,18 @@ class Format:
 class Case:
     FORMAT = [
         ['name', 'M', 'P'],
-        ['path', 'O', 'P'],
-        ['timeout_start', 'O', 'P'],
-        ['timeout_finish', 'O', 'P'],
-        ['times_run', 'O', 'P'],
-        ['times_skip', 'O', 'P'],
-        ['version', 'O', 'P'],
-        ['*', 'O', 'P']  # Specific config
+        ['*', 'O', 'P']
     ]
 
     def __init__(self, data):
-        self.path = 'internal'
-        self.timeout_start = 60
-        self.timeout_finish = 90
-        self.times_run = 1
-        self.times_skip = 0
-        self.period_start_check = 1
-        self.period_finish_check = 10
         self.data = data
-        self.result = []
-        self.metric = ''
-        self.average = 0
         Format.format(self)
 
-    def add_result(self, result):
-        self.result.append(result)
-
-    def log_result(self):
-        total = 0
-        for i in range(self.times_skip, self.times_run):
-            total += self.result[i]
-
-        if self.times_run > self.times_skip:
-            self.average = round(total / (self.times_run - self.times_skip), 2)
-        LOGGER.info(vars(self))
+    def run(self, driver):
+        name = self.name
+        exec 'from benchmark.' + name.lower() + ' import ' + name
+        benchmark = eval(name)(driver, self)
+        LOGGER.info(benchmark.run())
 
 
 class Proxy:
@@ -190,20 +168,7 @@ class Suite:
         driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
 
         for i in range(len(self.cases)):
-            case = self.cases[i]
-            case_name = case.name
-            exec 'from benchmark.' + case_name.lower() + ' import ' + case_name
-            case_instance = eval(case_name)(driver, case)
-            result = case_instance.get_result(driver)
-            if isinstance(result, float):
-                result = [result]
-
-            if not hasattr(case, 'version'):
-                case_version = 'NA'
-            else:
-                case_version = case.version
-            result_output = '[result] %s,%s,%s' % (case_name, case_version, str(result))
-            LOGGER.info(result_output)
+            self.cases[i].run(driver)
 
         #self.extension.uninstall()
         driver.quit()
@@ -338,7 +303,7 @@ def setup():
 
     if has_process('chromedriver'):
         execute('sudo killall chromedriver', show_command=False)
-    subprocess.Popen('third_party/WebDriver/android/chromedriver', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.Popen('driver/chromedriver', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # Sleep a bit to make sure driver is ready
     time.sleep(1)
 

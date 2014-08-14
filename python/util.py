@@ -20,6 +20,9 @@ import re
 import commands
 import fcntl
 
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
 formatter = logging.Formatter('[%(asctime)s - %(levelname)s] %(message)s', "%Y-%m-%d %H:%M:%S")
 host_os = platform.system().lower()
 host_name = socket.gethostname()

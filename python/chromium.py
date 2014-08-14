@@ -847,7 +847,7 @@ def notify(force=False):
         else:
             subject = 'Chrome for Android New Release %s-%s-%s' % (target_arch, ver, ver_type)
             content = 'New Chrome for Android has been prepared at %s/android-%s-chrome/%s-%s.' % (path_web_chromium, target_arch, ver, ver_type)
-        send_mail('webperf@intel.com', 'yang.gu@intel.com', subject, content, type='html')
+        send_mail('webperf@intel.com', 'yang.gu@intel.com,zhiqiangx.yu@intel.com', subject, content, type='html')
 
 
 def phase_continue():

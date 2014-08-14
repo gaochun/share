@@ -214,9 +214,8 @@ sudo iptables -A FORWARD -i $EXTERNAL -o $INTERNAL -m state --state RELATED,ESTA
 sudo iptables -A FORWARD -i $INTERNAL -o $EXTERNAL -j ACCEPT
 
 Target:
-# Add routing
+# Add routing & DNS
 route add default gw 192.168.42.2 dev eth0
-# Add DNS
 /system/bin/dnsmasq -2 -x -i lo -S 10.248.2.5 --pid-file
 
 </reverse_tethering>

@@ -490,6 +490,9 @@ def build_one(build_next):
 
     patch_before_build(target_os, target_arch, target_module, rev)
 
+    dir_out_build_type = dir_repo + '/src/out-%s/out/Release' % target_arch
+    # Remove apks first as sometimes ninja build error doesn't actually return error.
+    execute('rm -f %s/apks/*' % dir_out_build_type)
     cmd_build = run_chromium_script + ' --build --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_build, dryrun=DRYRUN, show_progress=True)
 
@@ -502,7 +505,6 @@ def build_one(build_next):
 
         result = execute(cmd_build, dryrun=DRYRUN)
 
-    dir_out_build_type = dir_repo + '/src/out-%s/out/Release' % target_arch
     # Handle result, either success or failure. TODO: Need to handle other comb.
     if target_os == 'android' and target_module == 'content_shell':
         if result[0]:

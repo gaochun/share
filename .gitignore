@@ -1,1 +1,4 @@
 *.pyc
+python/webcatch/download
+python/webcatch/log
+python/webmark/log

@@ -848,11 +848,11 @@ def notify(force=False):
             subject = 'Chrome for Android New Release %s-%s' % (ver, ver_type)
             content = 'Browser Team is excited to announce the %s release of Chrome %s for Android has been prepared for you!<br>' % (ver_type, ver)
             for target_arch_temp in target_arch_chrome_android:
-                content += '%s version: %s/android-%s-chrome/%s-%s.<br>' % (target_arch_temp, path_web_chromium, target_arch_temp, ver, ver_type)
+                content += '%s version: %s/android-%s-chrome/%s-%s.<br>' % (target_arch_temp, path_web_chrome_android, target_arch_temp, ver, ver_type)
             content += 'Enjoy them!<br>'
         else:
             subject = 'Chrome for Android New Release %s-%s-%s' % (target_arch, ver, ver_type)
-            content = 'New Chrome for Android has been prepared at %s/android-%s-chrome/%s-%s.' % (path_web_chromium, target_arch, ver, ver_type)
+            content = 'New Chrome for Android has been prepared at %s/android-%s-chrome/%s-%s.' % (path_web_chrome_android, target_arch, ver, ver_type)
         if host_name == 'wp-03':
             send_mail('webperf@intel.com', 'yang.gu@intel.com,zhiqiangx.yu@intel.com', subject, content, type='html')
 

@@ -61,12 +61,16 @@ while not os.path.exists(dir_temp + '/.git'):
     dir_temp = _get_real_dir(dir_temp)
 dir_share = dir_temp
 dir_python = dir_share + '/python'
+dir_webcatch = dir_python + '/webcatch'
+dir_webmark = dir_python + '/webmark'
 dir_linux = dir_share + '/linux'
 dir_common = dir_share + '/common'
 file_chromium = dir_python + '/chromium.py'
 file_aosp = dir_python + '/aosp.py'
+file_webmark = dir_webmark + '/webmark.py'
 python_chromium = 'python ' + file_chromium
 python_aosp = 'python ' + file_aosp
+python_webmark = 'python ' + file_webmark
 
 dir_workspace = '/workspace'
 dir_server = dir_workspace + '/server'
@@ -78,8 +82,8 @@ dir_project = dir_workspace + '/project'
 dir_project_chrome_android = dir_project + '/chrome-android'
 dir_tool = dir_workspace + '/tool'
 
-path_web = 'http://wp-03.sh.intel.com'
-path_web_chromium = path_web + '/chromium'
+path_web_chrome_android = 'http://wp-03.sh.intel.com/chromium'
+path_web_webcatch = 'http://wp-02.sh.intel.com/chromium'
 path_server_backup = '//wp-01/backup'
 
 dir_home = os.getenv('HOME')
@@ -154,15 +158,18 @@ def execute(command, show_command=True, show_duration=False, show_progress=False
         ret = os.system(command)
         result = [ret / 256, '']
     else:
+        out_temp = ''
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while show_progress:
             nextline = process.stdout.readline()
             if nextline == '' and process.poll() is not None:
                 break
+            out_temp += nextline
             sys.stdout.write(nextline)
             sys.stdout.flush()
 
         (out, err) = process.communicate()
+        out = out_temp + out
         ret = process.returncode
 
         if return_output:

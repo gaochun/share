@@ -18,7 +18,6 @@ import inspect
 import multiprocessing
 import re
 import commands
-import fcntl
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -633,6 +632,7 @@ def ver_ge(ver_a, ver_b):
 
 
 def singleton(lock):
+    import fcntl
     try:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except:

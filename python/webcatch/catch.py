@@ -13,6 +13,7 @@ revs = []
 baseline = []
 comb_name = ''
 dir_download = ''
+dir_log = ''
 
 ################################################################################
 
@@ -47,7 +48,7 @@ examples:
 
 
 def setup():
-    global target_os, target_arch, target_module, comb_name, benchmark, dir_download
+    global target_os, target_arch, target_module, comb_name, benchmark, dir_download, dir_log
 
     target_os = args.target_os
     target_arch = args.target_arch
@@ -56,6 +57,7 @@ def setup():
     comb_name = get_comb_name(target_os, target_arch, target_module)
     dir_download = dir_webcatch + '/download/' + comb_name
     ensure_dir(dir_download)
+    dir_log = dir_webcatch + '/log'
 
     if args.good_rev:
         rev_min = args.good_rev
@@ -68,6 +70,8 @@ def setup():
         rev_max = rev_default[1]
 
     _get_revs(rev_min, rev_max)
+    if len(revs) < 2:
+        error('The valid versions are not enough for bisect')
 
     if target_os == 'linux' and target_module == 'chrome':
         sandbox_file = '/usr/local/sbin/chrome-devel-sandbox'

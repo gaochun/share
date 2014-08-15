@@ -303,13 +303,14 @@ def setup():
 
     if has_process('chromedriver'):
         execute('sudo killall chromedriver', show_command=False)
-    subprocess.Popen('driver/chromedriver', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.Popen(dir_webmark + '/driver/chromedriver', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # Sleep a bit to make sure driver is ready
     time.sleep(1)
 
     unsetenv('http_proxy')
 
     (devices, devices_name, devices_type, devices_target_arch) = setup_device()
+
     if len(devices) == 0:
         error('No device is connected')
     if len(devices) > 1 and not args.device:

@@ -1,21 +1,18 @@
+import urllib2
 import sys
 sys.path.append(sys.path[0] + '/..')
 from util import *
 from common import *
 
 
-# Define result for good rev
-benchmarks = {
-    'browsermark': ['>2300'],
-}
-
 target_os = ''
 target_arch = ''
 target_module = ''
 benchmark = ''
-rev_list = []
+revs = []
+baseline = []
 comb_name = ''
-dir_out = '/workspace/gytemp/webcatch/out'
+dir_download = ''
 
 ################################################################################
 
@@ -28,6 +25,7 @@ def handle_option():
 examples:
 
   python %(prog)s -g 218527 -b 226662 --benchmark cocos
+  python %(prog)s -g 264037 -b 266292 --benchmark browsermark --benchmark-config '"test": "Search"'
 
 ''')
     parser.add_argument('--target-os', dest='target_os', help='target os', choices=target_os_all, default='android')
@@ -35,20 +33,29 @@ examples:
     parser.add_argument('--target-module', dest='target_module', help='target module', choices=target_module_all, default='content_shell')
     parser.add_argument('--benchmark', dest='benchmark', help='benchmark', required=True)
     parser.add_argument('--benchmark-config', dest='benchmark_config', help='benchmark config')
+    parser.add_argument('--dir-chromium', dest='dir_chromium', help='chromium dir')
     parser.add_argument('-g', '--good-rev', dest='good_rev', type=int, help='small revision, which is good')
     parser.add_argument('-b', '--bad-rev', dest='bad_rev', type=int, help='big revision, which is bad')
+    parser.add_argument('--diff', dest='diff', type=int, help='percentage gap between good and bad', default=10)
+    parser.add_argument('--bigger-better', dest='bigger_better', help='bigger is better', default=True)
 
     args = parser.parse_args()
 
+    if len(sys.argv) <= 1:
+        parser.print_help()
+        quit()
+
 
 def setup():
-    global target_os, target_arch, target_module, comb_name, benchmark
+    global target_os, target_arch, target_module, comb_name, benchmark, dir_download
 
     target_os = args.target_os
     target_arch = args.target_arch
     target_module = args.target_module
     benchmark = args.benchmark
     comb_name = get_comb_name(target_os, target_arch, target_module)
+    dir_download = dir_webcatch + '/download/' + comb_name
+    ensure_dir(dir_download)
 
     if args.good_rev:
         rev_min = args.good_rev
@@ -60,8 +67,7 @@ def setup():
     else:
         rev_max = rev_default[1]
 
-    get_rev_list(rev_min, rev_max)
-    #print rev_list
+    _get_revs(rev_min, rev_max)
 
     if target_os == 'linux' and target_module == 'chrome':
         sandbox_file = '/usr/local/sbin/chrome-devel-sandbox'
@@ -72,48 +78,118 @@ def setup():
             error('SUID Sandbox environmental variable does not set')
 
 
-def parse_result(benchmark, output):
-    # Result is in format: result is [1,2,3]
+def bisect(index_good, index_bad, check_boundry=False):
+    rev_good = revs[index_good]
+    rev_bad = revs[index_bad]
+
+    if check_boundry:
+        if not _is_good(rev_good):
+            error('Revision ' + str(rev_good) + ' should not be bad')
+
+        if _is_good(rev_bad):
+            error('Revision ' + str(rev_bad) + ' should not be good')
+
+    if index_good + 1 == index_bad:
+        rev_good_final = revs[index_good]
+        rev_bad_final = revs[index_bad]
+
+        if rev_good_final + 1 == rev_bad_final:
+            info('Revision ' + str(rev_bad) + ' is the exact commit for regression')
+        else:
+            info('The regression is between revisions (' + str(revs[index_good]) + ',' + str(revs[index_bad]) + '], but there is no build for further investigation')
+
+        if rev_bad_final - rev_good_final < 15:
+            _get_commit(rev_good_final, rev_bad_final)
+        else:
+            info('There are too many checkins in between, please manually check the checkin info')
+
+        exit(0)
+
+    index_mid = (index_good + index_bad) / 2
+    rev_mid = revs[index_mid]
+    if _is_good(rev_mid):
+        bisect(index_mid, index_bad)
+    else:
+        bisect(index_good, index_mid)
+
+
+def _get_revs(rev_min, rev_max):
+    global revs
+    url = path_web_webcatch + '/%s-%s-%s/' % (target_os, target_arch, target_module)
+    try:
+        u = urllib2.urlopen(url)
+    except:
+        error('Failed to open ' + url)
+
+    html = u.read()
+    pattern = re.compile('href="(\d+).apk"')
+    revs_temp = pattern.findall(html)
+    revs = [int(x) for x in revs_temp if int(x) >= rev_min and int(x) <= rev_max]
+
+
+def _is_good(rev):
+    global baseline
+
+    backup_dir(dir_download)
+    if not os.path.exists(str(rev) + '.apk'):
+        result = execute('wget %s/%s/%s.apk' % (path_web_webcatch, comb_name, str(rev)), interactive=True)
+        if result[0]:
+            error('Failed to download revision %s' % str(rev))
+
+    cmd = python_webmark + ' --target-os ' + target_os + ' --target-arch ' + target_arch + ' --target-module ' + target_module + ' --benchmark ' + benchmark
+    if args.benchmark_config:
+        cmd += ' --benchmark-config ' + '\'' + args.benchmark_config + '\''
+    cmd += ' --target-module-path %s/%s.apk' % (dir_download, str(rev))
+    result_cmd = execute(cmd, return_output=True, show_progress=True)
+    if result_cmd[0]:
+        error('Failed to run benchmark ' + benchmark + ' with revision ' + str(rev))
+
+    results = _parse_result(result_cmd[1])
+
+    result_show = 'good'
+    if baseline == []:
+        baseline = results
+    else:
+        for index, result in enumerate(results):
+            if args.bigger_better and result >= baseline[index] or not args.bigger_better and result < baseline[index]:
+                continue
+            if abs(baseline[index] - result) * 100 / args.diff > baseline[index]:
+                info('The result %s with index %s is deemed as bad' % (str(result), str(index)))
+                result_show = 'bad'
+                break
+
+    info('Rev %s, %s, result [%s]' % (str(rev), result_show, ','.join([str(x) for x in results])))
+    if result_show == 'good':
+        return True
+    else:
+        return False
+
+
+def _parse_result(output):
     results = []
-    pattern = re.compile('result is \[(.*)\]')
-    match = pattern.search(output)
+    pattern = re.compile('Result:.*\[(.*)\]')
+    match = pattern.search(output, re.MULTILINE)
     if match:
-        results = match.group(1).split(',')
+        results = [float(x) for x in match.group(1).split(',')]
     return results
 
 
-def is_good(rev):
-    backup_dir('../webmark')
-    cmd = 'python webmark.py --target-os ' + target_os + ' --target-arch ' + target_arch + ' --target-module ' + target_module + ' --target-module-path ' + dir_out + '/' + get_comb_name(target_os, target_arch, target_module) + '/' + str(rev) + '.apk' + ' --benchmark ' + benchmark
-    if args.benchmark_config:
-        cmd += ' --benchmark-config ' + '\'' + args.benchmark_config + '\''
-    r = execute(cmd, return_output=True, interactive=True)
-    restore_dir()
+def _get_commit(rev_good, rev_bad):
+    if args.dir_chromium:
+        dir_chromium = args.dir_chromium
+    else:
+        dir_chromium = dir_project + '/chromium-' + target_os
 
-    if r[0]:
-        error('Failed to run benchmark ' + benchmark + ' with revision ' + str(rev))
-
-    results = parse_result(benchmark, r[1])
-
-    for index, result in enumerate(results):
-        condition = result + benchmarks[benchmark][index]
-        if not eval(condition):
-            info(str(rev) + ': Bad')
-            return False
-
-    info(str(rev) + ': Good')
-    return True
-
-
-def get_commit(rev_good, rev_bad):
-    backup_dir(dir_root + '/project/chromium-' + target_os + '/src')
+    if not os.path.exists(dir_chromium):
+        error('The chromium directory does not exist')
+    backup_dir(dir_chromium + '/src')
     execute('git log origin master >git_log', show_command=False)
     file = open('git_log')
     lines = file.readlines()
     file.close()
 
     pattern_commit = re.compile('^commit (.*)')
-    pattern_rev = re.compile('git-svn-id: .*@(.*) (.*)')
+    pattern_rev = re.compile('^git-svn-id: .*@(.*) (.*)')
     need_print = False
     suspect_log = dir_log + '/suspect.log'
     for line in lines:
@@ -141,56 +217,7 @@ def get_commit(rev_good, rev_bad):
     restore_dir()
 
 
-def bisect(index_good, index_bad, check_boundry=False):
-    rev_good = rev_list[index_good]
-    rev_bad = rev_list[index_bad]
-
-    if check_boundry:
-        if not is_good(rev_good):
-            error('Revision ' + str(rev_good) + ' should not be bad')
-
-        if is_good(rev_bad):
-            error('Revision ' + str(rev_bad) + ' should not be good')
-
-    #print 'index_good:' + str(index_good) + ' index_bad:' + str(index_bad)
-    if index_good + 1 == index_bad:
-        rev_good_final = rev_list[index_good]
-        rev_bad_final = rev_list[index_bad]
-
-        if rev_good_final + 1 == rev_bad_final:
-            info('Revision ' + str(rev_bad) + ' is the exact commit for regression')
-        else:
-            info('The regression is between revisions (' + rev_list[index_good] + ',' + rev_list[index_bad] + '], but there is no build for further investigation')
-
-        if rev_bad_final - rev_good_final < 15:
-            get_commit(rev_good_final, rev_bad_final)
-        else:
-            info('There are too many checkins in between, please manually check the checkin info')
-
-        exit(0)
-
-    index_mid = (index_good + index_bad) / 2
-    rev_mid = rev_list[index_mid]
-    if is_good(rev_mid):
-        bisect(index_mid, index_bad)
-    else:
-        bisect(index_good, index_mid)
-
-
-def get_rev_list(rev_min, rev_max):
-    global rev_list
-    for file in os.listdir(dir_out + '/' + comb_name):
-        pattern = re.compile(comb_valid[target_os, target_arch, target_module][0])
-        match = pattern.search(file)
-        if match:
-            rev = int(match.group(1))
-            if rev >= rev_min and rev <= rev_max:
-                rev_list.append(rev)
-
-    rev_list = sorted(rev_list)
-
-
 if __name__ == '__main__':
     handle_option()
     setup()
-    bisect(0, len(rev_list) - 1, check_boundry=True)
+    bisect(0, len(revs) - 1, check_boundry=True)

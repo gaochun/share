@@ -507,7 +507,7 @@ def build_one(build_next):
 
     # Handle result, either success or failure. TODO: Need to handle other comb.
     if target_os == 'android' and target_module == 'content_shell':
-        if result[0]:
+        if result[0] or not os.path.exists(dir_out_build_type + '/apks/ContentShell.apk'):
             file_final = dir_comb + '/' + str(rev) + '.FAIL'
             execute('touch ' + file_final)
         else:
@@ -515,7 +515,7 @@ def build_one(build_next):
             execute('cp ' + dir_out_build_type + '/apks/ContentShell.apk ' + file_final, dryrun=DRYRUN)
             execute('rm -f ' + file_log)
     elif target_os == 'android' and target_module == 'webview':
-        if result[0]:
+        if result[0] or not os.path.exists(dir_out_build_type + '/apks/AndroidWebView.apk'):
             file_final = dir_comb + '/' + str(rev) + '.FAIL'
             execute('touch ' + file_final)
         else:

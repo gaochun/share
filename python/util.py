@@ -24,7 +24,6 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 
 REV_MAX = 9999999
-formatter = logging.Formatter('[%(asctime)s - %(levelname)s] %(message)s', "%Y-%m-%d %H:%M:%S")
 host_os = platform.system().lower()
 host_name = socket.gethostname()
 username = os.getenv('USER')
@@ -143,9 +142,9 @@ def debug(msg):
 # return_output: Put stdout and stderr in result if True. Default to False.
 # dryrun: Do not actually run command if True. Default to False.
 # abort: Quit after execution failed if True. Default to False.
-# log_file: Print stderr to log file if existed. Default to ''.
+# file_log: Print stderr to log file if existed. Default to ''.
 # interactive: Need user's input if true. Default to False.
-def execute(command, show_command=True, show_duration=False, show_progress=False, return_output=False, dryrun=False, abort=False, log_file='', interactive=False):
+def execute(command, show_command=True, show_duration=False, show_progress=False, return_output=False, dryrun=False, abort=False, file_log='', interactive=False):
     if show_command:
         _cmd(command)
 
@@ -177,8 +176,8 @@ def execute(command, show_command=True, show_duration=False, show_progress=False
         else:
             result = [ret, '']
 
-    if log_file:
-        os.system('echo ' + err + ' >>' + log_file)
+    if file_log:
+        os.system('echo ' + err + ' >>' + file_log)
 
     end_time = datetime.datetime.now().replace(microsecond=0)
     time_diff = end_time - start_time
@@ -811,6 +810,22 @@ def _chromium_get_hash_one(rev):
         if match:
             rev_temp = int(match.group(1))
 
+
+def get_logger(name, dir_log, level=logging.DEBUG):
+    ensure_dir(dir_log)
+    formatter = logging.Formatter('[%(asctime)s - %(levelname)s] %(message)s', "%Y-%m-%d %H:%M:%S")
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+
+    file_log = logging.FileHandler(dir_log + '/' + get_datetime(format='%Y-%m-%d-%X') + '.log')
+    file_log.setFormatter(formatter)
+    logger.addHandler(file_log)
+
+    console = logging.StreamHandler()
+    console.setFormatter(formatter)
+    logger.addHandler(console)
+
+    return logger
 ################################################################################
 
 

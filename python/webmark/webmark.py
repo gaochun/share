@@ -7,9 +7,7 @@ from util import *
 import json
 from selenium import webdriver
 
-PROJECT_NAME = 'webmark'
-
-LOGGER = logging.getLogger(PROJECT_NAME)
+logger = ''
 dir_root = ''
 dir_test = ''
 device = ''
@@ -32,14 +30,14 @@ class Format:
         # Check if all mandatory members in FORMAT are satisfied
         for format in instance.FORMAT:
             if format[Format.REQUIRED] == 'M' and not format[Format.NAME] in instance.data:
-                LOGGER.error(format[Format.NAME] + ' is not defined in ' + instance.__class__.__name__)
+                logger.error(format[Format.NAME] + ' is not defined in ' + instance.__class__.__name__)
                 quit()
 
         for member in instance.data:
             # Check all members in instance are recognized
             format = Format.format_has_member(instance.FORMAT, member)
             if not format:
-                LOGGER.warning('Can not recognize ' + ' in ' + instance.__class__.__name__)
+                logger.warning('Can not recognize ' + ' in ' + instance.__class__.__name__)
                 continue
 
             if format[Format.NAME] == '*':
@@ -71,7 +69,7 @@ class Case:
         name = self.name
         exec 'from benchmark.' + name.lower() + ' import ' + name
         benchmark = eval(name)(driver, self)
-        LOGGER.info(benchmark.run())
+        logger.info(benchmark.run())
 
 
 class Proxy:
@@ -180,28 +178,13 @@ class WebMark:
     ]
 
     def __init__(self):
-        # Init LOGGER
-        LOGGER.setLevel(logging.DEBUG)
-
-        dir_result = dir_root + '/result'
-        if not os.path.exists(dir_result):
-            os.mkdir(dir_result)
-        log_file = logging.FileHandler(dir_result + '/' + time.strftime('%Y-%m-%d-%X', time.localtime()) + '.log')
-        log_file.setFormatter(formatter)
-        LOGGER.addHandler(log_file)
-
-        console = logging.StreamHandler()
-        console.setFormatter(formatter)
-        LOGGER.addHandler(console)
-
-        # Log start
         self.start_time = time.time()
-        LOGGER.info('Start of ' + self.__class__.__name__ + '.')
+        logger.info('Start of ' + self.__class__.__name__ + '.')
 
         # Parse
         if args.config:
             if not os.path.isfile(config_file):
-                LOGGER.error(config_file + ' is not a valid file.')
+                logger.error(config_file + ' is not a valid file.')
                 return [1, '']
             f = file(config_file)
             self.data = json.load(f)
@@ -262,7 +245,7 @@ class WebMark:
 
     def __del__(self):
         self.stop_time = time.time()
-        LOGGER.info('End of ' + self.__class__.__name__ + '. Total elapsed time: ' + str(int(self.stop_time - self.start_time)) + ' seconds')
+        logger.info('End of ' + self.__class__.__name__ + '. Total elapsed time: ' + str(int(self.stop_time - self.start_time)) + ' seconds')
 
 
 def parse_arg():
@@ -294,7 +277,7 @@ examples:
 
 
 def setup():
-    global dir_root, dir_test, device
+    global dir_root, dir_test, device, logger
 
     dir_root = get_symbolic_link_dir()
     dir_test = dir_root + '/test'
@@ -321,6 +304,8 @@ def setup():
         device = args.device
     else:
         device = devices[0]
+
+    logger = get_logger(name='webmark', dir_log=dir_root + '/log')
 
 if __name__ == '__main__':
     parse_arg()

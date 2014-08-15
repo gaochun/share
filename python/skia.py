@@ -103,11 +103,11 @@ def recover():
         if device_to_target[device][1] == ONLINE and device_to_target[device][0] != HOST:
             execute('adb -s ' + device + ' shell start')
 
-def _parse_format_result(dir, log_file, results):
+def _parse_format_result(dir, file_log, results):
     backup_dir(dir)
-    fr = open(log_file)
-    lines = fr.readlines()
-    fr.close()
+    f = open(file_log)
+    lines = f.readlines()
+    f.close()
 
     for line in lines:
         # Skip blank line
@@ -175,17 +175,17 @@ def average():
 
     restore_dir()
 
-def parse_result(dir, log_file):
+def parse_result(dir, file_log):
     if args.test_type != 'bench':
         return
 
     backup_dir(dir)
 
-    format_file = log_file.replace('origin', 'format')
+    format_file = file_log.replace('origin', 'format')
     if os.path.exists(format_file):
         os.remove(format_file)
 
-    fr = open(log_file)
+    fr = open(file_log)
     lines = fr.readlines()
     fr.close()
 
@@ -416,13 +416,13 @@ def run():
             os.mkdir(group_log_dir)
 
         for i in range(args.run_times):
-            log_file = get_datetime() + '-' + device + '-' + args.test_type + '-origin' + log_suffix
-            command = command + ' 2>&1 |tee ' + group_log_dir + log_file
+            file_log = get_datetime() + '-' + device + '-' + args.test_type + '-origin' + log_suffix
+            command = command + ' 2>&1 |tee ' + group_log_dir + file_log
             start = datetime.datetime.now()
             execute(command)
             elapsed = (datetime.datetime.now() - start)
             info('Time elapsed to run: ' + str(elapsed.seconds) + 's')
-            parse_result(group_log_dir, log_file)
+            parse_result(group_log_dir, file_log)
             time.sleep(2)
 
         if not args.run_nonroot and device != HOST:

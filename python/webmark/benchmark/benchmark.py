@@ -82,7 +82,7 @@ class Benchmark(object):
                     times_skip = times_skip - 1
                     continue
                 result = self.get_result(driver)
-                info(','.join(result))
+                info('Single result: ' + ','.join(result))
                 results.append([float(x) for x in result])
 
             count_results = len(results)
@@ -99,7 +99,7 @@ class Benchmark(object):
             for i in range(count_result):
                 results_average.append(results_total[i] / count_results)
 
-            return '[result] %s,%s,[%s]' % (self.name, self.version, ','.join(str(x) for x in results_average))
+            return 'Result: %s,%s,[%s]' % (self.name, self.version, ','.join(str(x) for x in results_average))
 
     def _is_finished(self, driver):
         if self.states[self.state][0](self, driver):

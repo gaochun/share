@@ -52,7 +52,6 @@ devices_target_arch = []
 # rev related
 rev = 0
 rev_hash = {}
-REV_MAX = 9999999
 
 # From this rev, do not append --target-arch to envsetup.sh, instead, use android_gyp -Dtarget_arch.
 # From rev 252166, envsetup.sh --target-arch would report an error.
@@ -593,7 +592,7 @@ def sync(force=False):
 
     cmd_type = 'sync'
     if rev != REV_MAX:
-        cmd_type += ' --revision src@' + _get_hash()
+        cmd_type += ' --revision src@' + chromium_get_hash(dir_src, rev)
     _run_gclient(cmd_type)
 
     if repo_type == 'chrome-android':
@@ -1426,46 +1425,6 @@ def _calc_test_filter(device_type, target_arch, suite):
         test_filter_str = '*'
 
     return (test_filter_str, count_test_filter)
-
-
-def _get_hash():
-    if rev == REV_MAX:
-        error('_get_hash should not be called for REV_MAX')
-
-    backup_dir(dir_src)
-    hash_temp = _get_hash_one()
-    if hash_temp == 0:
-        execute('git fetch')
-        hash_temp = _get_hash_one()
-    restore_dir()
-
-    if hash_temp == 0:
-        error('Could not find hash for revision ' + str(rev))
-    return hash_temp
-
-
-# Return 0 if failed to find
-def _get_hash_one():
-    execute('git log origin master >git_log')
-    f = open('git_log')
-    lines = f.readlines()
-    f.close()
-
-    pattern_hash = re.compile('^commit (.*)')
-    pattern_rev = re.compile('^git-svn-id: .*@(.*) (.*)')
-    for line in lines:
-        match = pattern_hash.search(line)
-        if match:
-            hash_temp = match.group(1)
-            continue
-
-        match = pattern_rev.search(line.lstrip())
-        if match:
-            rev_temp = int(match.group(1))
-            if rev_temp == rev:
-                return hash_temp
-            elif rev_temp < rev:
-                return 0
 
 
 def _install_apk(device, apks, force=False):

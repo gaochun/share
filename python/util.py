@@ -23,6 +23,7 @@ import fcntl
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
+REV_MAX = 9999999
 formatter = logging.Formatter('[%(asctime)s - %(levelname)s] %(message)s', "%Y-%m-%d %H:%M:%S")
 host_os = platform.system().lower()
 host_name = socket.gethostname()
@@ -757,6 +758,52 @@ def mouse_click(button=1):
     d.sync()
     fake_input(d, X.ButtonRelease, button)
     d.sync()
+
+
+def chromium_get_hash(dir_src, rev):
+    if rev == REV_MAX:
+        error('Could not get hash for REV_MAX')
+
+    backup_dir(dir_src)
+    hash_temp = _chromium_get_hash_one(rev)
+    if hash_temp == '':
+        execute('git fetch')
+        hash_temp = _chromium_get_hash_one(rev)
+    restore_dir()
+
+    if hash_temp == '':
+        error('Could not get hash for revision ' + str(rev))
+    return hash_temp
+
+
+# Return 0 if failed to find
+def _chromium_get_hash_one(rev):
+    execute('git log origin master >git_log', show_command=False)
+    f = open('git_log')
+    lines = f.readlines()
+    f.close()
+    execute('rm git_log', show_command=False)
+
+    pattern_hash = re.compile('^commit (.*)')
+    pattern_rev = re.compile('^git-svn-id: .*@(.*) (.*)')
+    hash_temp = ''
+    rev_temp = 0
+    for line in lines:
+        match = pattern_hash.search(line)
+        if match:
+            if hash_temp == '':
+                hash_temp = match.group(1)
+                continue
+            if rev_temp == rev:
+                return hash_temp
+            elif rev_temp < rev:
+                return ''
+            hash_temp = match.group(1)
+
+        match = pattern_rev.search(line.lstrip())
+        if match:
+            rev_temp = int(match.group(1))
+
 ################################################################################
 
 

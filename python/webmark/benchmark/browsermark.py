@@ -65,11 +65,11 @@ class browsermark(Benchmark):
             ActionChains(driver).move_to_element(e).click().perform()
 
         elif self.path_type == 'internal':
-            ele_ver = driver.find_elements_by_class_name('selectVersionButton')
+            e = driver.find_elements_by_class_name('selectVersionButton')
             if self.version == '2.0':
-                ele_ver[1].click()
+                e[1].click()
             elif self.version == '2.1':
-                ele_ver[0].click()
+                e[0].click()
             else:
                 error('version is not supported')
 

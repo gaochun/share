@@ -47,7 +47,7 @@ class browsermark(Benchmark):
     def cond0(self, driver):
         if self.version == '2.0' and self.path_type == 'external' and driver.find_elements_by_id('continent'):
             return True
-        elif self.version == '2.1' and self.path_type == 'internal' and driver.find_elements_by_class_name('launchIcon'):
+        elif self.path_type == 'internal' and driver.find_elements_by_class_name('launchIcon'):
             return True
 
         return False
@@ -64,7 +64,16 @@ class browsermark(Benchmark):
             e = driver.find_element_by_css_selector('div[class="start_test enabled"] span:first-of-type')
             ActionChains(driver).move_to_element(e).click().perform()
 
-        elif self.version == '2.1' and self.path_type == 'internal':
+        elif self.path_type == 'internal':
+            ele_ver = driver.find_elements_by_class_name('selectVersionButton')
+            if self.version == '2.0':
+                ele_ver[1].click()
+            elif self.version == '2.1':
+                ele_ver[0].click()
+            else:
+                error('version is not supported')
+
+            time.sleep(2)
             if self.test != 'all':
                 select = Select(driver.find_element_by_class_name('selectTest'))
                 select.select_by_visible_text('——— ' + self.test)
@@ -89,7 +98,7 @@ class browsermark(Benchmark):
                 match = re.search(pattern, score.get_attribute('innerText'))
                 if match:
                     results.append(match.group(1))
-        elif self.version == '2.1' and self.path_type == 'internal':
+        elif self.path_type == 'internal':
             if self.test != 'all':
                 results.append(driver.find_element_by_class_name('score').get_attribute('innerText'))
             else:

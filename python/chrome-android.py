@@ -162,7 +162,7 @@ def check(force=False):
         content = 'The following combos need to be downloaded: ' + ','.join(str(i) for i in combos_new)
         info(content)
         if host_name == 'wp-03':
-            send_mail('webperf@intel.com', 'yang.gu@intel.com,zhiqiangx.yu@intel.com', 'New Chrome for Android at Google Play', content, type='html')
+            send_mail('webperf@intel.com', ['yang.gu@intel.com', 'zhiqiangx.yu@intel.com'], 'New Chrome for Android at Google Play', content, type='html')
     else:
         info('Great! All the known versions have been built')
 

@@ -50,6 +50,7 @@ examples:
 
 def setup():
     ensure_dir(dir_server_log)
+    setenv('DISPLAY', ':0')
 
 
 def cron():

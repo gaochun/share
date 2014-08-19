@@ -381,7 +381,7 @@ def setup():
 
     # set repo_type related global variables
     for key in repo_type_info['default']:
-        if repo_type == 'default' or not repo_type in repo_type_info or not key in repo_type_info[repo_type]:
+        if repo_type == 'default' or repo_type not in repo_type_info or key not in repo_type_info[repo_type]:
             globals()[key] = repo_type_info['default'][key]
         else:
             globals()[key] = repo_type_info[repo_type][key]
@@ -1493,7 +1493,7 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
     if target_arch not in target_arch_device:
         android_start_emu(target_arch)
         target_arch_device = _get_target_arch_device()
-    if not target_arch in target_arch_device:
+    if arget_arch not in target_arch_device:
         error('Failed to get device for target arch ' + target_arch)
 
     device = target_arch_device[target_arch]
@@ -1571,7 +1571,7 @@ def _get_target_arch_device():
     target_arch_device = {}
     for index, device in enumerate(devices):
         target_arch_temp = devices_target_arch[index]
-        if not target_arch_temp in target_arch_device:
+        if target_arch_temp not in target_arch_device:
             target_arch_device[target_arch_temp] = devices[index]
 
     return target_arch_device

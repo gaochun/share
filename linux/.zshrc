@@ -720,7 +720,6 @@ symbolic_link $DIR_SUBLIME3 SublimeLinter.sublime-settings ~/.config/sublime-tex
 
 # apache2
 symbolic_link $DIR_APACHE2 apache2.conf $DIR_ETC/apache2
-symbolic_link $DIR_APACHE2 000-default.conf $DIR_ETC/apache2/sites-available
 
 complete () {
         emulate -L zsh
@@ -744,15 +743,17 @@ complete () {
 # machine specific configuration
 hostname=$(hostname)
 
+# conditional configuration
+DIR_DEFAULT=/workspace/project
+CONF_APACHE2=000-default.conf
+
 if [ $hostname == "ubuntu-ygu5-01" -o $hostname == "ubuntu-ygu5-02" ] ; then
-    cd /workspace/project
+    DIR_DEFAULT=$DIR_SHARE
 elif [ $hostname == "ubuntu-y560d" ] ; then
-    cd $DIR_SHARE
-else
-    cd /workspace/project
+    DIR_DEFAULT=$DIR_SHARE
+elif [ $hostname == "wp-01" ] ; then
+    CONF_APACHE2=000-benchmark.conf
 fi
 
-
-
-
-
+cd $DIR_DEFAULT
+symbolic_link $DIR_APACHE2 $CONF_APACHE2 $DIR_ETC/apache2/sites-available

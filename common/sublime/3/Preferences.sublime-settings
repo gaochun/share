@@ -1,3 +1,7 @@
 {
-	"color_scheme": "Packages/User/iPlastic (SL).tmTheme"
+	"color_scheme": "Packages/User/iPlastic (SL).tmTheme",
+	"ignored_packages":
+	[
+		"Vintage"
+	]
 }

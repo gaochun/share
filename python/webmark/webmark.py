@@ -137,9 +137,9 @@ class Suite:
         Format.format(self)
 
     def run(self):
-        #driver_name = self.module.name.capitalize() + 'Driver'
-        #exec 'from driver.' + driver_name.lower() + ' import ' + driver_name
-        #self.driver = eval(driver_name)(self.module)
+        # driver_name = self.module.name.capitalize() + 'Driver'
+        # exec 'from driver.' + driver_name.lower() + ' import ' + driver_name
+        # self.driver = eval(driver_name)(self.module)
 
         # Handle app mode
         if self.module.mode == 'app':
@@ -168,7 +168,7 @@ class Suite:
         for i in range(len(self.cases)):
             self.cases[i].run(driver)
 
-        #self.extension.uninstall()
+        # self.extension.uninstall()
         driver.quit()
 
 
@@ -206,8 +206,8 @@ class WebMark:
                 restore_dir()
             elif target_os == 'android':
                 target_module_path = args.target_module_path
-                #module_file = os.path.basename(target_module_path)
-                #execute('adb install -r ' + target_module_path)
+                # module_file = os.path.basename(target_module_path)
+                # execute('adb install -r ' + target_module_path)
 
             benchmark = args.benchmark
             if args.benchmark_config:

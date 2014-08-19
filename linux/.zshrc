@@ -659,7 +659,8 @@ DIR_PYTHON=$DIR_SHARE/python
 DIR_LINUX=$DIR_SHARE/linux
 DIR_APACHE2=$DIR_LINUX/apache2
 DIR_COMMON=$DIR_SHARE/common
-DIR_SUBLIME=$DIR_COMMON/sublime
+DIR_SUBLIME2=$DIR_COMMON/sublime/2
+DIR_SUBLIME3=$DIR_COMMON/sublime/3
 
 DIR_ETC=/etc
 
@@ -712,8 +713,10 @@ function sublime_text() {
     bash -c "LD_PRELOAD=/workspace/project/share/linux/libsublime-imfix.so sublime_text $1"
 }
 alias st='sublime_text'
-symbolic_link $DIR_SUBLIME Preferences.sublime-settings ~/.config/sublime-text-2/Packages/User
-symbolic_link $DIR_SUBLIME SublimeLinter.sublime-settings ~/.config/sublime-text-2/Packages/User
+symbolic_link $DIR_SUBLIME2 Preferences.sublime-settings ~/.config/sublime-text-2/Packages/User
+symbolic_link $DIR_SUBLIME2 SublimeLinter.sublime-settings ~/.config/sublime-text-2/Packages/User
+symbolic_link $DIR_SUBLIME3 Preferences.sublime-settings ~/.config/sublime-text-3/Packages/User
+symbolic_link $DIR_SUBLIME3 SublimeLinter.sublime-settings ~/.config/sublime-text-3/Packages/User
 
 # apache2
 symbolic_link $DIR_APACHE2 apache2.conf $DIR_ETC/apache2

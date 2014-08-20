@@ -89,7 +89,7 @@ def start():
         pass
 
     elif host_name == 'ubuntu-ygu5-02':
-        _run_one('test_x64_aosp_build')
+        pass
 
 
 def update_share():
@@ -103,10 +103,6 @@ def test_x64_all():
     return 'test-x64.py --target-arch x86_64,x86'
 
 
-def test_x64_aosp_build():
-    return 'test-x64.py --target-arch x86_64,x86 --phase aosp-prebuild,aosp-build --dir-aosp aosp-stable-daily'
-
-
 def chrome_android():
     return 'chrome-android.py --run'
 
@@ -115,6 +111,10 @@ def daemon():
     if device_connected():
         android_tap()
     return ''
+
+
+def test_x64_aosp_build():
+    return 'test-x64.py --target-arch x86_64,x86 --phase aosp-prebuild,aosp-build --dir-aosp aosp-stable-daily'
 
 
 # If callback does not start within interval, start it

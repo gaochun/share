@@ -21,10 +21,13 @@ vers = []
 ver_types = []
 target_archs = []
 
-ACT_CHECK = 1 << 0
+ACT_DOWNLOAD = 1 << 0
 ACT_FILE = 1 << 1
 ACT_DIR = 1 << 2
-ACT_ALL = ACT_CHECK | ACT_FILE | ACT_DIR
+ACT_CHECK = 1 << 3
+ACT_ALL = ACT_DOWNLOAD | ACT_FILE | ACT_DIR | ACT_CHECK
+
+cmd_common = python_chromium + ' --repo-type chrome-android --target-os android --target-module chrome'
 
 
 def parse_arg():
@@ -74,111 +77,36 @@ def setup():
         if not os.path.exists(dir_temp):
             os.makedirs(dir_temp)
 
+    ensure_dir(chrome_android_dir_server_todo)
+
 
 def run(force=False, act=ACT_ALL):
     if not args.run and not force:
         return
 
+    if act & ACT_DOWNLOAD:
+        download(force=True)
+
+    if act & ACT_FILE:
+        _handle_todo_file()
+
+    if act & ACT_DIR:
+        _handle_todo_dir()
+
     if act & ACT_CHECK:
         check(force=True)
 
-    if not os.path.exists(chrome_android_dir_server_todo):
-        os.makedirs(chrome_android_dir_server_todo)
-        return
 
-    cmd_common = python_chromium + ' --repo-type chrome-android --target-os android --target-module chrome'
-    backup_dir(chrome_android_dir_server_todo)
-    execute('rm -rf temp', show_command=False)
-
-    # use two loops as dir would be handled before file, then new dir created from buildid phase would not be handled
-    todos = os.listdir('.')
-    for todo in todos:
-        if os.path.isfile(todo) and act & ACT_FILE:
-            cmd = cmd_common + ' --dir-root ' + chrome_android_dir_server_todo
-            cmd += ' --chrome-android-apk "' + todo + '"'
-            cmd += ' --buildid'
-            execute(cmd, interactive=True)
-
-    todos = os.listdir('.')
-    for todo in todos:
-        if os.path.isdir(todo) and act & ACT_DIR:
-            target_arch_temp = todo
-            if target_arch_temp not in target_arch_all:
-                continue
-
-            dirs_todo = os.listdir(chrome_android_dir_server_todo + '/' + target_arch_temp)
-            for dir_todo in dirs_todo:
-                info = dir_todo.split('-')
-                ver_temp = info[0]
-                ver_type_temp = info[1]
-
-                cmd = cmd_common + ' --dir-root ' + dir_root + '/' + ver_temp
-                cmd += ' --target-arch ' + target_arch_temp
-                cmd += ' --ver ' + ver_temp
-                cmd += ' --ver-type ' + ver_type_temp
-                cmd += ' --phase-continue'
-
-                execute(cmd, interactive=True)
-    restore_dir()
-
-
-def check(force=False):
-    if not args.check and not force:
-        return
-
-    # get all the combos
-    url = 'http://www.hiapphere.org/app-chrome_beta'
-    try:
-        u = urllib2.urlopen(url)
-    except BadStatusLine:
-        warning('Failed to open ' + url)
-        return
-
-    html = u.read()
-    pattern = re.compile('Version(\d+\.\d+\.\d+\.\d+)')
-    vers_all = pattern.findall(html)
-    combos_all = []
-    for ver in vers_all:
-        if not ver_ge(ver, '33.0.1750.132'):
-            continue
-        for target_arch in target_arch_chrome_android:
-            combos_all.append((target_arch, ver))
-
-    # get all combos done
-    combos_done = []
-    for target_arch in target_arch_chrome_android:
-        dirs_done = os.listdir(dir_server_chromium + '/android-%s-chrome' % target_arch)
-        dirs_done += os.listdir(dir_server_chromium + '/android-%s-chrome/archive' % target_arch)
-        combos_done += _get_combos(dirs_done, target_arch)
-
-    # get all combos todo
-    combos_todo = []
-    for target_arch in target_arch_chrome_android:
-        dirs_todo = os.listdir(chrome_android_dir_server_todo + '/%s' % target_arch)
-        combos_todo += _get_combos(dirs_todo, target_arch)
-
-    combos_new = sorted(list_diff(combos_all, list_union(combos_done, combos_todo)))
-    if len(combos_new):
-        content = 'The following combos need to be downloaded: ' + ','.join(str(i) for i in combos_new)
-        info(content)
-        if host_name == 'wp-03':
-            send_mail('webperf@intel.com', ['yang.gu@intel.com', 'zhiqiangx.yu@intel.com'], 'New Chrome for Android at Google Play', content, type='html')
-    else:
-        info('Great! All the known versions have been built')
-
-
-def download():
-    if not args.download:
+def download(force=False):
+    if not args.download and not force:
         return
 
     dir_download = chrome_android_dir_server_todo + '/download'
-    if not os.path.exists(dir_download):
-        os.mkdir(dir_download)
+    ensure_dir(dir_download)
     execute('rm -rf %s/*' % dir_download)
 
     dir_trash = chrome_android_dir_server_todo + '/trash'
-    if not os.path.exists(dir_trash):
-        os.mkdir(dir_trash)
+    ensure_dir(dir_trash)
 
     # download the apk
     env_http_proxy = getenv('http_proxy')
@@ -215,7 +143,65 @@ def download():
     setenv('http_proxy', env_http_proxy)
 
     execute('mv %s/* %s' % (dir_download, chrome_android_dir_server_todo), dryrun=False)
-    run(force=True, act=(ACT_FILE | ACT_DIR))
+
+
+def check(force=False):
+    if not args.check and not force:
+        return
+
+    info('Begin to check..')
+    content = ''
+    subject = ''
+
+    # get all the combos
+    url = 'http://www.hiapphere.org/app-chrome_beta'
+    try:
+        u = urllib2.urlopen(url)
+    except BadStatusLine:
+        warning('Failed to open ' + url)
+        return
+
+    html = u.read()
+    pattern = re.compile('Version(\d+\.\d+\.\d+\.\d+)')
+    vers_all = pattern.findall(html)
+    combos_all = []
+    for ver in vers_all:
+        if not ver_ge(ver, '33.0.1750.132'):
+            continue
+        for target_arch in target_arch_chrome_android:
+            combos_all.append((target_arch, ver))
+
+    # get all combos done
+    combos_done = []
+    for target_arch in target_arch_chrome_android:
+        dirs_done = os.listdir(dir_server_chromium + '/android-%s-chrome' % target_arch)
+        dirs_done += os.listdir(dir_server_chromium + '/android-%s-chrome/archive' % target_arch)
+        combos_done += _get_combos(dirs_done, target_arch)
+
+    # get all combos todo
+    combos_todo = []
+    for target_arch in target_arch_chrome_android:
+        dirs_todo = os.listdir(chrome_android_dir_server_todo + '/%s' % target_arch)
+        combos_todo += _get_combos(dirs_todo, target_arch)
+
+    combos_new = sorted(list_diff(combos_all, list_union(combos_done, combos_todo)))
+
+    if len(combos_new):
+        subject += ' download required'
+        content += 'The following combos need to be downloaded: ' + ','.join(str(i) for i in combos_new) + '<br>'
+    else:
+        subject += ' download clean'
+
+    if len(combos_todo):
+        subject += ' build required'
+        content += 'The following combos need to be built: ' + ','.join(str(i) for i in combos_new) + '<br>'
+    else:
+        subject += ' build clean'
+
+    info(content)
+    if host_name == 'wp-03':
+        to = ['yang.gu@intel.com', 'zhiqiangx.yu@intel.com']
+        send_mail('webperf@intel.com', to, 'Chrome for Android -' + subject, content, type='html')
 
 
 def backup():
@@ -257,6 +243,44 @@ def _get_combos(dirs_check, target_arch):
         combos.append((target_arch, ver_temp))
 
     return combos
+
+
+def _handle_todo_file():
+    backup_dir(chrome_android_dir_server_todo)
+    todos = os.listdir('.')
+    for todo in todos:
+        if os.path.isfile(todo):
+            cmd = cmd_common + ' --dir-root ' + chrome_android_dir_server_todo
+            cmd += ' --chrome-android-apk "' + todo + '"'
+            cmd += ' --buildid'
+            execute(cmd, interactive=True)
+
+    restore_dir()
+
+
+def _handle_todo_dir():
+    backup_dir(chrome_android_dir_server_todo)
+    todos = os.listdir('.')
+    for todo in todos:
+        if os.path.isdir(todo):
+            target_arch_temp = todo
+            if target_arch_temp not in target_arch_all:
+                continue
+
+            dirs_todo = os.listdir(chrome_android_dir_server_todo + '/' + target_arch_temp)
+            for dir_todo in dirs_todo:
+                info = dir_todo.split('-')
+                ver_temp = info[0]
+                ver_type_temp = info[1]
+
+                cmd = cmd_common + ' --dir-root ' + dir_root + '/' + ver_temp
+                cmd += ' --target-arch ' + target_arch_temp
+                cmd += ' --ver ' + ver_temp
+                cmd += ' --ver-type ' + ver_type_temp
+                cmd += ' --phase-continue'
+
+                execute(cmd, interactive=True)
+    restore_dir()
 
 
 if __name__ == "__main__":

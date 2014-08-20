@@ -481,19 +481,19 @@ def setup():
         setenv('GYP_DEFINES', 'werror= disable_nacl=1 component=shared_library enable_svg=0')
         setenv('CHROME_DEVEL_SANDBOX', '/usr/local/sbin/chrome-devel-sandbox')
     elif target_os == 'android':
-        if rev < rev_envsetup:
+        if repo_type != 'chrome-android' and rev < rev_envsetup:
             backup_dir(dir_src)
             shell_source('build/android/envsetup.sh --target-arch=' + target_arch, use_bash=True)
             restore_dir()
             if not getenv('ANDROID_SDK_ROOT'):
                 error('Environment is not well set')
 
-        if rev < rev_gyp_defines or repo_type == 'chrome-android' and not args.chrome_android_apk and ver_ge(ver_gyp_defines, ver):
+        if repo_type != 'chrome-android' and rev < rev_gyp_defines or repo_type == 'chrome-android' and not args.chrome_android_apk and ver_ge(ver_gyp_defines, ver):
             setenv('GYP_DEFINES', 'werror= disable_nacl=1 enable_svg=0')
         else:
             setenv('GYP_DEFINES', 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os)
 
-        if rev >= rev_clang and not os.path.exists('src/third_party/llvm-build'):
+        if repo_type != 'chrome-android' and rev >= rev_clang and not os.path.exists('src/third_party/llvm-build'):
             info('From revision %s, llvm is used for build. Now will download it for you.')
             execute('src/tools/clang/scripts/update.sh')
 
@@ -518,6 +518,7 @@ def buildid(force=False):
         return
 
     # get the target arch
+    execute('rm -rf temp')
     execute('unzip "%s" -d temp' % chrome_android_apk, show_command=True)
     target_arch_temp = ''
     for key in target_arch_info:
@@ -538,7 +539,7 @@ def buildid(force=False):
     ]
     for dir_check in dirs_check:
         if os.path.exists(dir_check):
-            execute('mv %s trash' % chrome_android_apk)
+            execute('mv "%s" trash' % chrome_android_apk)
             error('The apk %s/%s-%s has been tracked, so will be moved to trash' % (target_arch_temp, ver_temp, ver_type_temp))
 
     os.makedirs(dir_todo)
@@ -1493,7 +1494,7 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
     if target_arch not in target_arch_device:
         android_start_emu(target_arch)
         target_arch_device = _get_target_arch_device()
-    if arget_arch not in target_arch_device:
+    if target_arch not in target_arch_device:
         error('Failed to get device for target arch ' + target_arch)
 
     device = target_arch_device[target_arch]

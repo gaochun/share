@@ -748,7 +748,7 @@ DIR_DEFAULT=/workspace/project
 CONF_APACHE2=000-default.conf
 
 if [ $hostname == "ubuntu-ygu5-01" -o $hostname == "ubuntu-ygu5-02" ] ; then
-    DIR_DEFAULT=$DIR_SHARE
+    DIR_DEFAULT=$DIR_DEFAULT
 elif [ $hostname == "ubuntu-y560d" ] ; then
     DIR_DEFAULT=$DIR_SHARE
 elif [ $hostname == "wp-01" ] ; then

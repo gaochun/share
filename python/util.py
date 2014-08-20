@@ -306,7 +306,8 @@ def getenv(env):
 
 
 def setenv(env, value):
-    os.environ[env] = value
+    if value:
+        os.environ[env] = value
 
 
 def unsetenv(env):

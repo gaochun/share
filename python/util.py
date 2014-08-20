@@ -104,7 +104,7 @@ def get_datetime(format='%Y%m%d%H%M%S'):
     return time.strftime(format, time.localtime())
 
 
-def has_recent_change(path_file, interval=24*3600):
+def has_recent_change(path_file, interval=24 * 3600):
     if time.time() - os.path.getmtime(path_file) < interval:
         return True
     else:
@@ -387,7 +387,7 @@ def setup_device(devices_limit=[]):
 
 
 def timer_start(tag):
-    if not tag in timer:
+    if tag not in timer:
         timer[tag] = [0, 0]
     timer[tag][0] = datetime.datetime.now().replace(microsecond=0)
 

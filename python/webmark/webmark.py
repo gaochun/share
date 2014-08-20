@@ -292,10 +292,11 @@ def setup():
 
     unsetenv('http_proxy')
 
-    (devices, devices_name, devices_type, devices_target_arch) = setup_device()
+    (devices, devices_name, devices_type, devices_target_arch, devices_mode) = setup_device()
 
     if len(devices) == 0:
-        error('No device is connected')
+        warning('No device is connected')
+        android_start_emu('x86')
     if len(devices) > 1 and not args.device:
         error('More than one device is connected')
     if args.device:

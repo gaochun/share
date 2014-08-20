@@ -48,6 +48,7 @@ devices = []
 devices_name = []
 devices_type = []
 devices_target_arch = []
+devices_mode = []
 
 # rev related
 rev = 0
@@ -453,7 +454,7 @@ def setup():
             devices_limit = []
 
         connect_device()
-        (devices, devices_name, devices_type, devices_target_arch) = setup_device(devices_limit=devices_limit)
+        (devices, devices_name, devices_type, devices_target_arch, devices_mode) = setup_device(devices_limit=devices_limit)
 
         _hack_app_process()
 
@@ -1568,7 +1569,7 @@ def _update_phase(phase):
 
 # get one device for each target_arch
 def _get_target_arch_device():
-    (devices, devices_name, devices_type, devices_target_arch) = setup_device()
+    (devices, devices_name, devices_type, devices_target_arch, devices_mode) = setup_device()
     target_arch_device = {}
     for index, device in enumerate(devices):
         target_arch_temp = devices_target_arch[index]

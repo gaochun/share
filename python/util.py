@@ -351,26 +351,40 @@ def setup_device(devices_limit=[]):
     devices = []
     devices_name = []
     devices_type = []
+    devices_mode = []
     devices_target_arch = []
     cmd = adb('devices -l', device='')
     device_lines = commands.getoutput(cmd).split('\n')
+    cmd = 'fastboot devices -l'
+    device_lines += commands.getoutput(cmd).split('\n')
+
+    pattern_system = re.compile('device:(.*)')
+    pattern_fastboot = re.compile('(\S+)\s+fastboot')
     for device_line in device_lines:
         if re.match('List of devices attached', device_line):
             continue
         elif re.match('^\s*$', device_line):
             continue
 
-        pattern = re.compile('device:(.*)')
-        match = pattern.search(device_line)
+        match = pattern_system.search(device_line)
         if match:
+            device = device_line.split(' ')[0]
+            devices.append(device)
             device_name = match.group(1)
             devices_name.append(device_name)
-            device = device_line.split(' ')[0]
             if re.search('192.168.42.1', device):
                 devices_type.append('baytrail')
             elif re.search('emulator', device):
                 devices_type.append('generic')
+            devices_mode.append('system')
+
+        match = pattern_fastboot.search(device_line)
+        if match:
+            device = match.group(1)
             devices.append(device)
+            devices_name.append('')
+            devices_type.append('')
+            devices_mode.append('fastboot')
 
     if devices_limit:
         # This has to be reversed and deleted from end
@@ -379,11 +393,15 @@ def setup_device(devices_limit=[]):
                 del devices[index]
                 del devices_name[index]
                 del devices_type[index]
+                del devices_mode[index]
 
-    for device in devices:
-        devices_target_arch.append(android_get_target_arch(device=device))
+    for index, device in enumerate(devices):
+        if devices_mode[index] == 'fastboot':
+            devices_target_arch = ''
+        else:
+            devices_target_arch.append(android_get_target_arch(device=device))
 
-    return (devices, devices_name, devices_type, devices_target_arch)
+    return (devices, devices_name, devices_type, devices_target_arch, devices_mode)
 
 
 def timer_start(tag):
@@ -451,8 +469,12 @@ def device_connected(device='192.168.42.1', mode='system'):
     if mode == 'system':
         result = execute('timeout 1s ' + adb(cmd='shell \ls', device=device))
     elif mode == 'bootloader':
+        if device == '192.168.42.1':
+            option = '-t'
+        else:
+            option = '-s'
         path_fastboot = dir_linux + '/fastboot'
-        result = execute('timeout 1s %s -t %s getvar all' % (path_fastboot, device))
+        result = execute('timeout 1s %s %s %s getvar all' % (path_fastboot, option, device))
 
     if result[0]:
         return False
@@ -466,8 +488,9 @@ def connect_device(device='192.168.42.1', mode='system'):
         if device_connected(device, mode):
             return True
 
-        cmd = 'timeout 1s ' + adb(cmd='disconnect %s' % device, device='') + ' && timeout 1s ' + adb(cmd='connect %s' % device, device='')
-        execute(cmd, interactive=True)
+        if device == '192.168.42.1':
+            cmd = 'timeout 1s ' + adb(cmd='disconnect %s' % device, device='') + ' && timeout 1s ' + adb(cmd='connect %s' % device, device='')
+            execute(cmd, interactive=True)
         return device_connected(device, mode)
     elif mode == 'bootloader':
         return device_connected(device, mode)

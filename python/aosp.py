@@ -25,6 +25,7 @@ devices = []
 devices_name = []
 devices_type = []
 devices_target_arch = []
+devices_mode = []
 chromium_version = ''
 ip = '192.168.42.1'
 timestamp = ''
@@ -35,7 +36,7 @@ variant = ''
 # variable product: out/target/product/asus_t100_64p|baytrail_64p
 # variable combo: lunch asus_t100_64p-userdebug|aosp_baytrail_64p-eng
 # out/dist asus_t100_64p-bootloader-eng.gyagp|aosp_baytrail_64p-bootloader-userdebug.gyagp
-repo_type = ''  # upstream, stable, mcg, gmin
+repo_type = ''  # upstream, stable, mcg, gminl, irdakk, gminl64
 repo_branch = ''
 # stable from 20140624, combo changed to asus_t100-userdebug, etc.
 repo_date = 0
@@ -77,7 +78,8 @@ examples:
     parser.add_argument('--repo-type', dest='repo_type', help='repo type')
     parser.add_argument('--repo-branch', dest='repo_branch', help='repo branch', default='master')
     parser.add_argument('--revert', dest='revert', help='revert', action='store_true')
-    parser.add_argument('--sync', dest='sync', help='sync code for android, chromium and intel', choices=['all', 'aosp', 'chromium'])
+    parser.add_argument('--sync', dest='sync', help='sync code for android', action='store_true')
+    parser.add_argument('--sync-chromium', dest='sync_chromium', help='sync code for chromium', action='store_true')
     parser.add_argument('--patch', dest='patch', help='patch', action='store_true')
     parser.add_argument('--build', dest='build', help='build', action='store_true')
     parser.add_argument('--build-showcommands', dest='build_showcommands', help='build with detailed command', action='store_true')
@@ -103,7 +105,10 @@ examples:
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'all'], default='x86_64')
     parser.add_argument('--target-device-type', dest='target_device_type', help='target device, can be t100, generic, mrd7, nexus4, nexus5, nexus7', choices=['baytrail', 'generic'], default='baytrail')
     parser.add_argument('--target-module', dest='target_module', help='target module', choices=['libwebviewchromium', 'webview', 'browser', 'cts', 'system', 'all'], default='system')
-    parser.add_argument('--variant', dest='variant', help='variant', choices=['user', 'userdebug', 'eng'])
+    parser.add_argument('--variant', dest='variant', help='variant', choices=['user', 'userdebug', 'eng'], default='userdebug')
+
+    parser.add_argument('--product-brand', dest='product_brand', help='product brand', choices=['ecs', 'fxn'])
+    parser.add_argument('--product-name', dest='product_name', help='product name', choices=['e7', 'anchor8'])
 
     args = parser.parse_args()
 
@@ -113,7 +118,7 @@ examples:
 
 def setup():
     global dir_root, dir_chromium, dir_out, target_archs, target_devices_type, target_modules, chromium_version
-    global devices, devices_name, devices_type, devices_target_arch, timestamp, use_upstream_chromium, patches_build
+    global devices, devices_name, devices_type, devices_target_arch, devices_mode, timestamp, use_upstream_chromium, patches_build
     global repo_type, repo_date, file_log, variant
 
     if args.dir_root:
@@ -126,7 +131,7 @@ def setup():
     dir_chromium = dir_root + '/external/chromium_org'
     dir_out = dir_root + '/out'
 
-    (devices, devices_name, devices_type, devices_target_arch) = setup_device()
+    (devices, devices_name, devices_type, devices_target_arch, devices_mode) = setup_device()
 
     os.chdir(dir_root)
 
@@ -137,6 +142,8 @@ def setup():
     else:
         (repo_type, repo_date) = _get_repo_info()
 
+    info('repo type is ' + repo_type)
+
     if args.time_fixed:
         timestamp = get_datetime(format='%Y%m%d')
     else:
@@ -144,11 +151,9 @@ def setup():
 
     # Set path
     path = os.getenv('PATH')
-    path += ':/usr/bin:/usr/sbin'
+    path += ':/usr/bin:/usr/sbin:/workspace/project/depot_tools'
     if args.extra_path:
         path += ':' + args.extra_path
-    if repo_type == 'gmin':
-        path = '/workspace/software/make-3.81:' + path
     setenv('PATH', path)
 
     for cmd in ['adb', 'git', 'gclient']:
@@ -186,44 +191,47 @@ def setup():
     else:
         patches_build = dict(patches_build_common, **patches_build_aosp_chromium)
 
-    file_log = dir_root + '/log-' + timestamp + '.txt'
+    dir_log = dir_root + '/log'
+    ensure_dir(dir_log)
+    file_log = dir_log + '/' + timestamp + '.txt'
 
     # Set up JDK
     backup_dir(dir_python)
-    if repo_type == 'gmin':
+    if repo_type == 'irdakk':
         execute('python version.py -t java -s jdk1.6.0_45')
     else:
         execute('python version.py -t java -s java-7-openjdk-amd64')
     restore_dir()
 
-    if args.variant:
-        variant = args.variant
-    else:
-        if repo_type == 'upstream':
-            variant = 'userdebug'
-        else:
-            variant = 'eng'
+    variant = args.variant
 
 
 def init():
     if not args.init:
         return()
 
-    if repo_type == 'stable':
-        file_repo = 'http://android.intel.com/repo'
-    elif repo_type == 'upstream':
+    if repo_type == 'upstream':
         file_repo = 'https://storage.googleapis.com/git-repo-downloads/repo'
-
-    execute('curl --noproxy intel.com %s >./repo' % file_repo, interactive=True)
+    elif repo_type == 'stable' or repo_type == 'gminl' or repo_type == 'gminl64':
+        file_repo = 'http://android.intel.com/repo'
+    elif repo_type == 'irdakk':
+        file_repo = 'https://buildbot-otc.jf.intel.com/repo.otc'
+    execute('curl -k --noproxy intel.com %s >./repo' % file_repo, interactive=True)
     execute('chmod +x ./repo')
 
-    if repo_type == 'stable':
-        cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/private/topic/aosp_stable/master'
-    elif repo_type == 'upstream':
+    if repo_type == 'upstream':
         cmd = './repo init -u https://android.googlesource.com/platform/manifest -b ' + args.repo_branch
-
+    elif repo_type == 'stable':
+        cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/private/topic/aosp_stable/master'
+    elif repo_type == 'gminl':
+        cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/topic/gmin/l-dev/master'
+    elif repo_type == 'gminl64':
+        cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/topic/gmin/l-dev/aosp/64bit/master'
+    elif repo_type == 'irdakk':
+        cmd = 'repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b irda/kitkat/master'
     execute(cmd, interactive=True)
-    execute('./repo sync -c -j16')
+
+    execute('./repo sync -c -j16', interactive=True)
     execute('./repo start temp --all')
 
 
@@ -231,12 +239,9 @@ def sync():
     if not args.sync:
         return()
 
-    if args.sync == 'all' or args.sync == 'aosp':
-        info('Syncing aosp...')
-        _sync_repo(dir_root, './repo sync -c -j16')
+    _sync_repo(dir_root, './repo sync -c -j16')
 
-    if (args.sync == 'all' or args.sync == 'chromium') and os.path.exists(dir_chromium + '/src'):
-        info('Syncing chromium...')
+    if args.sync_chromium and os.path.exists(dir_chromium + '/src'):
         _sync_repo(dir_chromium, 'GYP_DEFINES="OS=android werror= disable_nacl=1 enable_svg=0" gclient sync -f -n -j16')
 
 
@@ -302,8 +307,12 @@ def build():
             cmd = bashify(cmd)
             execute(cmd, interactive=True)
 
+        if repo_type == 'irdakk':
+            make = dir_tool + '/make-3.81/make'
+        else:
+            make = 'make'
         if module == 'system' or module == 'cts':
-            cmd = '. build/envsetup.sh && lunch ' + combo + ' && make '
+            cmd = '. build/envsetup.sh && lunch %s && %s ' % (combo, make)
             if module == 'system':
                 cmd += 'dist'
             else:
@@ -384,42 +393,53 @@ def flash_image():
     if len(target_devices_type) > 1 or target_devices_type[0] != 'baytrail':
         error('Only baytrail can burn the image')
 
-    connect_device()
+    if repo_type == 'stable':
+        connect_device()
+
     arch = target_archs[0]
     device_type = target_devices_type[0]
+    device = devices[0]
     path_fastboot = dir_linux + '/fastboot'
 
-    # Prepare image
-    if repo_type == 'stable':
-        dir_extract = '/tmp/' + timestamp
-        execute('mkdir ' + dir_extract)
-        backup_dir(dir_extract)
+    dir_extract = '/tmp/' + timestamp
+    ensure_dir(dir_extract)
+    backup_dir(dir_extract)
 
-        if args.file_image:
-            if re.match('http', args.file_image):
-                execute('wget ' + args.file_image, dryrun=False)
-            else:
-                execute('mv ' + args.file_image + ' ./')
-
-            if args.file_image[-6:] == 'tar.gz':
-                execute('tar zxf ' + args.file_image.split('/')[-1])
-                execute('mv */* ./')
-                result = execute('ls *.tgz', return_output=True)
-                file_image = dir_extract + '/' + result[1].rstrip('\n')
-            else:
-                file_image = args.file_image.split('/')[-1]
+    if args.file_image:
+        if re.match('http', args.file_image):
+            execute('wget ' + args.file_image, dryrun=False)
         else:
+            execute('mv ' + args.file_image + ' ./')
+
+        if args.file_image[-6:] == 'tar.gz':
+            execute('tar zxf ' + args.file_image.split('/')[-1])
+            execute('mv */* ./')
+            result = execute('ls *.tgz', return_output=True)
+            file_image = dir_extract + '/' + result[1].rstrip('\n')
+        else:
+            file_image = args.file_image.split('/')[-1]
+    else:
+        if repo_type == 'stable':
             if repo_date >= 20140624:
                 file_image = dir_root + '/out/dist/%s-om-factory.tgz' % get_product(arch, device_type, date=repo_date)
             else:
                 file_image = dir_root + '/out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type, date=repo_date)
+        elif repo_type == 'irdakk':
+            file_image = dir_root + '/out/target/product/irda/irda-ktu84p-factory.tgz'
 
-        if not os.path.exists(file_image):
-            error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
-            return
+    if not os.path.exists(file_image):
+        error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
+        return
 
-        execute('tar xvf ' + file_image, interactive=True)
+    execute('tar xvf ' + file_image, interactive=True, dryrun=False)
 
+    for line in fileinput.input('flash-all.sh', inplace=1):
+        if re.search('unlock', line):
+            line = line.replace('unlock', 'unlock-noconfirm')
+        sys.stdout.write(line)
+    fileinput.close()
+
+    if repo_type == 'stable':
         # Hack flash-all.sh to skip sleep and use our own fastboot
         for line in fileinput.input('flash-all.sh', inplace=1):
             if re.search('sleep', line):
@@ -442,11 +462,11 @@ def flash_image():
 
     # Flash image
     # This command would not return so we have to use timeout here
-    execute('timeout 5s ' + adb(cmd='reboot bootloader'))
+    execute('timeout 5s ' + adb(cmd='reboot fastboot', device=device))
     sleep_sec = 3
     is_connected = False
     for i in range(0, 60):
-        if not connect_device(mode='bootloader'):
+        if not connect_device(mode='bootloader', device=device):
             info('Sleeping %s seconds' % str(sleep_sec))
             time.sleep(sleep_sec)
             continue
@@ -457,25 +477,29 @@ def flash_image():
     if not is_connected:
         error('Can not connect to device in bootloader')
 
-    if repo_type == 'gmin' or repo_type == 'upstream':
+    if repo_type == 'upstream':
         combo = _get_combo(arch, device_type)
         cmd = bashify('. build/envsetup.sh && lunch ' + combo + ' && fastboot -t 192.168.42.1 -w flashall')
         execute(cmd, interactive=True)
-    else:
+    elif repo_type == 'irdakk':
+        execute('./flash-all.sh', interactive=True, dryrun=False)
+        execute('rm -rf ' + dir_extract, dryrun=False)
 
+        cmd = 'timeout 10s %s -s %s reboot' % (path_fastboot, device)
+        execute(cmd)
+    elif repo_type == 'stable':
         execute('./flash-all.sh -t ' + ip, interactive=True, dryrun=False)
         execute('rm -rf ' + dir_extract, dryrun=False)
 
-        # This command would not return so we have to use timeout here
         cmd = 'timeout 10s %s -t %s reboot' % (path_fastboot, ip)
         execute(cmd)
 
-        restore_dir()
+    restore_dir()
 
     # Wait until system is up
     is_connected = False
     for i in range(0, 60):
-        if not connect_device():
+        if not connect_device(device=device):
             info('Sleeping %s seconds' % str(sleep_sec))
             time.sleep(sleep_sec)
             continue
@@ -486,7 +510,6 @@ def flash_image():
     if not is_connected:
         error('Can not connect to device after system boots up')
 
-    # It will take about 45s to boot to GUI
     info('Sleeping 60 seconds until system fully boots up..')
     time.sleep(60)
 
@@ -657,26 +680,35 @@ def _sync_repo(dir, cmd):
 def _get_combo(arch, device_type):
     if repo_type == 'upstream':
         combo = 'full_' + codename[device_type] + '-' + variant
-    elif device_type == 'generic':
-        combo_prefix = 'aosp_'
-        combo_suffix = '-' + variant
-        combo = combo_prefix + arch + combo_suffix
-    elif device_type == 'baytrail':
-        if repo_type == 'stable' and repo_date >= 20140624 or repo_type == 'gmin':
-            combo_prefix = 'asus_t100'
-            combo_suffix = '-' + variant
-
-            if arch == 'x86_64':
-                combo = combo_prefix + '_64p' + combo_suffix
-            elif arch == 'x86':
-                combo = combo_prefix + combo_suffix
-        else:
+    elif repo_type == 'irdakk':
+        combo = 'irda-userdebug'
+    elif repo_type == 'gminl':
+        if not args.product_brand or not args.product_name:
+            error('Please designate product brand and name')
+        combo = '%s_%s-userdebug' % (args.product_brand, args.product_name)
+    elif repo_type == 'gminl64':
+        combo = 'ecs_e7-userdebug'
+    elif repo_type == 'stable':
+        if device_type == 'generic':
             combo_prefix = 'aosp_'
             combo_suffix = '-' + variant
-            if arch == 'x86_64':
-                combo = combo_prefix + device_type + '_64p' + combo_suffix
-            elif arch == 'x86':
-                combo = combo_prefix + device_type + combo_suffix
+            combo = combo_prefix + arch + combo_suffix
+        elif device_type == 'baytrail':
+            if repo_type == 'stable' and repo_date >= 20140624:
+                combo_prefix = 'asus_t100'
+                combo_suffix = '-' + variant
+
+                if arch == 'x86_64':
+                    combo = combo_prefix + '_64p' + combo_suffix
+                elif arch == 'x86':
+                    combo = combo_prefix + combo_suffix
+            else:
+                combo_prefix = 'aosp_'
+                combo_suffix = '-' + variant
+                if arch == 'x86_64':
+                    combo = combo_prefix + device_type + '_64p' + combo_suffix
+                elif arch == 'x86':
+                    combo = combo_prefix + device_type + combo_suffix
 
     return combo
 
@@ -811,23 +843,33 @@ def _get_repo_info():
     lines = f.readlines()
     f.close()
 
+    pattern = re.compile('merge = (.*)')
     for line in lines:
-        if re.search('merge =', line):
-            if re.search('aosp_stable', line):
-                repo_type = 'stable'
-            elif re.search('merge = master', line):
+        match = pattern.search(line)
+        if match:
+            merge = match.group(1)
+            if merge == 'master':
                 repo_type = 'upstream'
-            elif re.search('platform/android/r44c-stable', line):
+            elif merge == 'abt/private/topic/aosp_stable/master':
+                repo_type = 'stable'
+            elif merge == 'platform/android/r44c-stable':
                 repo_type = 'mcg'
-            elif re.search('gmin', line):
-                repo_type = 'gmin'
+            elif merge == 'abt/topic/gmin/l-dev/master':
+                repo_type = 'gminl'
+            elif merge == 'abt/topic/gmin/l-dev/aosp/64bit/master':
+                repo_type = 'gminl64'
+            elif merge == 'irda/kitkat/master':
+                repo_type = 'irdakk'
             else:
                 error('Could not find repo branch')
 
-    if repo_type == 'stable' and os.path.exists('device/intel/baytrail/asus_t100'):
-        repo_date = 20140624
+    if repo_type == 'stable':
+        if os.path.exists('device/intel/baytrail/asus_t100'):
+            repo_date = 20140624
+        else:
+            repo_date = 20140101
     else:
-        repo_date = 20140101
+        repo_date = 0
 
     return (repo_type, repo_date)
 

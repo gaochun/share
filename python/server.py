@@ -25,7 +25,7 @@ cb_interval = {
     'update_share': 1800,
     'test_x64_all': 24 * 3600 - interval_cron * 60,
     'test_x64_aosp_build': 24 * 3600 - interval_cron * 60,
-    'chrome_android': 3600,
+    'chrome_android': 24 * 3600 - interval_cron * 60,
     'daemon': 1200,
 }
 

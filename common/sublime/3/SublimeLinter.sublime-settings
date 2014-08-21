@@ -11,7 +11,10 @@
                 "@disable": false,
                 "args": [],
                 "excludes": [],
-                "ignore": ["E501", "E265"],
+                "ignore": [
+                    "E501",
+                    "E265"
+                ],
                 "max-line-length": null,
                 "select": ""
             }

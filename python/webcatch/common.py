@@ -13,6 +13,7 @@ dir_out_server = '/workspace/server/chromium'
 # comb: [binary_format, rev_min_built, rev_max_built]
 comb_valid = {
     ('android', 'x86', 'content_shell'): ['(.*).apk$', 233137, 233137],  # 250735
+    ('android', 'x86_64', 'content_shell'): ['(.*).apk$', 233137, 278978],
     ('android', 'x86', 'webview'): ['(.*).apk$', 233137, 252136],
     ('linux', 'x86', 'chrome'): ['(.*).tar.gz$', 233137, 236088],
     #['android', 'arm', 'content_shell'],

@@ -458,7 +458,9 @@ def setup():
 
         _hack_app_process()
 
-    file_log = dir_root + '/log-' + timestamp + '.txt'
+    dir_log = dir_root + '/log'
+    ensure_dir(dir_log)
+    file_log = dir_log + '/' + timestamp + '.txt'
 
     # repo type specific variables
     if repo_type == 'chrome-android':

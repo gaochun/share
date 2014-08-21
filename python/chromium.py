@@ -300,7 +300,7 @@ examples:
     group_common.add_argument('--devices', dest='devices', help='device id list separated by ","', default='')
     group_common.add_argument('--dir-root', dest='dir_root', help='set root directory')
     group_common.add_argument('--just-out', dest='just_out', help='stick to out, instead of out-x86_64/out', action='store_true')
-    group_common.add_argument('--extra-path', dest='extra_path', help='extra path for execution, such as path for depot_tools')
+    group_common.add_argument('--path-extra', dest='path_extra', help='extra path for execution, such as path for depot_tools')
     group_common.add_argument('--time-fixed', dest='time_fixed', help='fix the time for test sake. We may run multiple tests and results are in same dir', action='store_true')
     group_common.add_argument('--rev', dest='rev', type=int, help='revision, will override --sync-upstream')
     group_common.add_argument('--ver', dest='ver', help='ver for chrome-android')
@@ -398,8 +398,8 @@ def setup():
     else:
         timestamp = get_datetime()
 
+    set_path(args.path_extra)
     set_proxy()
-    set_path(args.extra_path)
 
     for cmd in ['adb', 'git', 'gclient']:
         result = execute('which ' + cmd, show_command=False)

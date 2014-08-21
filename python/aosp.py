@@ -101,7 +101,7 @@ examples:
     parser.add_argument('--analyze', dest='analyze', help='analyze tombstone or ANR file')
     parser.add_argument('--push', dest='push', help='push updates to system', action='store_true')
     parser.add_argument('--remove-out', dest='remove_out', help='remove out dir before build', action='store_true')
-    parser.add_argument('--extra-path', dest='extra_path', help='extra path for execution, such as path for depot_tools')
+    parser.add_argument('--path-extra', dest='path_extra', help='extra path for execution, such as path for depot_tools')
     parser.add_argument('--hack-app-process', dest='hack_app_process', help='hack app_process', action='store_true')
     parser.add_argument('--time-fixed', dest='time_fixed', help='fix the time for test sake. We may run multiple tests and results are in same dir', action='store_true')
     parser.add_argument('--dir-root', dest='dir_root', help='set root directory')
@@ -156,19 +156,13 @@ def setup():
     else:
         timestamp = get_datetime()
 
-    # Set path
-    path = os.getenv('PATH')
-    path += ':/usr/bin:/usr/sbin:/workspace/project/depot_tools'
-    if args.extra_path:
-        path += ':' + args.extra_path
-    setenv('PATH', path)
+    set_path(args.path_extra)
+    set_proxy()
 
     for cmd in ['adb', 'git', 'gclient']:
         result = execute('which ' + cmd, show_command=False)
         if result[0]:
             error('Could not find ' + cmd + ', and you may use --extra-path to designate it')
-
-    set_proxy()
 
     if args.target_arch == 'all':
         target_archs = ['x86_64', 'x86']

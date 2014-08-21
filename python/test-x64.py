@@ -60,10 +60,7 @@ def setup():
         if not os.path.exists(project):
             error('You need to put project ' + project + ' into ' + dir_project)
 
-    path = os.getenv('PATH')
-    path += ':/usr/bin:/usr/sbin'
-    setenv('PATH', path)
-
+    set_path()
     set_proxy()
 
     if args.target_arch == 'all':

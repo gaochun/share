@@ -285,18 +285,24 @@ def backup_smb(server, dir_server, file_local, dryrun=False):
         info('Succeeded to upload: ' + file_local)
 
 
-def set_path(path_extra):
+def set_path(path_extra=''):
     path = os.getenv('PATH')
     if host_os == 'windows':
         splitter = ';'
     elif host_os == 'linux':
         splitter = ':'
 
-    paths = [path]
+    paths = path.split(splitter)
+
     if host_os == 'linux':
-        paths.extend(['/usr/bin', '/usr/sbin'])
+        paths_new = ['/usr/bin', '/usr/sbin', '/workspace/project/depot_tools']
+
     if path_extra:
-        paths.append(path_extra)
+        paths_new.extend(path_extra.split(splitter))
+
+    for path_new in paths_new:
+        if path_new not in paths:
+            paths.append(path_new)
 
     setenv('PATH', splitter.join(paths))
 

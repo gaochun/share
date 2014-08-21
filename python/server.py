@@ -51,6 +51,8 @@ examples:
 def setup():
     ensure_dir(dir_server_log)
     setenv('DISPLAY', ':0')
+    set_path()
+    set_proxy()
 
 
 def cron():

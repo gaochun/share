@@ -78,6 +78,8 @@ def setup():
             os.makedirs(dir_temp)
 
     ensure_dir(chrome_android_dir_server_todo)
+    set_path()
+    set_proxy()
 
 
 def run(force=False, act=ACT_ALL):
@@ -109,9 +111,6 @@ def download(force=False):
     ensure_dir(dir_trash)
 
     # download the apk
-    env_http_proxy = getenv('http_proxy')
-    unsetenv('http_proxy')
-
     for target_arch in target_arch_chrome_android:
         options = webdriver.ChromeOptions()
         options.add_experimental_option('excludeSwitches', ['user-data-dir', 'ignore-certificate-errors', 'disable-default-apps'])
@@ -140,7 +139,6 @@ def download(force=False):
                 time.sleep(3)
 
         driver.quit()
-    setenv('http_proxy', env_http_proxy)
 
     execute('mv %s/* %s' % (dir_download, chrome_android_dir_server_todo), dryrun=False)
 

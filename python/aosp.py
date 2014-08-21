@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# todo:
+# flash_image for upstream
+
 # Build:
 # Check tag info from http://source.android.com/source/build-numbers.html
 # Download proprietary drivers from https://developers.google.com/android/nexus/drivers, and put them into related directory under /workspace/topic/android/backup/vendor.
@@ -17,7 +20,7 @@ dir_root = ''
 dir_chromium = ''
 dir_out = ''
 dir_script = sys.path[0]
-dir_backup = 'backup'
+dir_backup = ''
 target_archs = []
 target_devices_type = []
 target_modules = []
@@ -32,6 +35,8 @@ timestamp = ''
 use_upstream_chromium = False
 file_log = ''
 variant = ''
+product_brand = ''
+product_name = ''
 
 # variable product: out/target/product/asus_t100_64p|baytrail_64p
 # variable combo: lunch asus_t100_64p-userdebug|aosp_baytrail_64p-eng
@@ -107,8 +112,8 @@ examples:
     parser.add_argument('--target-module', dest='target_module', help='target module', choices=['libwebviewchromium', 'webview', 'browser', 'cts', 'system', 'all'], default='system')
     parser.add_argument('--variant', dest='variant', help='variant', choices=['user', 'userdebug', 'eng'], default='userdebug')
 
-    parser.add_argument('--product-brand', dest='product_brand', help='product brand', choices=['ecs', 'fxn'])
-    parser.add_argument('--product-name', dest='product_name', help='product name', choices=['e7', 'anchor8'])
+    parser.add_argument('--product-brand', dest='product_brand', help='product brand', choices=['ecs', 'fxn'], default='ecs')
+    parser.add_argument('--product-name', dest='product_name', help='product name', choices=['e7', 'anchor8'], default='e7')
 
     args = parser.parse_args()
 
@@ -117,9 +122,10 @@ examples:
 
 
 def setup():
-    global dir_root, dir_chromium, dir_out, target_archs, target_devices_type, target_modules, chromium_version
+    global dir_root, dir_chromium, dir_out, dir_backup, target_archs, target_devices_type, target_modules, chromium_version
     global devices, devices_name, devices_type, devices_target_arch, devices_mode, timestamp, use_upstream_chromium, patches_build
     global repo_type, repo_date, file_log, variant
+    global product_brand, product_name
 
     if args.dir_root:
         dir_root = args.dir_root
@@ -130,6 +136,7 @@ def setup():
 
     dir_chromium = dir_root + '/external/chromium_org'
     dir_out = dir_root + '/out'
+    dir_backup = dir_root + '/backup'
 
     (devices, devices_name, devices_type, devices_target_arch, devices_mode) = setup_device()
 
@@ -204,6 +211,8 @@ def setup():
     restore_dir()
 
     variant = args.variant
+    product_brand = args.product_brand
+    product_name = args.product_name
 
 
 def init():
@@ -290,8 +299,8 @@ def build():
 
         combo = _get_combo(arch, device_type)
         if repo_type == 'upstream':
-            dir_backup = '/workspace/topic/android/backup'
-            dir_backup_driver = dir_backup + '/vendor'
+            dir_backup_upstream = '/workspace/topic/android/backup'
+            dir_backup_driver = dir_backup_upstream + '/vendor'
             # Check proprietary binaries.
             dir_backup_spec_driver = dir_backup_driver + '/' + device + '/' + version + '/vendor'
             if not os.path.exists(dir_backup_spec_driver):
@@ -396,14 +405,18 @@ def flash_image():
     if repo_type == 'stable':
         connect_device()
 
+    if len(devices) < 1:
+        error('You must have device connected')
+
     arch = target_archs[0]
     device_type = target_devices_type[0]
     device = devices[0]
     path_fastboot = dir_linux + '/fastboot'
 
+    # extract image
     dir_extract = '/tmp/' + timestamp
     ensure_dir(dir_extract)
-    backup_dir(dir_extract)
+    backup_dir(dir_extract, verbose=True)
 
     if args.file_image:
         if re.match('http', args.file_image):
@@ -426,6 +439,8 @@ def flash_image():
                 file_image = dir_root + '/out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type, date=repo_date)
         elif repo_type == 'irdakk':
             file_image = dir_root + '/out/target/product/irda/irda-ktu84p-factory.tgz'
+        elif repo_type == 'gminl':
+            file_image = dir_root + '/out/target/product/%s_%s/%s_%s-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)
 
     if not os.path.exists(file_image):
         error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
@@ -433,12 +448,7 @@ def flash_image():
 
     execute('tar xvf ' + file_image, interactive=True, dryrun=False)
 
-    for line in fileinput.input('flash-all.sh', inplace=1):
-        if re.search('unlock', line):
-            line = line.replace('unlock', 'unlock-noconfirm')
-        sys.stdout.write(line)
-    fileinput.close()
-
+    # hack the script
     if repo_type == 'stable':
         # Hack flash-all.sh to skip sleep and use our own fastboot
         for line in fileinput.input('flash-all.sh', inplace=1):
@@ -460,8 +470,7 @@ def flash_image():
             sys.stdout.write(line)
         fileinput.close()
 
-    # Flash image
-    # This command would not return so we have to use timeout here
+    # enter fastboot mode
     execute('timeout 5s ' + adb(cmd='reboot fastboot', device=device))
     sleep_sec = 3
     is_connected = False
@@ -477,43 +486,41 @@ def flash_image():
     if not is_connected:
         error('Can not connect to device in bootloader')
 
+    # flash image
     if repo_type == 'upstream':
         combo = _get_combo(arch, device_type)
         cmd = bashify('. build/envsetup.sh && lunch ' + combo + ' && fastboot -t 192.168.42.1 -w flashall')
         execute(cmd, interactive=True)
-    elif repo_type == 'irdakk':
+    elif repo_type == 'irdakk' or repo_type == 'gminl':
+        execute('./flash-base.sh', interactive=True, dryrun=False)
         execute('./flash-all.sh', interactive=True, dryrun=False)
         execute('rm -rf ' + dir_extract, dryrun=False)
-
-        cmd = 'timeout 10s %s -s %s reboot' % (path_fastboot, device)
-        execute(cmd)
+        execute('timeout 10s %s -s %s reboot' % (path_fastboot, device))
     elif repo_type == 'stable':
         execute('./flash-all.sh -t ' + ip, interactive=True, dryrun=False)
         execute('rm -rf ' + dir_extract, dryrun=False)
-
-        cmd = 'timeout 10s %s -t %s reboot' % (path_fastboot, ip)
-        execute(cmd)
+        execute('timeout 10s %s -t %s reboot' % (path_fastboot, ip))
 
     restore_dir()
 
-    # Wait until system is up
-    is_connected = False
-    for i in range(0, 60):
-        if not connect_device(device=device):
-            info('Sleeping %s seconds' % str(sleep_sec))
-            time.sleep(sleep_sec)
-            continue
-        else:
-            is_connected = True
-            break
-
-    if not is_connected:
-        error('Can not connect to device after system boots up')
-
-    info('Sleeping 60 seconds until system fully boots up..')
-    time.sleep(60)
-
+    # wait until system boots up
     if repo_type == 'stable':
+        is_connected = False
+        for i in range(0, 60):
+            if not connect_device(device=device):
+                info('Sleeping %s seconds' % str(sleep_sec))
+                time.sleep(sleep_sec)
+                continue
+            else:
+                is_connected = True
+                break
+
+        if not is_connected:
+            error('Can not connect to device after system boots up')
+        else:
+            info('Sleeping 60 seconds until system fully boots up..')
+            time.sleep(60)
+
         android_keep_screen_on()
         android_unlock_screen()
         # Remove guide screen
@@ -530,11 +537,11 @@ def start_emu():
     for arch in target_archs:
         product = get_product(arch, 'generic', date=repo_date)
         if args.dir_emu:
-            dir_backup = args.dir_emu
+            dir_backup_emu = args.dir_emu
         else:
             result = execute('ls -t -d --group-directories-first backup/*generic*', return_output=True)
-            dir_backup = dir_root + '/' + result[1].split('\n')[0]
-        backup_dir(dir_backup)
+            dir_backup_emu = dir_root + '/' + result[1].split('\n')[0]
+        backup_dir(dir_backup_emu)
 
         if not os.path.exists(dir_root + '/sdcard-%s.img' % arch):
             error('Please put sdcard.img into ' + dir_root)
@@ -550,20 +557,20 @@ def start_emu():
             file_emu = 'emulator-x86'
 
         cmd = '''
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:%(dir_backup)s/emulator-linux/lib \
-%(dir_backup)s/emulator-linux/%(file_emu)s -verbose -show-kernel -no-snapshot -gpu %(gpu_type)s -memory 512 \
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:%(dir_backup_emu)s/emulator-linux/lib \
+%(dir_backup_emu)s/emulator-linux/%(file_emu)s -verbose -show-kernel -no-snapshot -gpu %(gpu_type)s -memory 512 \
 -skin HVGA \
--skindir %(dir_backup)s/platforms/skins \
--kernel %(dir_backup)s/system-images/aosp_%(arch)s/kernel-qemu \
--ramdisk %(dir_backup)s/system-images/aosp_%(arch)s/ramdisk.img \
--sysdir %(dir_backup)s/system-images/aosp_%(arch)s \
--system %(dir_backup)s/system-images/aosp_%(arch)s/system.img \
--datadir %(dir_backup)s/system-images/aosp_%(arch)s \
--data %(dir_backup)s/system-images/aosp_%(arch)s/userdata-qemu.img \
--cache %(dir_backup)s/system-images/aosp_%(arch)s/cache.img \
--initdata %(dir_backup)s/system-images/aosp_%(arch)s/userdata.img \
+-skindir %(dir_backup_emu)s/platforms/skins \
+-kernel %(dir_backup_emu)s/system-images/aosp_%(arch)s/kernel-qemu \
+-ramdisk %(dir_backup_emu)s/system-images/aosp_%(arch)s/ramdisk.img \
+-sysdir %(dir_backup_emu)s/system-images/aosp_%(arch)s \
+-system %(dir_backup_emu)s/system-images/aosp_%(arch)s/system.img \
+-datadir %(dir_backup_emu)s/system-images/aosp_%(arch)s \
+-data %(dir_backup_emu)s/system-images/aosp_%(arch)s/userdata-qemu.img \
+-cache %(dir_backup_emu)s/system-images/aosp_%(arch)s/cache.img \
+-initdata %(dir_backup_emu)s/system-images/aosp_%(arch)s/userdata.img \
 -sdcard %(dir_root)s/sdcard-%(arch)s.img \
-''' % {'dir_root': dir_root, 'dir_backup': dir_backup, 'product': product, 'arch': arch, 'gpu_type': gpu_type, 'file_emu': file_emu}
+''' % {'dir_root': dir_root, 'dir_backup_emu': dir_backup_emu, 'product': product, 'arch': arch, 'gpu_type': gpu_type, 'file_emu': file_emu}
 
         execute(cmd, interactive=True)
         restore_dir()
@@ -681,13 +688,13 @@ def _get_combo(arch, device_type):
     if repo_type == 'upstream':
         combo = 'full_' + codename[device_type] + '-' + variant
     elif repo_type == 'irdakk':
-        combo = 'irda-userdebug'
+        combo = 'irda-%s' % variant
     elif repo_type == 'gminl':
-        if not args.product_brand or not args.product_name:
+        if not product_brand or not product_name:
             error('Please designate product brand and name')
-        combo = '%s_%s-userdebug' % (args.product_brand, args.product_name)
+        combo = '%s_%s-%s' % (product_brand, product_name, variant)
     elif repo_type == 'gminl64':
-        combo = 'ecs_e7-userdebug'
+        combo = '%s_%s_64p-%s' % (product_brand, product_name, variant)
     elif repo_type == 'stable':
         if device_type == 'generic':
             combo_prefix = 'aosp_'
@@ -713,7 +720,7 @@ def _get_combo(arch, device_type):
     return combo
 
 
-# All valid combination:
+# All valid combination for stable:
 # 1. x86_64, baytrail, webview
 # 2. x86_64, baytrail, system
 # 3. x86, baytrail, system
@@ -724,64 +731,73 @@ def _get_combo(arch, device_type):
 # (x86, generic, webview) is included in 1
 
 def _backup_one(arch, device_type, module):
-    product = get_product(arch, device_type, date=repo_date)
-
-    if module == 'webview':
-        if arch == 'x86_64':
-            libs = ['lib64', 'lib']
-        elif arch == 'x86':
-            libs = ['lib']
-
-        backup_files = {
-            'out/target/product/' + product + '/system/framework': 'out/target/product/' + product + '/system/framework/webviewchromium.jar',
-            'out/target/product/' + product + '/system/framework/webview': 'out/target/product/' + product + '/system/framework/webview/paks',
-        }
-
-        for lib in libs:
-            backup_files['out/target/product/' + product + '/system/' + lib] = [
-                'out/target/product/' + product + '/system/' + lib + '/libwebviewchromium_plat_support.so',
-                'out/target/product/' + product + '/system/' + lib + '/libwebviewchromium.so'
-            ]
-
-    else:  # module == 'system'
-        if device_type == 'baytrail':
-            if repo_date >= 20140624:
-                prefix = ''
-            else:
-                prefix = 'aosp_'
-            backup_files = {
-                '.': [
-                    'out/dist/%s%s-om-factory.tgz' % (prefix, get_product(arch, device_type, date=repo_date)),
-                ],
-            }
-        elif device_type == 'generic':
-            backup_files = {
-                'platforms': 'development/tools/emulator/skins',
-                'emulator-linux': 'external/qemu/objs/*',
-                'system-images/aosp_%s/system' % arch: 'out/target/product/generic_%s/system/*' % arch,
-                'system-images/aosp_%s' % arch: [
-                    'out/target/product/generic_%s/cache.img' % arch,
-                    'out/target/product/generic_%s/userdata.img' % arch,
-                    'out/target/product/generic_%s/ramdisk.img' % arch,
-                    'out/target/product/generic_%s/system.img' % arch,
-                    'prebuilts/qemu-kernel/%s/kernel-qemu' % arch,
-                ],
-            }
-
-        # TODO: Backup image for upstream
+    if repo_type == 'upstream':
+        pass
         #dest_dir = dir_backup_img + get_datetime() + '-' + device + '-' + variant + '/'
         #os.mkdir(dest_dir)
         #execute('cp ' + root_dir + 'out/target/product/' + device_code_name + '/*.img ' + dest_dir)
+    elif repo_type == 'irdakk':
+        backup_files = {'.': 'out/target/product/irda/irda-ktu84p-factory.tgz'}
+    elif repo_type == 'gminl':
+        backup_files = {'.': 'out/target/product/%s_%s/%s_%s-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
+    elif repo_type == 'gminl64':
+        pass
+    elif repo_type == 'stable':
+        product = get_product(arch, device_type, date=repo_date)
 
-    name = timestamp + '-' + arch + '-' + device_type + '-' + module + '-' + chromium_version
+        if module == 'webview':
+            if arch == 'x86_64':
+                libs = ['lib64', 'lib']
+            elif arch == 'x86':
+                libs = ['lib']
+
+            backup_files = {
+                'out/target/product/' + product + '/system/framework': 'out/target/product/' + product + '/system/framework/webviewchromium.jar',
+                'out/target/product/' + product + '/system/framework/webview': 'out/target/product/' + product + '/system/framework/webview/paks',
+            }
+
+            for lib in libs:
+                backup_files['out/target/product/' + product + '/system/' + lib] = [
+                    'out/target/product/' + product + '/system/' + lib + '/libwebviewchromium_plat_support.so',
+                    'out/target/product/' + product + '/system/' + lib + '/libwebviewchromium.so'
+                ]
+
+        else:  # module == 'system'
+            if device_type == 'baytrail':
+                if repo_date >= 20140624:
+                    prefix = ''
+                else:
+                    prefix = 'aosp_'
+                backup_files = {
+                    '.': [
+                        'out/dist/%s%s-om-factory.tgz' % (prefix, get_product(arch, device_type, date=repo_date)),
+                    ],
+                }
+            elif device_type == 'generic':
+                backup_files = {
+                    'platforms': 'development/tools/emulator/skins',
+                    'emulator-linux': 'external/qemu/objs/*',
+                    'system-images/aosp_%s/system' % arch: 'out/target/product/generic_%s/system/*' % arch,
+                    'system-images/aosp_%s' % arch: [
+                        'out/target/product/generic_%s/cache.img' % arch,
+                        'out/target/product/generic_%s/userdata.img' % arch,
+                        'out/target/product/generic_%s/ramdisk.img' % arch,
+                        'out/target/product/generic_%s/system.img' % arch,
+                        'prebuilts/qemu-kernel/%s/kernel-qemu' % arch,
+                    ],
+                }
+
+    name = timestamp + '-' + repo_type
+    if repo_type == 'stable':
+        name += '-' + arch + '-' + device_type + '-' + module + '-' + chromium_version
+    elif repo_type == 'gminl':
+        name += '-' + product_brand + '-' + product_name
     dir_backup_one = dir_backup + '/' + name
-    if not os.path.exists(dir_backup_one):
-        os.makedirs(dir_backup_one)
+    ensure_dir(dir_backup_one)
     backup_dir(dir_backup_one)
     info('Begin to backup to ' + dir_backup_one)
     for dir_dest in backup_files:
-        if not os.path.exists(dir_dest):
-            os.makedirs(dir_dest)
+        ensure_dir(dir_dest)
 
         if isinstance(backup_files[dir_dest], str):
             files = [backup_files[dir_dest]]
@@ -798,7 +814,7 @@ def _backup_one(arch, device_type, module):
         backup_dir(dir_backup)
         name_tar = name + '-' + host_name + '.tar.gz'
         execute('tar zcf ' + name_tar + ' ' + name)
-        backup_smb('//wp-03.sh.intel.com/aosp', 'aosp-stable/temp', name_tar, dryrun=False)
+        backup_smb('//wp-03.sh.intel.com/aosp', '%s/temp' % repo_type, name_tar, dryrun=False)
         restore_dir()
 
 

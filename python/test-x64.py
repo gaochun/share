@@ -92,7 +92,7 @@ def test():
         if not os.path.exists(dir_aosp):
             error(dir_aosp + ' does not exist')
         backup_dir(dir_aosp)
-        cmd = cmd_aosp + '--sync aosp --patch --remove-out'
+        cmd = cmd_aosp + '--sync --patch --remove-out'
         execute(cmd, interactive=True, abort=True, dryrun=dryrun)
         restore_dir()
 

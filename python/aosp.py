@@ -441,6 +441,8 @@ def flash_image():
             file_image = dir_root + '/out/target/product/irda/irda-ktu84p-factory.tgz'
         elif repo_type == 'gminl':
             file_image = dir_root + '/out/target/product/%s_%s/%s_%s-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)
+        elif repo_type == 'gminl64':
+            file_image = dir_root + '/out/target/product/%s_%s_64p/%s_%s_64p-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)
 
     if not os.path.exists(file_image):
         error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
@@ -491,7 +493,7 @@ def flash_image():
         combo = _get_combo(arch, device_type)
         cmd = bashify('. build/envsetup.sh && lunch ' + combo + ' && fastboot -t 192.168.42.1 -w flashall')
         execute(cmd, interactive=True)
-    elif repo_type == 'irdakk' or repo_type == 'gminl':
+    elif repo_type == 'irdakk' or repo_type == 'gminl' or repo_type == 'gminl64':
         execute('./flash-base.sh', interactive=True, dryrun=False)
         execute('./flash-all.sh', interactive=True, dryrun=False)
         execute('rm -rf ' + dir_extract, dryrun=False)
@@ -741,7 +743,7 @@ def _backup_one(arch, device_type, module):
     elif repo_type == 'gminl':
         backup_files = {'.': 'out/target/product/%s_%s/%s_%s-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
     elif repo_type == 'gminl64':
-        pass
+        backup_files = {'.': 'out/target/product/%s_%s_64p/%s_%s_64p-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
     elif repo_type == 'stable':
         product = get_product(arch, device_type, date=repo_date)
 

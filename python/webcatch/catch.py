@@ -103,7 +103,19 @@ def bisect(index_good, index_bad, check_boundry=False):
             info('The regression is between revisions (' + str(revs[index_good]) + ',' + str(revs[index_bad]) + '], but there is no build for further investigation')
 
         if rev_bad_final - rev_good_final < 15:
-            _get_commit(rev_good_final, rev_bad_final)
+            if args.dir_chromium:
+                dir_chromium = args.dir_chromium
+            else:
+                dir_chromium = dir_project + '/chromium-' + target_os
+
+            dir_src = dir_chromium + '/src'
+            suspect_log = dir_log + '/suspect.log'
+            rev_hash = chromium_get_rev_hash(dir_src, rev_good_final, rev_bad_final)
+            revs = sorted(rev_hash.keys())
+            for rev in revs:
+                execute('git show ' + rev_hash[rev] + ' >>' + suspect_log, show_command=False)
+            info('Check ' + suspect_log + ' for suspected checkins')
+
         else:
             info('There are too many checkins in between, please manually check the checkin info')
 
@@ -176,49 +188,6 @@ def _parse_result(output):
     if match:
         results = [float(x) for x in match.group(1).split(',')]
     return results
-
-
-def _get_commit(rev_good, rev_bad):
-    if args.dir_chromium:
-        dir_chromium = args.dir_chromium
-    else:
-        dir_chromium = dir_project + '/chromium-' + target_os
-
-    if not os.path.exists(dir_chromium):
-        error('The chromium directory does not exist')
-    backup_dir(dir_chromium + '/src')
-    execute('git log origin master >git_log', show_command=False)
-    file = open('git_log')
-    lines = file.readlines()
-    file.close()
-
-    pattern_commit = re.compile('^commit (.*)')
-    pattern_rev = re.compile('^git-svn-id: .*@(.*) (.*)')
-    need_print = False
-    suspect_log = dir_log + '/suspect.log'
-    for line in lines:
-        match = pattern_commit.search(line)
-        if match:
-            commit = match.group(1)
-            if need_print:
-                execute('git show ' + commit + ' >>' + suspect_log, show_command=False)
-
-        match = pattern_rev.search(line)
-        if match:
-            rev = int(match.group(1))
-
-            if rev <= rev_good:
-                break
-
-            if rev > rev_bad:
-                continue
-
-            if not need_print:
-                need_print = True
-                execute('git show ' + commit + ' >>' + suspect_log, show_command=False)
-
-    info('Check ' + suspect_log + ' for suspected checkins')
-    restore_dir()
 
 
 if __name__ == '__main__':

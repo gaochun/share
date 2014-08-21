@@ -496,10 +496,6 @@ def setup():
         else:
             setenv('GYP_DEFINES', 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os)
 
-        if repo_type != 'chrome-android' and rev >= rev_clang and not os.path.exists('src/third_party/llvm-build'):
-            info('From revision %s, llvm is used for build. Now will download it for you.')
-            execute('src/tools/clang/scripts/update.sh')
-
     print '''
 ========== Configuration Begin ==========
 PATH=%(path)s
@@ -596,7 +592,7 @@ def sync(force=False):
 
     cmd_type = 'sync'
     if rev != REV_MAX:
-        cmd_type += ' --revision src@' + chromium_get_hash(dir_src, rev)
+        cmd_type += ' --revision src@' + chromium_get_rev_hash(dir_src, rev)
     _run_gclient(cmd_type)
 
     if repo_type == 'chrome-android':
@@ -724,6 +720,10 @@ def build(force=False):
     print 'Host OS: ' + host_os
     print 'Target OS: ' + target_os.capitalize()
     print '======================='
+
+    if repo_type != 'chrome-android' and rev >= rev_clang and not os.path.exists('src/third_party/llvm-build'):
+        info('From revision %s, llvm is used for build. Now will download it for you.')
+        execute('src/tools/clang/scripts/update.sh')
 
     name_func = get_caller_name()
     timer_start(name_func)

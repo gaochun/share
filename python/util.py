@@ -796,44 +796,61 @@ def mouse_click(button=1):
     d.sync()
 
 
-def chromium_get_hash(dir_src, rev):
-    if rev == REV_MAX:
-        error('Could not get hash for REV_MAX')
+def chromium_get_rev_hash(dir_src, rev_min, *rev_extra):
+    if len(rev_extra):
+        rev_max = rev_extra[0]
+    else:
+        rev_max = rev_min
+
+    if rev_min > rev_max:
+        return {}
+    if not os.path.exists(dir_src):
+        error('Chromium src dir does not exist')
 
     backup_dir(dir_src)
-    hash_temp = _chromium_get_hash_one(rev)
-    if hash_temp == '':
+    rev_hash = _chromium_get_rev_hash(rev_min, rev_max, force=False)
+    if not rev_hash:
         execute('git fetch')
-        hash_temp = _chromium_get_hash_one(rev)
+        rev_hash = _chromium_get_rev_hash(rev_min, rev_max, force=True)
     restore_dir()
 
-    if hash_temp == '':
-        error('Could not get hash for revision ' + str(rev))
-    return hash_temp
+    if len(rev_extra):
+        return rev_hash
+    else:
+        if rev_min in rev_hash:
+            return rev_hash[rev_min]
+        else:
+            error('Could not find hash for rev ' + str(rev_min))
 
 
-# Return 0 if failed to find
-def _chromium_get_hash_one(rev):
+# force: True so that rev_hash will return as much as possible
+def _chromium_get_rev_hash(rev_min, rev_max, force=False):
     execute('git log origin master >git_log', show_command=False)
     f = open('git_log')
     lines = f.readlines()
     f.close()
-    execute('rm git_log', show_command=False)
+    execute('rm -f git_log', show_command=False)
 
     pattern_hash = re.compile('^commit (.*)')
     pattern_rev = re.compile('^git-svn-id: .*@(.*) (.*)')
     hash_temp = ''
     rev_temp = 0
+    is_first = True
+    rev_hash = {}
     for line in lines:
         match = pattern_hash.search(line)
         if match:
             if hash_temp == '':
                 hash_temp = match.group(1)
                 continue
-            if rev_temp == rev:
-                return hash_temp
-            elif rev_temp < rev:
-                return ''
+            if is_first:
+                is_first = False
+                if rev_temp < rev_max and not force:
+                    return rev_hash
+            if rev_temp >= rev_min and rev_temp <= rev_max:
+                rev_hash[rev_temp] = hash_temp
+            elif rev_temp < rev_min:
+                return rev_hash
             hash_temp = match.group(1)
 
         match = pattern_rev.search(line.lstrip())

@@ -162,7 +162,7 @@ def setup():
     for cmd in ['adb', 'git', 'gclient']:
         result = execute('which ' + cmd, show_command=False)
         if result[0]:
-            error('Could not find ' + cmd + ', and you may use --extra-path to designate it')
+            error('Could not find ' + cmd + ', and you may use --path-extra to designate it')
 
     if args.target_arch == 'all':
         target_archs = ['x86_64', 'x86']

@@ -404,7 +404,7 @@ def setup():
     for cmd in ['adb', 'git', 'gclient']:
         result = execute('which ' + cmd, show_command=False)
         if result[0]:
-            error('Could not find ' + cmd + ', and you may use --extra-path to designate it')
+            error('Could not find ' + cmd + ', and you may use --path-extra to designate it')
 
     target_arch = args.target_arch
     if not args.target_module:

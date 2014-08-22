@@ -55,7 +55,7 @@ def set_version():
 
 def _get_version_java():
     # Output is in stderr
-    java_version_result = execute('java -version', show_command=False, return_output=True)
+    java_version_result = execute('java -version', show_cmd=False, return_output=True)
     match = re.match('java version "(.*)"', java_version_result[1])
     java_version = match.group(1)
 
@@ -71,7 +71,7 @@ def _get_version_java():
         java_home = 'NULL'
 
     if os.path.exists(default_java_file):
-        default_java_result = execute('ls -l ' + default_java_file, show_command=False, return_output=True)
+        default_java_result = execute('ls -l ' + default_java_file, show_cmd=False, return_output=True)
         default_java = default_java_result[1].split('/')[-1].rstrip('\n')
     else:
         default_java = 'NULL'
@@ -107,7 +107,7 @@ def _set_version_java():
 
 
 def _get_version_gcc():
-    gcc_version_result = execute('ls -l ' + gcc_file, show_command=True, return_output=True)
+    gcc_version_result = execute('ls -l ' + gcc_file, show_cmd=True, return_output=True)
     match = re.match('.+gcc-(.+)', gcc_version_result[1])
     if match:
         gcc_version = match.group(1)
@@ -120,12 +120,12 @@ def _get_version_gcc():
 
 def _set_version_gcc():
     version = args.set_version
-    execute('sudo rm -f /usr/bin/gcc', show_command=True)
-    execute('sudo ln -s /usr/bin/gcc-' + version + ' /usr/bin/gcc', show_command=True)
-    execute('sudo rm -f /usr/bin/g++', show_command=True)
-    execute('sudo ln -s /usr/bin/g++-' + version + ' /usr/bin/g++', show_command=True)
-    execute('sudo rm -f /usr/bin/cc', show_command=True)
-    execute('sudo ln -s /usr/bin/gcc /usr/bin/cc', show_command=True)
+    execute('sudo rm -f /usr/bin/gcc', show_cmd=True)
+    execute('sudo ln -s /usr/bin/gcc-' + version + ' /usr/bin/gcc', show_cmd=True)
+    execute('sudo rm -f /usr/bin/g++', show_cmd=True)
+    execute('sudo ln -s /usr/bin/g++-' + version + ' /usr/bin/g++', show_cmd=True)
+    execute('sudo rm -f /usr/bin/cc', show_cmd=True)
+    execute('sudo ln -s /usr/bin/gcc /usr/bin/cc', show_cmd=True)
 
     _get_version_gcc()
 

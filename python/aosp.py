@@ -160,7 +160,7 @@ def setup():
     set_proxy()
 
     for cmd in ['adb', 'git', 'gclient']:
-        result = execute('which ' + cmd, show_command=False)
+        result = execute('which ' + cmd, show_cmd=False)
         if result[0]:
             error('Could not find ' + cmd + ', and you may use --path-extra to designate it')
 
@@ -307,7 +307,7 @@ def build():
             cmd = '. build/envsetup.sh && lunch ' + combo + ' && ' + dir_root + '/external/chromium_org/src/android_webview/tools/gyp_webview linux-x86'
             if arch == 'x86_64':
                 cmd += ' && ' + dir_root + '/external/chromium_org/src/android_webview/tools/gyp_webview linux-x86_64'
-            cmd = bashify(cmd)
+            cmd = bashify_cmd(cmd)
             execute(cmd, interactive=True)
 
         if repo_type == 'irdakk':
@@ -337,18 +337,18 @@ def build():
         if args.build_showcommands:
             cmd += ' showcommands'
         cmd += ' -j16 2>&1 |tee -a ' + file_log
-        cmd = bashify(cmd)
+        cmd = bashify_cmd(cmd)
         result = execute(cmd, interactive=True, dryrun=False)
         if result[0]:
             error('Failed to build %s %s %s' % (arch, device_type, module))
 
         if module == 'system' and device_type == 'generic':
-            cmd = bashify('. build/envsetup.sh && lunch ' + combo + ' && external/qemu/android-rebuild.sh')
+            cmd = bashify_cmd('. build/envsetup.sh && lunch ' + combo + ' && external/qemu/android-rebuild.sh')
             result = execute(cmd, interactive=True)
             if result[0]:
                 error('Failed to build %s emulator' % arch)
 
-        timer_end(name_build)
+        timer_stop(name_build)
         info('Time for ' + name_build + ': ' + timer_diff(name_build))
 
 
@@ -485,7 +485,7 @@ def flash_image():
     # flash image
     if repo_type == 'upstream':
         combo = _get_combo(arch, device_type)
-        cmd = bashify('. build/envsetup.sh && lunch ' + combo + ' && fastboot -t 192.168.42.1 -w flashall')
+        cmd = bashify_cmd('. build/envsetup.sh && lunch ' + combo + ' && fastboot -t 192.168.42.1 -w flashall')
         execute(cmd, interactive=True)
     elif repo_type == 'irdakk' or repo_type == 'gminl' or repo_type == 'gminl64':
         execute('./flash-base.sh', interactive=True, dryrun=False)
@@ -668,7 +668,7 @@ def cts_run():
     device_type = target_devices_type[0]
 
     combo = _get_combo(arch, device_type)
-    cmd = bashify('. build/envsetup.sh && lunch ' + combo + ' && cts-tradefed run cts -p ' + args.cts_run)
+    cmd = bashify_cmd('. build/envsetup.sh && lunch ' + combo + ' && cts-tradefed run cts -p ' + args.cts_run)
     execute(cmd, interactive=True)
 
 

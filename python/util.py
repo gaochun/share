@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
 import os
 import platform
 import sys
@@ -18,11 +17,13 @@ import inspect
 import multiprocessing
 import re
 import commands
+import fileinput
+import random
+import select
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-REV_MAX = 9999999
 host_os = platform.system().lower()
 host_name = socket.gethostname()
 username = os.getenv('USER')
@@ -31,19 +32,13 @@ args = argparse.Namespace()
 dir_stack = []
 timer = {}
 
-# src/build/android/pylib/constants.py
-chromium_android_info = {
-    'chrome_stable': ['com.android.chrome', ''],
-    'chrome_beta': ['com.chrome.beta', ''],
-    'chrome_example': ['com.example.chromium', 'com.google.android.apps.chrome.Main'],
-    'chrome_example_stable': ['com.chromium.stable', 'com.google.android.apps.chrome.Main'],
-    'chrome_example_beta': ['com.chromium.beta', 'com.google.android.apps.chrome.Main'],
-    'content_shell': ['org.chromium.content_shell_apk', ''],
-    #'webview_shell': 'com.android.webview_shell_apk?',
-    'stock_browser': ['com.android.browser', 'com.android.browser.BrowserActivity'],
-}
-CHROMIUM_ANDROID_INFO_INDEX_PKG = 0
-CHROMIUM_ANDROID_INFO_INDEX_ACT = 1
+# servers that webcatch can build on
+servers_webcatch = [
+    'wp-02',
+    'wp-03',
+]
+# main server for webcatch
+server_webcatch = servers_webcatch[0]
 
 target_arch_index = {'x86': 0, 'arm': 1, 'x86_64': 2, 'arm64': 3}
 target_arch_strip = {
@@ -51,7 +46,20 @@ target_arch_strip = {
     'arm': 'arm-linux-androideabi-strip',
 }
 
+target_os_all = ['android', 'linux']
+target_arch_all = ['x86', 'arm', 'x86_64']
+target_arch_chrome_android = target_arch_all[0:2]
+target_arch_info = {
+    'x86': ['x86'],
+    'arm': ['armeabi-v7a'],
+    'x86_64': ['x86_64'],
+}
+TARGET_ARCH_INFO_INDEX_ABI = 0
 
+target_module_all = ['webview', 'chrome', 'content_shell', 'chrome_stable', 'chrome_beta', 'webview_shell', 'chrome_shell', 'stock_browser']
+
+
+# <path>
 def _get_real_dir(path):
     return os.path.split(os.path.realpath(path))[0]
 dir_temp = _get_real_dir(__file__)
@@ -74,10 +82,14 @@ dir_workspace = '/workspace'
 dir_server = dir_workspace + '/server'
 dir_server_aosp = dir_server + '/aosp'
 dir_server_chromium = dir_server + '/chromium'
-chrome_android_dir_server_todo = dir_server_chromium + '/android-chrome-todo'
+dir_server_chrome_android_todo = dir_server_chromium + '/android-chrome-todo'
 dir_server_log = dir_server + '/log'
 dir_project = dir_workspace + '/project'
 dir_project_chrome_android = dir_project + '/chrome-android'
+dir_project_webcatch = dir_project + '/webcatch'
+dir_proejct_webcatch_out = dir_project_webcatch + '/out'
+dir_project_webcatch_project = dir_project_webcatch + '/project'
+dir_project_webcatch_log = dir_project_webcatch + '/log'
 dir_tool = dir_workspace + '/tool'
 
 path_web_chrome_android = 'http://wp-03.sh.intel.com/chromium'
@@ -85,30 +97,42 @@ path_web_webcatch = 'http://wp-02.sh.intel.com/chromium'
 path_server_backup = '//wp-01/backup'
 
 dir_home = os.getenv('HOME')
+# </path>
 
-target_os_all = ['android', 'linux']
-target_arch_all = ['x86', 'arm', 'x86_64']
-target_arch_chrome_android = target_arch_all[0:2]
-target_arch_info = {
-    'x86': ['x86'],
-    'arm': ['armeabi-v7a'],
-    'x86_64': ['x86_64'],
+# <chromium>
+# src/build/android/pylib/constants.py
+chromium_android_info = {
+    'chrome_stable': ['com.android.chrome', ''],
+    'chrome_beta': ['com.chrome.beta', ''],
+    'chrome_example': ['com.example.chromium', 'com.google.android.apps.chrome.Main'],
+    'chrome_example_stable': ['com.chromium.stable', 'com.google.android.apps.chrome.Main'],
+    'chrome_example_beta': ['com.chromium.beta', 'com.google.android.apps.chrome.Main'],
+    'content_shell': ['org.chromium.content_shell_apk', ''],
+    #'webview_shell': 'com.android.webview_shell_apk?',
+    'stock_browser': ['com.android.browser', 'com.android.browser.BrowserActivity'],
 }
-TARGET_ARCH_INFO_INDEX_ABI = 0
+CHROMIUM_ANDROID_INFO_INDEX_PKG = 0
+CHROMIUM_ANDROID_INFO_INDEX_ACT = 1
 
+# Each chromium version is: major.minor.build.patch
+# major -> svn rev, git commit, build. major commit is after build commit.
+# To get this, search 'The atomic number' in 'git log origin master chrome/VERSION'
+chromium_majorver_info = {
+    38: [278979, '85c11da0bf7aad87c0a563c7093cb52ee58e4666', 2063],
+    37: [269579, '47c9991b3153128d79eac26ad0e8ecb3d7e21128', 1986],
+    36: [260368, 'b1f8bdb570beade2a212e69bee1ea7340d80838e', 1917],
+    35: [252136, '6d5ba2122914c53d753e5fb960a601b43cb79c60', 1848],
+    34: [241271, '3824512f1312ec4260ad0b8bf372619c7168ef6b', 1751],
+    33: [233137, 'eeaecf1bb1c52d4b9b56a620cc5119409d1ecb7b', 1701],
+    32: [225138, '6a384c4afe48337237e3da81ccff8658755e2a02', 1652],
+    31: [217377, 'c95dd877deb939ec7b064831c2d20d92e93a4775', 1600],
+    30: [208581, '88367e9bf6a10b9e024ec99f12755b6f626bbe0c', 1548],
+}
+CHROMIUM_MAJORVER_INFO_INDEX_REV = 0
 
-target_module_all = ['webview', 'chrome', 'content_shell', 'chrome_stable', 'chrome_beta', 'webview_shell', 'chrome_shell', 'stock_browser']
-
-
-def get_datetime(format='%Y%m%d%H%M%S'):
-    return time.strftime(format, time.localtime())
-
-
-def has_recent_change(path_file, interval=24 * 3600):
-    if time.time() - os.path.getmtime(path_file) < interval:
-        return True
-    else:
-        return False
+# revision range to care about
+chromium_rev_default = [chromium_majorver_info[36][CHROMIUM_MAJORVER_INFO_INDEX_REV], 999999]
+# </chromium>
 
 
 def info(msg):
@@ -134,8 +158,24 @@ def debug(msg):
     print '[DEBUG] ' + msg
 
 
+def get_datetime(format='%Y%m%d%H%M%S'):
+    return time.strftime(format, time.localtime())
+
+
+# get seconds since 1970-01-01
+def get_epoch_second():
+    return int(time.time())
+
+
+def has_recent_change(path_file, interval=24 * 3600):
+    if get_epoch_second() - os.path.getmtime(path_file) < interval:
+        return True
+    else:
+        return False
+
+
 # TODO: The interactive solution doesn't use subprocess now, which can not support show_progress and return_output now.
-# show_command: Print command if Ture. Default to True.
+# show_cmd: Print command if Ture. Default to True.
 # show_duration: Report duration to execute command if True. Default to False.
 # show_progress: print stdout and stderr to console if True. Default to False.
 # return_output: Put stdout and stderr in result if True. Default to False.
@@ -143,9 +183,9 @@ def debug(msg):
 # abort: Quit after execution failed if True. Default to False.
 # file_log: Print stderr to log file if existed. Default to ''.
 # interactive: Need user's input if true. Default to False.
-def execute(command, show_command=True, show_duration=False, show_progress=False, return_output=False, dryrun=False, abort=False, file_log='', interactive=False):
-    if show_command:
-        _cmd(command)
+def execute(cmd, show_cmd=True, show_duration=False, show_progress=False, return_output=False, dryrun=False, abort=False, file_log='', interactive=False):
+    if show_cmd:
+        cmd(cmd)
 
     if dryrun:
         return [0, '']
@@ -153,11 +193,11 @@ def execute(command, show_command=True, show_duration=False, show_progress=False
     start_time = datetime.datetime.now().replace(microsecond=0)
 
     if interactive:
-        ret = os.system(command)
+        ret = os.system(cmd)
         result = [ret / 256, '']
     else:
         out_temp = ''
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while show_progress:
             nextline = process.stdout.readline()
             if nextline == '' and process.poll() is not None:
@@ -182,7 +222,7 @@ def execute(command, show_command=True, show_duration=False, show_progress=False
     time_diff = end_time - start_time
 
     if show_duration:
-        info(str(time_diff) + ' was spent to execute following command: ' + command)
+        info(str(time_diff) + ' was spent to execute following command: ' + cmd)
 
     if abort and result[0]:
         error('Failed to execute', error_code=result[0])
@@ -190,8 +230,18 @@ def execute(command, show_command=True, show_duration=False, show_progress=False
     return result
 
 
-def bashify(command):
-    return 'bash -c "' + command + '"'
+def bashify_cmd(cmd):
+    return 'bash -c "' + cmd + '"'
+
+
+# Patch command if it needs to run on server
+def remotify_cmd(cmd, server):
+    if re.match('ubuntu', server):
+        username = 'gyagp'
+    else:
+        username = 'wp'
+
+    return 'ssh %s@%s %s' % (username, server, cmd)
 
 
 def has_process(name):
@@ -205,8 +255,8 @@ def has_process(name):
 
 def shell_source(shell_cmd, use_bash=False):
     if use_bash:
-        command = bashify('. ' + shell_cmd + '; env')
-        pipe = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+        cmd = bashify_cmd('. ' + shell_cmd + '; env')
+        pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
     else:
         pipe = subprocess.Popen('. %s; env' % shell_cmd, stdout=subprocess.PIPE, shell=True)
     output = pipe.communicate()[0]
@@ -241,7 +291,7 @@ def restore_dir(verbose=False):
 
 
 def package_installed(pkg):
-    result = execute('dpkg -s ' + pkg, show_command=False)
+    result = execute('dpkg -s ' + pkg, show_cmd=False)
     if result[0]:
         return False
     else:
@@ -445,7 +495,7 @@ def adb(cmd, device='192.168.42.1'):
 # adb shell would always return 0, so a trick has to be used here to get return value
 def execute_adb_shell(cmd, device='192.168.42.1'):
     cmd_adb = adb(cmd='shell "' + cmd + ' || echo FAIL"', device=device)
-    result = execute(cmd_adb, return_output=True, show_command=False)
+    result = execute(cmd_adb, return_output=True, show_cmd=False)
     if re.search('FAIL', result[1].rstrip('\n')):
         return False
     else:
@@ -550,7 +600,7 @@ def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/work
                 if not os.path.exists(path):
                     continue
                 cmd = dir_linux + '/x86_64-linux-android-addr2line -C -e %s -f %s' % (path, match.group(1))
-                result = execute(cmd, return_output=True, show_command=False)
+                result = execute(cmd, return_output=True, show_cmd=False)
                 print result[1]
 
                 count_valid += 1
@@ -628,7 +678,7 @@ def _patch_applied(dir_repo, path_patch, count=30):
     match = pattern.search(lines[3])
     title = match.group(1)
     backup_dir(dir_repo)
-    result = execute('git show -s --pretty="format:%s" --max-count=' + str(count) + ' |grep "%s"' % title.replace('"', '\\"'), show_command=False)
+    result = execute('git show -s --pretty="format:%s" --max-count=' + str(count) + ' |grep "%s"' % title.replace('"', '\\"'), show_cmd=False)
     restore_dir()
     if result[0]:
         return False
@@ -643,6 +693,14 @@ def ensure_dir(dir):
 
 def get_dir(path):
     return os.path.split(os.path.realpath(path))[0]
+
+
+def ensure_package(packages):
+    package_list = packages.split(' ')
+    for package in package_list:
+        result = execute('dpkg -l ' + package, show_cmd=False)
+        if result[0]:
+            error('You need to install package: ' + package)
 
 
 # return True if ver_a is greater or equal to ver_b
@@ -690,79 +748,6 @@ def chrome_android_get_ver_type(device='192.168.42.1'):
     return ver_type
 
 
-##### android related functions begin #####
-def android_unlock_screen(device='192.168.42.1'):
-    execute(adb(cmd='shell input keyevent 82', device=device))
-
-
-def android_set_screen_lock_none(device='192.168.42.1'):
-    execute_adb_shell(cmd='am start -n com.android.settings/.SecuritySettings && sleep 5 && input tap 200 150 && sleep 5 && input tap 200 100 && am force-stop com.android.settings', device=device)
-
-
-def android_set_display_sleep_30mins(device='192.168.42.1'):
-    execute_adb_shell(cmd='am start -n com.android.settings/.DisplaySettings && sleep 5 && input tap 200 250 && sleep 5 && input tap 500 550 && am force-stop com.android.settings', device=device)
-
-
-def android_is_screen_on(device='192.168.42.1'):
-    result = execute(adb(cmd='shell dumpsys power', device=device) + ' |grep mScreenOn=true')
-    if result[0]:
-        return False
-    else:
-        return True
-
-
-# Just trigger once
-def android_trigger_screen_on(device='192.168.42.1'):
-    if not android_is_screen_on(device):
-        # Bring up screen by pressing power
-        execute(adb('shell input keyevent 26'), device=device)
-
-
-# Keep screen on when charging
-def android_keep_screen_on(device='192.168.42.1'):
-    execute(adb(cmd='shell svc power stayon usb', device=device))
-
-
-def android_tap(x=1300, y=700, device='192.168.42.1'):
-    execute(adb(cmd='shell input tap %s %s' % (str(x), str(y)), device=device))
-
-
-def android_get_info(key, device='192.168.42.1'):
-    cmd = adb(cmd='shell grep %s= system/build.prop' % key, device=device)
-    result = execute(cmd, return_output=True, show_command=False)
-    return result[1].replace(key + '=', '').rstrip('\r\n')
-
-
-def android_get_target_arch(device='192.168.42.1'):
-    abi = android_get_info(key='ro.product.cpu.abi', device=device)
-    target_arch = ''
-    for key in target_arch_info:
-        if abi == target_arch_info[key][TARGET_ARCH_INFO_INDEX_ABI]:
-            target_arch = key
-            break
-
-    if target_arch == '':
-        error('Could not get correct target arch for device ' + device)
-
-    return target_arch
-
-
-def android_start_emu(target_arch):
-    pid = os.fork()
-    if pid == 0:
-        cmd = 'LD_LIBRARY_PATH=%s/adt/sdk/tools/lib %s/adt/sdk/tools/emulator64-%s -avd %s -no-audio' % (dir_tool, dir_tool, target_arch, target_arch)
-        execute(cmd)
-    else:
-        info('Starting emulator for ' + target_arch)
-        if target_arch == 'x86':
-            time.sleep(20)
-        else:
-            time.sleep(60)
-
-
-##### android related functions end #####
-
-
 def list_union(a, b):
     return list(set(a).union(set(b)))
 
@@ -773,6 +758,10 @@ def list_intersect(a, b):
 
 def list_diff(a, b):
     return list(set(a).difference(set(b)))
+
+
+def get_comb_name(splitter='-', *subs):
+    return splitter.join(subs)
 
 
 def mouse_move(x, y):
@@ -823,13 +812,102 @@ def chromium_get_rev_hash(dir_src, rev_min, *rev_extra):
             error('Could not find hash for rev ' + str(rev_min))
 
 
+def get_logger(name, dir_log, level=logging.DEBUG):
+    ensure_dir(dir_log)
+    formatter = logging.Formatter('[%(asctime)s - %(levelname)s] %(message)s', "%Y-%m-%d %H:%M:%S")
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+
+    file_log = logging.FileHandler(dir_log + '/' + get_datetime(format='%Y-%m-%d-%X') + '.log')
+    file_log.setFormatter(formatter)
+    logger.addHandler(file_log)
+
+    console = logging.StreamHandler()
+    console.setFormatter(formatter)
+    logger.addHandler(console)
+
+    return logger
+
+
+# <android>
+def android_unlock_screen(device='192.168.42.1'):
+    execute(adb(cmd='shell input keyevent 82', device=device))
+
+
+def android_set_screen_lock_none(device='192.168.42.1'):
+    execute_adb_shell(cmd='am start -n com.android.settings/.SecuritySettings && sleep 5 && input tap 200 150 && sleep 5 && input tap 200 100 && am force-stop com.android.settings', device=device)
+
+
+def android_set_display_sleep_30mins(device='192.168.42.1'):
+    execute_adb_shell(cmd='am start -n com.android.settings/.DisplaySettings && sleep 5 && input tap 200 250 && sleep 5 && input tap 500 550 && am force-stop com.android.settings', device=device)
+
+
+def android_is_screen_on(device='192.168.42.1'):
+    result = execute(adb(cmd='shell dumpsys power', device=device) + ' |grep mScreenOn=true')
+    if result[0]:
+        return False
+    else:
+        return True
+
+
+# Just trigger once
+def android_trigger_screen_on(device='192.168.42.1'):
+    if not android_is_screen_on(device):
+        # Bring up screen by pressing power
+        execute(adb('shell input keyevent 26'), device=device)
+
+
+# Keep screen on when charging
+def android_keep_screen_on(device='192.168.42.1'):
+    execute(adb(cmd='shell svc power stayon usb', device=device))
+
+
+def android_tap(x=1300, y=700, device='192.168.42.1'):
+    execute(adb(cmd='shell input tap %s %s' % (str(x), str(y)), device=device))
+
+
+def android_get_info(key, device='192.168.42.1'):
+    cmd = adb(cmd='shell grep %s= system/build.prop' % key, device=device)
+    result = execute(cmd, return_output=True, show_cmd=False)
+    return result[1].replace(key + '=', '').rstrip('\r\n')
+
+
+def android_get_target_arch(device='192.168.42.1'):
+    abi = android_get_info(key='ro.product.cpu.abi', device=device)
+    target_arch = ''
+    for key in target_arch_info:
+        if abi == target_arch_info[key][TARGET_ARCH_INFO_INDEX_ABI]:
+            target_arch = key
+            break
+
+    if target_arch == '':
+        error('Could not get correct target arch for device ' + device)
+
+    return target_arch
+
+
+def android_start_emu(target_arch):
+    pid = os.fork()
+    if pid == 0:
+        cmd = 'LD_LIBRARY_PATH=%s/adt/sdk/tools/lib %s/adt/sdk/tools/emulator64-%s -avd %s -no-audio' % (dir_tool, dir_tool, target_arch, target_arch)
+        execute(cmd)
+    else:
+        info('Starting emulator for ' + target_arch)
+        if target_arch == 'x86':
+            time.sleep(20)
+        else:
+            time.sleep(60)
+# </android>
+
+
+# <internal>
 # force: True so that rev_hash will return as much as possible
 def _chromium_get_rev_hash(rev_min, rev_max, force=False):
-    execute('git log origin master >git_log', show_command=False)
+    execute('git log origin master >git_log', show_cmd=False)
     f = open('git_log')
     lines = f.readlines()
     f.close()
-    execute('rm -f git_log', show_command=False)
+    execute('rm -f git_log', show_cmd=False)
 
     pattern_hash = re.compile('^commit (.*)')
     pattern_rev = re.compile('^git-svn-id: .*@(.*) (.*)')
@@ -856,25 +934,4 @@ def _chromium_get_rev_hash(rev_min, rev_max, force=False):
         match = pattern_rev.search(line.lstrip())
         if match:
             rev_temp = int(match.group(1))
-
-
-def get_logger(name, dir_log, level=logging.DEBUG):
-    ensure_dir(dir_log)
-    formatter = logging.Formatter('[%(asctime)s - %(levelname)s] %(message)s', "%Y-%m-%d %H:%M:%S")
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-
-    file_log = logging.FileHandler(dir_log + '/' + get_datetime(format='%Y-%m-%d-%X') + '.log')
-    file_log.setFormatter(formatter)
-    logger.addHandler(file_log)
-
-    console = logging.StreamHandler()
-    console.setFormatter(formatter)
-    logger.addHandler(console)
-
-    return logger
-################################################################################
-
-
-def _cmd(msg):
-    print '[COMMAND] ' + msg
+# </internal>

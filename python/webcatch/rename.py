@@ -1,9 +1,9 @@
 from util import *
 
-dir_root = '/workspace/project/gyagp/webcatch/out/android-x86-content_shell'
+dir_root_temp = '/workspace/project/gyagp/webcatch/out/android-x86-content_shell'
 
 if __name__ == '__main__':
-    os.chdir(dir_root)
+    os.chdir(dir_root_temp)
     files = os.listdir('.')
     pattern = re.compile('ContentShell@(\d+).apk')
     for file in files:

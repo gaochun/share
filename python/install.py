@@ -61,7 +61,7 @@ Examples:
 
 
 def setup():
-    ver_gcc_result = execute('ls -l /usr/bin/gcc', show_command=True, return_output=True)
+    ver_gcc_result = execute('ls -l /usr/bin/gcc', show_cmd=True, return_output=True)
     match = re.match('.+gcc-(.+)', ver_gcc_result[1])
     if match:
         ver_gcc = match.group(1)

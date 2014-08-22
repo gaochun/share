@@ -223,7 +223,7 @@ def clean(force=False):
 
     for repo in dirty_repos:
         backup_dir(root_dir + '/' + repo)
-        result = execute('git reset --hard umg/abt/topic/64-bit/master', show_command=False)
+        result = execute('git reset --hard umg/abt/topic/64-bit/master', show_cmd=False)
         if result[0]:
             error('Fail to clean up repo ' + repo)
         else:
@@ -290,18 +290,18 @@ def patch(force=False):
         else:
             cmd_fetch += 'android.intel.com/a'
         cmd_fetch += '/' + path + ' ' + change
-        result = execute(cmd_fetch, show_command=False)
+        result = execute(cmd_fetch, show_cmd=False)
         if result[0]:
             error('Failed to execute command ' + cmd_fetch, error_code=result[0])
 
-        result = execute('git show FETCH_HEAD |grep Change-Id:', return_output=True, show_command=False)
+        result = execute('git show FETCH_HEAD |grep Change-Id:', return_output=True, show_cmd=False)
 
         pattern = re.compile('Change-Id: (.*)')
         change_id = result[1]
         match = pattern.search(change_id)
-        result = execute('git log |grep ' + match.group(1), show_command=False)
+        result = execute('git log |grep ' + match.group(1), show_cmd=False)
         if result[0]:
-            result = execute('git cherry-pick FETCH_HEAD', show_command=False)
+            result = execute('git cherry-pick FETCH_HEAD', show_cmd=False)
             if result[0]:
                 error('Fail to cherry-pick ' + patch)
             else:
@@ -326,7 +326,7 @@ def mk64(force=False):
         os.remove(file)
 
     # Generate raw .mk files
-    command = bashify('export CHROME_ANDROID_BUILD_WEBVIEW=1 && . build/android/envsetup.sh --target-arch=' + chromium_target_arch + ' && android_gyp -Dwerror= ')
+    command = bashify_cmd('export CHROME_ANDROID_BUILD_WEBVIEW=1 && . build/android/envsetup.sh --target-arch=' + chromium_target_arch + ' && android_gyp -Dwerror= ')
     execute(command)
 
     # Generate related x64 files according to raw .mk files
@@ -345,7 +345,7 @@ def mk64(force=False):
             x64_file = auto_x64_file.replace('target', 'target.linux-' + android_target_arch)
             x64_file = x64_file.replace('host', 'host.linux-' + android_target_arch)
             command = 'cp -f ' + auto_x64_file + ' ' + x64_file
-            execute(command, show_command=False)
+            execute(command, show_cmd=False)
 
             line = line.replace('target', 'target.linux-' + android_target_arch)
             line = line.replace('host', 'host.linux-' + android_target_arch)
@@ -411,7 +411,7 @@ def build(force=False):
                 suffix += ' -j16 -k'
             suffix += ' 2>&1 |tee ' + root_dir + '/' + combo + '_' + module + '_log'
             command = command.replace('suffix', suffix)
-            command = bashify(command)
+            command = bashify_cmd(command)
             execute(command, show_progress=True, show_duration=True)
 
 
@@ -424,7 +424,7 @@ def git_status():
 
     for repo in repos:
         backup_dir(repo)
-        result = execute('git status |grep modified', show_command=False)
+        result = execute('git status |grep modified', show_cmd=False)
         if not result[0]:
             has_change = True
             repos_change.append(repo)
@@ -535,7 +535,7 @@ def scan():
             command += 'packages/apps/Browser'
 
         command += ' -j16' + ' 2>&1 |tee ' + root_dir + '/' + module + '_scan_log'
-        command = bashify(command)
+        command = bashify_cmd(command)
         execute(command, show_duration=True)
 
 

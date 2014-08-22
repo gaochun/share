@@ -2,8 +2,6 @@ import urllib2
 import sys
 sys.path.append(sys.path[0] + '/..')
 from util import *
-from common import *
-
 
 target_os = ''
 target_arch = ''
@@ -13,7 +11,6 @@ revs = []
 baseline = []
 comb_name = ''
 dir_download = ''
-dir_log = ''
 
 ################################################################################
 
@@ -48,16 +45,15 @@ examples:
 
 
 def setup():
-    global target_os, target_arch, target_module, comb_name, benchmark, dir_download, dir_log
+    global target_os, target_arch, target_module, comb_name, benchmark, dir_download
 
     target_os = args.target_os
     target_arch = args.target_arch
     target_module = args.target_module
     benchmark = args.benchmark
-    comb_name = get_comb_name(target_os, target_arch, target_module)
+    comb_name = get_comb_name(splitter='-', target_os, target_arch, target_module)
     dir_download = dir_webcatch + '/download/' + comb_name
     ensure_dir(dir_download)
-    dir_log = dir_webcatch + '/log'
 
     if args.good_rev:
         rev_min = args.good_rev
@@ -106,14 +102,14 @@ def bisect(index_good, index_bad, check_boundry=False):
             if args.dir_chromium:
                 dir_chromium = args.dir_chromium
             else:
-                dir_chromium = dir_project + '/chromium-' + target_os
+                dir_chromium = dir_project_webcatch_project + '/chromium-' + target_os
 
             dir_src = dir_chromium + '/src'
-            suspect_log = dir_log + '/suspect.log'
+            suspect_log = dir_webcatch_log + '/suspect.log'
             rev_hash = chromium_get_rev_hash(dir_src, rev_good_final, rev_bad_final)
             revs = sorted(rev_hash.keys())
             for rev in revs:
-                execute('git show ' + rev_hash[rev] + ' >>' + suspect_log, show_command=False)
+                execute('git show ' + rev_hash[rev] + ' >>' + suspect_log, show_cmd=False)
             info('Check ' + suspect_log + ' for suspected checkins')
 
         else:

@@ -1,9 +1,9 @@
 from util import *
 
-dir_root = '/workspace/gytemp/large'
+dir_root_temp = '/workspace/gytemp/large'
 
 if __name__ == '__main__':
-    os.chdir(dir_root)
+    os.chdir(dir_root_temp)
     result = execute('find -maxdepth 1 -size +100M |xargs ls', return_output=True)
     files = result[1].split('\n')
     del files[-1]

@@ -97,7 +97,7 @@ def build():
     execute('cp -rf ' + backup_specific_driver_dir + ' ./')
 
     start = datetime.datetime.now()
-    execute(bashify('. build/envsetup.sh && lunch full_' + device_code_name + '-' + variant + ' && make -j16'), interactive=True)
+    execute(bashify_cmd('. build/envsetup.sh && lunch full_' + device_code_name + '-' + variant + ' && make -j16'), interactive=True)
     elapsed = (datetime.datetime.now() - start)
     info('Time elapsed to build: ' + str(elapsed.seconds) + 's')
 

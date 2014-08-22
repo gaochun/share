@@ -178,8 +178,7 @@ class WebMark:
     ]
 
     def __init__(self):
-        self.start_time = time.time()
-        logger.info('Start of ' + self.__class__.__name__ + '.')
+        timer_start(self.__class__.__name__)
 
         # Parse
         if args.config:
@@ -244,8 +243,8 @@ class WebMark:
             self.suites[i].run()
 
     def __del__(self):
-        self.stop_time = time.time()
-        logger.info('End of ' + self.__class__.__name__ + '. Total elapsed time: ' + str(int(self.stop_time - self.start_time)) + ' seconds')
+        timer_stop(self.__class__.__name__)
+        logger.info('Total elapsed time for execution: ' + timer_diff(self.__class__.__name__))
 
 
 def parse_arg():
@@ -285,7 +284,7 @@ def setup():
         os.mkdir(dir_test)
 
     if has_process('chromedriver'):
-        execute('sudo killall chromedriver', show_command=False)
+        execute('sudo killall chromedriver', show_cmd=False)
     subprocess.Popen(dir_webmark + '/driver/chromedriver', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # Sleep a bit to make sure driver is ready
     time.sleep(1)

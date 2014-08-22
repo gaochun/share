@@ -4,22 +4,7 @@ import fileinput
 from multiprocessing import Pool
 from util import *
 
-# Each chromium version is: major.minor.build.patch
-# major -> svn rev, git commit, build. major commit is after build commit.
-# To get this, search 'The atomic number' in 'git log origin master chrome/VERSION'
-majorver_info = {
-    38: [278979, '85c11da0bf7aad87c0a563c7093cb52ee58e4666', 2063],
-    37: [269579, '47c9991b3153128d79eac26ad0e8ecb3d7e21128', 1986],
-    36: [260368, 'b1f8bdb570beade2a212e69bee1ea7340d80838e', 1917],
-    35: [252136, '6d5ba2122914c53d753e5fb960a601b43cb79c60', 1848],
-    34: [241271, '3824512f1312ec4260ad0b8bf372619c7168ef6b', 1751],
-    33: [233137, 'eeaecf1bb1c52d4b9b56a620cc5119409d1ecb7b', 1701],
-    32: [225138, '6a384c4afe48337237e3da81ccff8658755e2a02', 1652],
-    31: [217377, 'c95dd877deb939ec7b064831c2d20d92e93a4775', 1600],
-    30: [208581, '88367e9bf6a10b9e024ec99f12755b6f626bbe0c', 1548],
-}
-MAJORVER_INFO_INDEX_REV = 0
-
+REV_MAX = 9999999
 args = ''
 args_dict = []
 repo_type = ''
@@ -402,7 +387,7 @@ def setup():
     set_proxy()
 
     for cmd in ['adb', 'git', 'gclient']:
-        result = execute('which ' + cmd, show_command=False)
+        result = execute('which ' + cmd, show_cmd=False)
         if result[0]:
             error('Could not find ' + cmd + ', and you may use --path-extra to designate it')
 
@@ -470,7 +455,7 @@ def setup():
             ver = args.ver
             ver_type = args.ver_type
             chrome_android_soname = _get_soname()
-            chrome_android_dir_server_root = chrome_android_dir_server_todo + '/' + target_arch + '/' + ver + '-' + ver_type
+            chrome_android_dir_server_root = dir_server_chrome_android_todo + '/' + target_arch + '/' + ver + '-' + ver_type
             chrome_android_file_readme = chrome_android_dir_server_root + '/README'
 
     if target_os == 'windows':
@@ -518,7 +503,7 @@ def buildid(force=False):
 
     # get the target arch
     execute('rm -rf temp')
-    execute('unzip "%s" -d temp' % chrome_android_apk, show_command=True)
+    execute('unzip "%s" -d temp' % chrome_android_apk, show_cmd=True)
     target_arch_temp = ''
     for key in target_arch_info:
         if os.path.exists('temp/lib/' + target_arch_info[key][TARGET_ARCH_INFO_INDEX_ABI]):
@@ -526,11 +511,11 @@ def buildid(force=False):
             break
     if target_arch_temp == '':
         error('Arch is not supported for ' + todo)
-    execute('rm -rf temp', show_command=False)
+    execute('rm -rf temp', show_cmd=False)
 
     (ver_temp, ver_type_temp, build_id_temp) = _chrome_android_get_info(target_arch_temp, chrome_android_apk)
     info('build id is ' + build_id_temp)
-    dir_todo = '%s/%s/%s-%s' % (chrome_android_dir_server_todo, target_arch_temp, ver_temp, ver_type_temp)
+    dir_todo = '%s/%s/%s-%s' % (dir_server_chrome_android_todo, target_arch_temp, ver_temp, ver_type_temp)
     dirs_check = [
         dir_todo,
         '%s/android-%s-chrome/%s-%s' % (dir_server_chromium, target_arch_temp, ver_temp, ver_type_temp),
@@ -543,7 +528,7 @@ def buildid(force=False):
 
     os.makedirs(dir_todo)
     execute('mv "%s" %s/Chrome.apk' % (chrome_android_apk, dir_todo))
-    execute('echo "phase=buildid\nbuild-id=%s" >%s/README' % (build_id_temp, dir_todo), show_command=False)
+    execute('echo "phase=buildid\nbuild-id=%s" >%s/README' % (build_id_temp, dir_todo), show_cmd=False)
 
 
 def init(force=False):
@@ -686,7 +671,7 @@ def makefile(force=False):
         cmd += ' --generator-output out-' + target_arch
 
     if re.search('source', cmd):
-        cmd = bashify(cmd)
+        cmd = bashify_cmd(cmd)
     result = execute(cmd, interactive=True, dryrun=False)
     restore_dir()
     if result[0]:
@@ -748,7 +733,7 @@ def build(force=False):
 
     cmd_ninja += ' 2>&1 |tee -a ' + file_log
     result = execute(cmd_ninja, interactive=True)
-    timer_end(name_func)
+    timer_stop(name_func)
     if result[0]:
         error('Failed to execute command: ' + cmd_ninja)
 
@@ -993,7 +978,7 @@ def test_build(force=False):
                 error('Failed to build ' + suite, abort=False)
                 results[command].append('FAIL')
 
-    timer_end(name_func)
+    timer_stop(name_func)
 
     return results
 
@@ -1153,7 +1138,7 @@ def _test_run_device(index_device, results):
                 else:
                     info('Succeeded to run "' + suite + '"')
 
-    timer_end('test_run_' + str(index_device))
+    timer_stop('test_run_' + str(index_device))
     # Generate report
     html = _test_gen_report(index_device, results)
     file_html = dir_test_device_name + '/report.html'
@@ -1376,7 +1361,7 @@ def _run_gclient(cmd_type):
         cmd = 'source src/build/android/envsetup.sh --target-arch=' + target_arch + ' && ' + cmd
 
     if re.search('source', cmd):
-        cmd = bashify(cmd)
+        cmd = bashify_cmd(cmd)
     result = execute(cmd, interactive=True)
     if result[0]:
         error('Failed to execute cmd: ' + cmd)
@@ -1520,7 +1505,7 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         #adb shell input tap 400 1040
         #adb shell input tap 400 1070
         if has_process('chromedriver'):
-            execute('sudo killall chromedriver', show_command=False)
+            execute('sudo killall chromedriver', show_cmd=False)
         subprocess.Popen(dir_tool + '/chromedriver', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         time.sleep(1)  # Sleep a bit to make sure driver is ready
         env_http_proxy = getenv('http_proxy')

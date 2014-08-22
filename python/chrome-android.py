@@ -77,7 +77,7 @@ def setup():
         if not os.path.exists(dir_temp):
             os.makedirs(dir_temp)
 
-    ensure_dir(chrome_android_dir_server_todo)
+    ensure_dir(dir_server_chrome_android_todo)
     set_path()
     set_proxy()
 
@@ -103,11 +103,11 @@ def download(force=False):
     if not args.download and not force:
         return
 
-    dir_download = chrome_android_dir_server_todo + '/download'
+    dir_download = dir_server_chrome_android_todo + '/download'
     ensure_dir(dir_download)
     execute('rm -rf %s/*' % dir_download)
 
-    dir_trash = chrome_android_dir_server_todo + '/trash'
+    dir_trash = dir_server_chrome_android_todo + '/trash'
     ensure_dir(dir_trash)
 
     # download the apk
@@ -140,7 +140,7 @@ def download(force=False):
 
         driver.quit()
 
-    execute('mv %s/* %s' % (dir_download, chrome_android_dir_server_todo), dryrun=False)
+    execute('mv %s/* %s' % (dir_download, dir_server_chrome_android_todo), dryrun=False)
 
 
 def check(force=False):
@@ -179,7 +179,7 @@ def check(force=False):
     # get all combos todo
     combos_todo = []
     for target_arch in target_arch_chrome_android:
-        dirs_todo = os.listdir(chrome_android_dir_server_todo + '/%s' % target_arch)
+        dirs_todo = os.listdir(dir_server_chrome_android_todo + '/%s' % target_arch)
         combos_todo += _get_combos(dirs_todo, target_arch)
 
     combos_new = sorted(list_diff(combos_all, list_union(combos_done, combos_todo)))
@@ -244,11 +244,11 @@ def _get_combos(dirs_check, target_arch):
 
 
 def _handle_todo_file():
-    backup_dir(chrome_android_dir_server_todo)
+    backup_dir(dir_server_chrome_android_todo)
     todos = os.listdir('.')
     for todo in todos:
         if os.path.isfile(todo):
-            cmd = cmd_common + ' --dir-root ' + chrome_android_dir_server_todo
+            cmd = cmd_common + ' --dir-root ' + dir_server_chrome_android_todo
             cmd += ' --chrome-android-apk "' + todo + '"'
             cmd += ' --buildid'
             execute(cmd, interactive=True)
@@ -257,7 +257,7 @@ def _handle_todo_file():
 
 
 def _handle_todo_dir():
-    backup_dir(chrome_android_dir_server_todo)
+    backup_dir(dir_server_chrome_android_todo)
     todos = os.listdir('.')
     for todo in todos:
         if os.path.isdir(todo):
@@ -265,7 +265,7 @@ def _handle_todo_dir():
             if target_arch_temp not in target_arch_all:
                 continue
 
-            dirs_todo = os.listdir(chrome_android_dir_server_todo + '/' + target_arch_temp)
+            dirs_todo = os.listdir(dir_server_chrome_android_todo + '/' + target_arch_temp)
             for dir_todo in dirs_todo:
                 info = dir_todo.split('-')
                 ver_temp = info[0]

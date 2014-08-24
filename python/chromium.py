@@ -577,7 +577,10 @@ def sync(force=False):
 
     cmd_type = 'sync'
     if rev != REV_MAX:
-        cmd_type += ' --revision src@' + chromium_get_rev_hash(dir_src, rev)
+        hash_temp = chromium_get_rev_hash(dir_src, rev)
+        if not hash_temp:
+            error('Could not find hash for rev ' + str(rev))
+        cmd_type += ' --revision src@' + hash_temp
     _run_gclient(cmd_type)
 
     if repo_type == 'chrome-android':

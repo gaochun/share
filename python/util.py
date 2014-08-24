@@ -675,29 +675,14 @@ def apply_patch(patches, dir_patches):
                     error('Fail to apply patch ' + patch)
 
 
-# dir_repo: repo dir
-# path_patch: Full path of patch
-# count: Recent commit count to check
-def _patch_applied(dir_repo, path_patch, count=30):
-    f = open(path_patch)
-    lines = f.readlines()
-    f.close()
-
-    pattern = re.compile('Subject: \[PATCH.*\] (.*)')
-    match = pattern.search(lines[3])
-    title = match.group(1)
-    backup_dir(dir_repo)
-    result = execute('git show -s --pretty="format:%s" --max-count=' + str(count) + ' |grep "%s"' % title.replace('"', '\\"'), show_cmd=False)
-    restore_dir()
-    if result[0]:
-        return False
+def ensure_dir(dir, server=''):
+    if server == '':
+        if not os.path.exists(dir):
+            os.makedirs(dir)
     else:
-        return True
-
-
-def ensure_dir(dir):
-    if not os.path.exists(dir):
-        os.makedirs(dir)
+        result = execute(remotify_cmd('ls ' + dir, server=server))
+        if result[0]:
+            execute(remotify_cmd('mkdir -p ' + dir, server=server))
 
 
 def get_dir(path):
@@ -769,7 +754,7 @@ def list_diff(a, b):
     return list(set(a).difference(set(b)))
 
 
-def get_comb_name(splitter='-', *subs):
+def get_comb_name(splitter, *subs):
     return splitter.join(subs)
 
 
@@ -794,6 +779,8 @@ def mouse_click(button=1):
     d.sync()
 
 
+# return '' for single rev if not found
+# return {} for rev range if not found
 def chromium_get_rev_hash(dir_src, rev_min, *rev_extra):
     if len(rev_extra):
         rev_max = rev_extra[0]
@@ -818,7 +805,7 @@ def chromium_get_rev_hash(dir_src, rev_min, *rev_extra):
         if rev_min in rev_hash:
             return rev_hash[rev_min]
         else:
-            error('Could not find hash for rev ' + str(rev_min))
+            return ''
 
 
 def get_logger(name, dir_log, level=logging.DEBUG):
@@ -909,7 +896,45 @@ def android_start_emu(target_arch):
 # </android>
 
 
+# 13, 5 -> 15
+def roundup(num, base):
+    remainder = num % base
+    if remainder == 0:
+        return num
+
+    return num + base - remainder
+
+
+# 17, 5 -> 15
+def rounddown(num, base):
+    remainder = num % base
+    if remainder == 0:
+        return num
+
+    return num - remainder
+
+
 # <internal>
+# dir_repo: repo dir
+# path_patch: Full path of patch
+# count: Recent commit count to check
+def _patch_applied(dir_repo, path_patch, count=30):
+    f = open(path_patch)
+    lines = f.readlines()
+    f.close()
+
+    pattern = re.compile('Subject: \[PATCH.*\] (.*)')
+    match = pattern.search(lines[3])
+    title = match.group(1)
+    backup_dir(dir_repo)
+    result = execute('git show -s --pretty="format:%s" --max-count=' + str(count) + ' |grep "%s"' % title.replace('"', '\\"'), show_cmd=False)
+    restore_dir()
+    if result[0]:
+        return False
+    else:
+        return True
+
+
 # force: True so that rev_hash will return as much as possible
 def _chromium_get_rev_hash(rev_min, rev_max, force=False):
     execute('git log origin master >git_log', show_cmd=False)

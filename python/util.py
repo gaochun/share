@@ -471,7 +471,7 @@ def timer_start(tag):
     timer[tag][0] = datetime.datetime.now().replace(microsecond=0)
 
 
-def timer_end(tag):
+def timer_stop(tag):
     timer[tag][1] = datetime.datetime.now().replace(microsecond=0)
 
 

@@ -530,6 +530,8 @@ def device_connected(device='192.168.42.1', mode='system'):
     if mode == 'system':
         result = execute('timeout 1s ' + adb(cmd='shell \ls', device=device))
     elif mode == 'bootloader':
+        if device == '192.168.42.1:5555':
+            device = '192.168.42.1'
         if device == '192.168.42.1':
             option = '-t'
         else:
@@ -554,6 +556,8 @@ def connect_device(device='192.168.42.1', mode='system'):
             execute(cmd, interactive=True)
         return device_connected(device, mode)
     elif mode == 'bootloader':
+        if device == '192.168.42.1:5555':
+            device = '192.168.42.1'
         return device_connected(device, mode)
 
 

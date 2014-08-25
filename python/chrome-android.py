@@ -192,7 +192,7 @@ def check(force=False):
 
     if len(combos_todo):
         subject += ' build required'
-        content += 'The following combos need to be built: ' + ','.join(str(i) for i in combos_new) + '<br>'
+        content += 'The following combos need to be built: ' + ','.join(str(i) for i in combos_todo) + '<br>'
     else:
         subject += ' build clean'
 

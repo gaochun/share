@@ -272,6 +272,8 @@ examples:
   misc:
   python %(prog)s --owner
 
+  chrome-android:
+  python %(prog)s --repo-type chrome-android --target-os android --target-module chrome --dir-root /workspace/project/chrome-android/37.0.2062.94 --target-arch x86 --ver 37.0.2062.94 --ver-type beta --phase-continue
 
   crontab -e
   0 1 * * * cd /workspace/project/chromium64-android && python %(prog)s -s --extra-path=/workspace/project/depot_tools

@@ -183,9 +183,9 @@ def has_recent_change(path_file, interval=24 * 3600):
 # abort: Quit after execution failed if True. Default to False.
 # file_log: Print stderr to log file if existed. Default to ''.
 # interactive: Need user's input if true. Default to False.
-def execute(cmd, show_cmd=True, show_duration=False, show_progress=False, return_output=False, dryrun=False, abort=False, file_log='', interactive=False):
+def execute(command, show_cmd=True, show_duration=False, show_progress=False, return_output=False, dryrun=False, abort=False, file_log='', interactive=False):
     if show_cmd:
-        cmd(cmd)
+        cmd(command)
 
     if dryrun:
         return [0, '']
@@ -193,11 +193,11 @@ def execute(cmd, show_cmd=True, show_duration=False, show_progress=False, return
     start_time = datetime.datetime.now().replace(microsecond=0)
 
     if interactive:
-        ret = os.system(cmd)
+        ret = os.system(command)
         result = [ret / 256, '']
     else:
         out_temp = ''
-        process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while show_progress:
             nextline = process.stdout.readline()
             if nextline == '' and process.poll() is not None:
@@ -222,7 +222,7 @@ def execute(cmd, show_cmd=True, show_duration=False, show_progress=False, return
     time_diff = end_time - start_time
 
     if show_duration:
-        info(str(time_diff) + ' was spent to execute following command: ' + cmd)
+        info(str(time_diff) + ' was spent to execute following command: ' + command)
 
     if abort and result[0]:
         error('Failed to execute', error_code=result[0])
@@ -380,7 +380,7 @@ def set_proxy():
         https_proxy = 'proxy-shz.intel.com:911'
     setenv('http_proxy', http_proxy)
     setenv('https_proxy', https_proxy)
-    setenv('no_proxy', 'intel.com,.intel.com,10.0.0.0/8,192.168.0.0/16,localhost,127.0.0.0/8,134.134.0.0/16,172.16.0.0/20,192.168.42.0/16,10.239.*.*,ubuntu-ygu5-*,wp-*')
+    setenv('no_proxy', '127.0.0.1,intel.com,.intel.com,10.0.0.0/8,192.168.0.0/16,localhost,127.0.0.0/8,134.134.0.0/16,172.16.0.0/20,192.168.42.0/16,10.239.*.*,ubuntu-ygu5-*,wp-*')
 
 
 def start_privoxy():
@@ -416,6 +416,7 @@ def setup_device(devices_limit=[]):
 
     pattern_system = re.compile('device:(.*)')
     pattern_fastboot = re.compile('(\S+)\s+fastboot')
+    pattern_nofastboot = re.compile('fastboot: not found')
     for device_line in device_lines:
         if re.match('List of devices attached', device_line):
             continue
@@ -433,6 +434,10 @@ def setup_device(devices_limit=[]):
             elif re.search('emulator', device):
                 devices_type.append('generic')
             devices_mode.append('system')
+
+        match = pattern_nofastboot.search(device_line)
+        if match:
+            continue
 
         match = pattern_fastboot.search(device_line)
         if match:

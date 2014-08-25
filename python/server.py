@@ -126,8 +126,8 @@ def _run_one(cb):
         execute('touch ' + file_cb)
         cmd = globals()[cb]()
         if cmd != '':
-            cmd = 'python ' + dir_python + '/' + cmd + ' 2>&1 >' + dir_server_log + '/' + cb + '.log'
-            execute(cmd)
+            cmd = 'python ' + dir_python + '/' + cmd + ' 2>&1 |tee ' + dir_server_log + '/' + cb + '.log'
+            execute(cmd, interactive=True)
 
 
 if __name__ == '__main__':

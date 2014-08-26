@@ -450,23 +450,30 @@ def _build(comb_next):
 def _build_one(comb_next):
     (target_os, target_arch, target_module, rev) = comb_next
     comb_name = _get_comb_name(target_os, target_arch, target_module)
-
-    info('Begin to build ' + comb_name + '@' + str(rev) + '...')
     dir_comb = dir_project_webcatch_out + '/' + comb_name
+
     if rev in rev_expectfail:
         file_final = dir_comb + '/' + str(rev) + '.EXPECTFAIL'
         execute('touch ' + file_final)
         _move_to_server(file_final, target_os, target_arch, target_module)
         return 0
 
+    if not chromium_get_hash(dir_chromium_src_main, rev):
+        file_final = dir_comb + '/' + str(rev) + '.NULL'
+        execute('touch ' + file_final)
+        _move_to_server(file_final, target_os, target_arch, target_module)
+        return 0
+
+    info('Begin to build ' + comb_name + '@' + str(rev) + '...')
+    dir_repo = dir_project_webcatch_project + '/chromium-' + target_os
     file_log = dir_project_webcatch_log + '/' + comb_name + '@' + str(rev) + '.log'
 
+    # lock
     if not args.slave_only:
         file_lock = dir_server_chromium + '/' + comb_name + '/' + str(rev) + '.LOCK'
         execute(_remotify_cmd('touch ' + file_lock))
 
-    dir_repo = dir_project_webcatch_project + '/chromium-' + target_os
-
+    # sync
     cmd_sync = python_chromium + ' --sync --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_sync, dryrun=DRYRUN, interactive=True)
     if result[0]:
@@ -476,6 +483,7 @@ def _build_one(comb_next):
 
     _patch_after_sync(target_os, target_arch, target_module, rev)
 
+    # makefile
     cmd_makefile = python_chromium + ' --makefile --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_makefile, dryrun=DRYRUN, show_progress=True)
     if result[0]:
@@ -488,15 +496,16 @@ def _build_one(comb_next):
             send_mail('webcatch@intel.com', 'yang.gu@intel.com', '[webcatch] Failed to generate makefile at ' + host_name, '')
             error('Failed to generate makefile')
 
+    # build
     _patch_before_build(target_os, target_arch, target_module, rev)
 
     dir_out_build_type = dir_repo + '/src/out-%s/out/Release' % target_arch
-    # Remove apks first as sometimes ninja build error doesn't actually return error.
+    ## remove apks first as sometimes ninja build error doesn't actually return error.
     execute('rm -f %s/apks/*' % dir_out_build_type)
     cmd_build = python_chromium + ' --build --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_build, dryrun=DRYRUN, show_progress=True)
 
-    # Retry here
+    ## retry here
     if result[0]:
         if target_os == 'android':
             execute('sudo ' + dir_repo + '/src/build/install-build-deps-android.sh', interactive=True, dryrun=DRYRUN)
@@ -505,7 +514,7 @@ def _build_one(comb_next):
 
         result = execute(cmd_build, dryrun=DRYRUN)
 
-    # Handle result, either success or failure. TODO: Need to handle other comb.
+    ## handle result, either success or failure. TODO: Need to handle other comb.
     if target_os == 'android' and target_module == 'content_shell':
         if result[0] or not os.path.exists(dir_out_build_type + '/apks/ContentShell.apk'):
             file_final = dir_comb + '/' + str(rev) + '.FAIL'
@@ -563,6 +572,7 @@ def _build_one(comb_next):
 
             file_final = dir_comb + '/' + str(rev) + '.tar.gz'
 
+    # backup
     if not args.slave_only:
         _move_to_server(file_final, target_os, target_arch, target_module)
         execute(_remotify_cmd('rm -f ' + file_lock))

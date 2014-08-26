@@ -572,11 +572,11 @@ def _build_one(comb_next):
 def _get_comb_next():
     comb_next = []
     for comb in combs:
-        rev_temp = comb[COMB_INDEX_REV]
-        while (_rev_is_built(comb) and comb[COMB_INDEX_REV] < rev_max):
-            rev_temp += build_every
+        comb_temp = comb
+        while (comb[COMB_INDEX_REV] <= rev_max and _rev_is_built(comb)):
+            info(str(comb) + ' has been built')
+            comb[COMB_INDEX_REV] += build_every
 
-        comb[COMB_INDEX_REV] = rev_temp
         if not comb_next:
             comb_next = comb
         elif rev_temp < comb_next[COMB_INDEX_REV]:
@@ -628,7 +628,7 @@ def _rev_is_built(comb):
 def _rev_is_built_one(cmd):
     for server in servers_webcatch:
         cmd_server = remotify_cmd(cmd, server=server)
-        result = execute(cmd_server, show_cmd=False)
+        result = execute(cmd_server, show_cmd=True)
         if result[0] == 0:
             return True
     return False

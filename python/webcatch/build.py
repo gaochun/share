@@ -428,6 +428,7 @@ def _move_to_server(file, target_os, target_arch, target_module):
 
 def _build(comb_next):
     result = _build_one(comb_next)
+    comb_next[COMB_INDEX_REV] += build_every
     if result:
         build_fail += 1
         if build_fail >= args.build_fail_max:
@@ -436,6 +437,9 @@ def _build(comb_next):
         build_fail = 0
 
     # Allow pause
+    if comb_next[COMB_INDEX_REV] > rev_max:
+        return
+
     seconds = 5
     info('You have ' + str(seconds) + ' seconds to type "enter" to pause')
     i, o, e = select.select([sys.stdin], [], [], seconds)

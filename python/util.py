@@ -87,7 +87,7 @@ dir_server_log = dir_server + '/log'
 dir_project = dir_workspace + '/project'
 dir_project_chrome_android = dir_project + '/chrome-android'
 dir_project_webcatch = dir_project + '/webcatch'
-dir_proejct_webcatch_out = dir_project_webcatch + '/out'
+dir_project_webcatch_out = dir_project_webcatch + '/out'
 dir_project_webcatch_project = dir_project_webcatch + '/project'
 dir_project_webcatch_log = dir_project_webcatch + '/log'
 dir_tool = dir_workspace + '/tool'
@@ -100,6 +100,8 @@ dir_home = os.getenv('HOME')
 # </path>
 
 # <chromium>
+chromium_rev_max = 9999999
+
 # src/build/android/pylib/constants.py
 chromium_android_info = {
     'chrome_stable': ['com.android.chrome', ''],
@@ -687,7 +689,7 @@ def ensure_dir(dir, server=''):
         if not os.path.exists(dir):
             os.makedirs(dir)
     else:
-        result = execute(remotify_cmd('ls ' + dir, server=server))
+        result = execute(remotify_cmd('ls ' + dir, server=server), show_cmd=False)
         if result[0]:
             execute(remotify_cmd('mkdir -p ' + dir, server=server))
 
@@ -786,8 +788,37 @@ def mouse_click(button=1):
     d.sync()
 
 
-# return '' for single rev if not found
-# return {} for rev range if not found
+def chromium_get_rev_max(dir_src):
+    if not os.path.exists(dir_src):
+        error('Chromium src dir does not exist')
+
+    backup_dir(dir_src)
+    execute('git fetch', dryrun=True)
+    rev_hash = _chromium_get_rev_hash(chromium_rev_max)
+    restore_dir()
+    return rev_hash.keys()[0]
+
+
+# get hash according to rev
+def chromium_get_hash(dir_src, rev):
+    if not os.path.exists(dir_src):
+        error('Chromium src dir does not exist')
+
+    backup_dir(dir_src)
+    rev_hash = _chromium_get_rev_hash(rev_min, rev_min, force=False)
+    if not rev_hash:
+        execute('git fetch', dryrun=True)
+        rev_hash = _chromium_get_rev_hash(rev_min, rev_min, force=False)
+    restore_dir()
+
+    if not rev_hash:
+        return ''
+    else:
+        return rev_hash[rev]
+
+
+# single rev: return hash for general rev, return ''  if failed to find. return rev_max for chromium_rev_max
+# rev range: return valid hashes within range, return {} if failed to find.
 def chromium_get_rev_hash(dir_src, rev_min, *rev_extra):
     if len(rev_extra):
         rev_max = rev_extra[0]
@@ -796,18 +827,24 @@ def chromium_get_rev_hash(dir_src, rev_min, *rev_extra):
 
     if rev_min > rev_max:
         return {}
+
     if not os.path.exists(dir_src):
         error('Chromium src dir does not exist')
 
     backup_dir(dir_src)
-    rev_hash = _chromium_get_rev_hash(rev_min, rev_max, force=False)
+    if rev_min == chromium_rev_max:
+        rev_hash = {}
+    else:
+        rev_hash = _chromium_get_rev_hash(rev_min, rev_max, force=False)
     if not rev_hash:
-        execute('git fetch')
+        execute('git fetch', dryrun=True)
         rev_hash = _chromium_get_rev_hash(rev_min, rev_max, force=True)
     restore_dir()
 
     if len(rev_extra):
         return rev_hash
+    elif rev_min == chromium_rev_max:
+        return rev_hash.keys()[0]
     else:
         if rev_min in rev_hash:
             return rev_hash[rev_min]
@@ -943,7 +980,7 @@ def _patch_applied(dir_repo, path_patch, count=30):
 
 
 # force: True so that rev_hash will return as much as possible
-def _chromium_get_rev_hash(rev_min, rev_max, force=False):
+def _chromium_get_rev_hash(rev_min, rev_max=0, force=False):
     execute('git log origin master >git_log', show_cmd=False)
     f = open('git_log')
     lines = f.readlines()
@@ -952,27 +989,41 @@ def _chromium_get_rev_hash(rev_min, rev_max, force=False):
 
     pattern_hash = re.compile('^commit (.*)')
     pattern_rev = re.compile('^git-svn-id: .*@(.*) (.*)')
+    # from r291561, use below new format
+    pattern_rev2 = re.compile('Cr-Commit-Position: refs/heads/master@{#(.*)}')
     hash_temp = ''
     rev_temp = 0
-    is_first = True
     rev_hash = {}
-    for line in lines:
+    is_rev = False
+    is_first = True
+    for index, line in enumerate(lines):
         match = pattern_hash.search(line)
         if match:
-            if hash_temp == '':
-                hash_temp = match.group(1)
-                continue
+            hash_temp = match.group(1)
+
+        match = pattern_rev.search(line.lstrip())
+        if match:
+            if pattern_hash.search(lines[index + 2].lstrip()):
+                rev_temp = int(match.group(1))
+                is_rev = True
+
+        match = pattern_rev2.search(line.lstrip())
+        if match:
+            if pattern_hash.search(lines[index + 2].lstrip()):
+                rev_temp = int(match.group(1))
+                is_rev = True
+
+        if is_rev:
+            is_rev = False
             if is_first:
                 is_first = False
+                if rev_min == chromium_rev_max:
+                    rev_hash[rev_temp] = hash_temp
+                    return rev_hash
                 if rev_temp < rev_max and not force:
                     return rev_hash
             if rev_temp >= rev_min and rev_temp <= rev_max:
                 rev_hash[rev_temp] = hash_temp
             elif rev_temp < rev_min:
                 return rev_hash
-            hash_temp = match.group(1)
-
-        match = pattern_rev.search(line.lstrip())
-        if match:
-            rev_temp = int(match.group(1))
 # </internal>

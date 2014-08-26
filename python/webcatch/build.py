@@ -193,17 +193,18 @@ def clean_lock():
     if not args.clean_lock:
         return
 
-    for target_os in target_os_info:
-        for comb in target_os_info[target_os][TARGET_OS_INFO_INDEX_BUILD]:
-            target_arch = comb[0]
-            target_module = comb[1]
+    for comb in combs:
+        target_os = comb[COMB_INDEX_TARGET_OS]
+        target_arch = comb[COMB_INDEX_TARGET_ARCH]
+        target_module = comb[COMB_INDEX_TARGET_MODULE]
+        comb_name = _get_comb_name(target_os, target_arch, target_module)
 
-            if args.slave_only:
-                cmd = 'rm ' + dir_project_webcatch_out + '/' + _get_comb_name(target_os, target_arch, target_module) + '/*.LOCK'
-            else:
-                cmd = _remotify_cmd('rm ' + dir_server_chromium + '/' + _get_comb_name(target_os, target_arch, target_module) + '/*.LOCK')
+        if args.slave_only:
+            cmd = 'rm ' + dir_project_webcatch_out + '/' + comb_name + '/*.LOCK'
+        else:
+            cmd = _remotify_cmd('rm ' + dir_server_chromium + '/' + comb_name + '/*.LOCK')
 
-            execute(cmd)
+        execute(cmd)
 
 
 def init():
@@ -448,19 +449,20 @@ def _build(comb_next):
 
 def _build_one(comb_next):
     (target_os, target_arch, target_module, rev) = comb_next
+    comb_name = _get_comb_name(target_os, target_arch, target_module)
 
-    info('Begin to build ' + _get_comb_name(target_os, target_arch, target_module) + '@' + str(rev) + '...')
-    dir_comb = dir_project_webcatch_out + '/' + _get_comb_name(target_os, target_arch, target_module)
+    info('Begin to build ' + comb_name + '@' + str(rev) + '...')
+    dir_comb = dir_project_webcatch_out + '/' + comb_name
     if rev in rev_expectfail:
         file_final = dir_comb + '/' + str(rev) + '.EXPECTFAIL'
         execute('touch ' + file_final)
         _move_to_server(file_final, target_os, target_arch, target_module)
         return 0
 
-    file_log = dir_project_webcatch_log + '/' + _get_comb_name(target_os, target_arch, target_module) + '@' + str(rev) + '.log'
+    file_log = dir_project_webcatch_log + '/' + comb_name + '@' + str(rev) + '.log'
 
     if not args.slave_only:
-        file_lock = dir_server_chromium + '/' + _get_comb_name(target_os, target_arch, target_module) + '/' + str(rev) + '.LOCK'
+        file_lock = dir_server_chromium + '/' + comb_name + '/' + str(rev) + '.LOCK'
         execute(_remotify_cmd('touch ' + file_lock))
 
     dir_repo = dir_project_webcatch_project + '/chromium-' + target_os
@@ -586,29 +588,29 @@ def _get_comb_next():
 
 
 def _rev_is_built(comb):
-    target_os_temp = comb[COMB_INDEX_TARGET_OS]
-    target_arch_temp = comb[COMB_INDEX_TARGET_ARCH]
-    target_module_temp = comb[COMB_INDEX_TARGET_MODULE]
-    rev_temp = comb[COMB_INDEX_REV]
-    comb_name = _get_comb_name(target_os_temp, target_arch_temp, target_module_temp)
+    target_os = comb[COMB_INDEX_TARGET_OS]
+    target_arch = comb[COMB_INDEX_TARGET_ARCH]
+    target_module = comb[COMB_INDEX_TARGET_MODULE]
+    rev = comb[COMB_INDEX_REV]
+    comb_name = _get_comb_name(target_os, target_arch, target_module)
 
     # skip the rev marked as built
     if not args.slave_only:
-        comb_valid_rev_min = comb_valid[(target_os_temp, target_arch_temp, target_module_temp)][COMB_VALID_INDEX_REV_MIN]
-        comb_valid_rev_max = comb_valid[(target_os_temp, target_arch_temp, target_module_temp)][COMB_VALID_INDEX_REV_MAX]
-        if rev_temp >= comb_valid_rev_min and rev_temp <= comb_valid_rev_max:
+        comb_valid_rev_min = comb_valid[(target_os, target_arch, target_module)][COMB_VALID_INDEX_REV_MIN]
+        comb_valid_rev_max = comb_valid[(target_os, target_arch, target_module)][COMB_VALID_INDEX_REV_MAX]
+        if rev >= comb_valid_rev_min and rev <= comb_valid_rev_max:
             return True
 
     # check for slave_only
     if args.slave_only:
-        cmd = 'ls ' + dir_project_webcatch_out + '/' + comb_name + '/' + str(rev_temp) + '*'
+        cmd = 'ls ' + dir_project_webcatch_out + '/' + comb_name + '/' + str(rev) + '*'
         result = execute(cmd, show_cmd=False)
         if result[0] == 0:
             return True
         return False
 
     # check in server
-    cmd = 'ls ' + dir_server_chromium + '/' + comb_name + '/' + str(rev_temp) + '*'
+    cmd = 'ls ' + dir_server_chromium + '/' + comb_name + '/' + str(rev) + '*'
 
     if _rev_is_built_one(cmd):
         return True

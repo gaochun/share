@@ -4,7 +4,6 @@ import fileinput
 from multiprocessing import Pool
 from util import *
 
-REV_MAX = 9999999
 args = ''
 args_dict = []
 repo_type = ''
@@ -120,7 +119,7 @@ test_suite = {}
 
 repo_type_info = {
     'default': {
-        'rev': REV_MAX,
+        'rev': chromium_rev_max,
         'dir_patches': dir_python,
         'patches': {},
         # (device_type, target_arch): {}
@@ -375,7 +374,7 @@ def setup():
             globals()[key] = repo_type_info[repo_type][key]
 
     if args.sync_upstream:
-        rev = REV_MAX
+        rev = chromium_rev_max
 
     if args.rev:
         rev = args.rev
@@ -578,7 +577,7 @@ def sync(force=False):
         restore_dir()
 
     cmd_type = 'sync'
-    if rev != REV_MAX:
+    if rev != chromium_rev_max:
         hash_temp = chromium_get_rev_hash(dir_src, rev)
         if not hash_temp:
             error('Could not find hash for rev ' + str(rev))

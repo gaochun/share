@@ -514,8 +514,8 @@ def flash_image():
         if not is_connected:
             error('Can not connect to device after system boots up')
         else:
-            info('Sleeping 60 seconds until system fully boots up..')
-            time.sleep(60)
+            info('Sleeping 150 seconds until system fully boots up..')
+            time.sleep(150)
 
         android_keep_screen_on()
         android_unlock_screen()
@@ -633,7 +633,7 @@ def hack_app_process():
         return
 
     for device in devices:
-        connect_device(device)
+        connect_device(device=device)
         if not execute_adb_shell("test -d /system/lib64", device=device):
             continue
 

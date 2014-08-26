@@ -1041,7 +1041,7 @@ def _test_run_device(index_device, results):
     device_type = devices_type[index_device]
     dir_test_device_name = dir_test_timestamp + '-' + device_name
 
-    connect_device(device)
+    connect_device(device=device)
 
     if not os.path.exists(dir_test_device_name):
         os.mkdir(dir_test_device_name)

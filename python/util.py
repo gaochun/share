@@ -409,7 +409,7 @@ def setup_device(devices_limit=[]):
     devices_type = []
     devices_mode = []
     devices_target_arch = []
-    cmd = adb('devices -l', device='')
+    cmd = adb('devices -l')
     device_lines = commands.getoutput(cmd).split('\n')
     cmd = 'fastboot devices -l'
     device_lines += commands.getoutput(cmd).split('\n')
@@ -486,19 +486,25 @@ def get_caller_name():
     return inspect.stack()[1][3]
 
 
-def adb(cmd, device='192.168.42.1'):
-    if device == '192.168.42.1':
+def adb(cmd, device=''):
+    # some commands do not need -s option
+    cmds_none = ['devices', 'connect', 'disconnect']
+    if device == '':
+        for cmd_none in cmds_none:
+            if re.search(cmd_none, cmd):
+                device = None
+                break
+    if device == '':
         device = '192.168.42.1:5555'
 
-    if device == '':
+    if device == None:
         return 'adb ' + cmd
-    else:
-        return 'adb -s ' + device + ' ' + cmd
+    return 'adb -s ' + device + ' ' + cmd
 
 
 # Execute a adb shell command and know the return value
 # adb shell would always return 0, so a trick has to be used here to get return value
-def execute_adb_shell(cmd, device='192.168.42.1'):
+def execute_adb_shell(cmd, device=''):
     cmd_adb = adb(cmd='shell "' + cmd + ' || echo FAIL"', device=device)
     result = execute(cmd_adb, return_output=True, show_cmd=False)
     if re.search('FAIL', result[1].rstrip('\n')):
@@ -526,7 +532,7 @@ def get_product(arch, device_type, date=20140101):
 
 # device: specific device. Do not use :5555 as -t option does not accept this.
 # mode: system for normal mode, bootloader for bootloader mode
-def device_connected(device='192.168.42.1', mode='system'):
+def device_connected(device='', mode='system'):
     if mode == 'system':
         result = execute('timeout 1s ' + adb(cmd='shell \ls', device=device))
     elif mode == 'bootloader':
@@ -546,13 +552,14 @@ def device_connected(device='192.168.42.1', mode='system'):
 
 
 # Try to connect to device in case it's not online
-def connect_device(device='192.168.42.1', mode='system'):
+def connect_device(device='', mode='system'):
     if mode == 'system':
         if device_connected(device, mode):
             return True
-
-        if device == '192.168.42.1':
-            cmd = 'timeout 1s ' + adb(cmd='disconnect %s' % device, device='') + ' && timeout 1s ' + adb(cmd='connect %s' % device, device='')
+        if device == '':
+            device = '192.168.42.1:5555'
+        if device == '192.168.42.1:5555':
+            cmd = 'timeout 1s ' + adb(cmd='disconnect %s' % device) + ' && timeout 1s ' + adb(cmd='connect %s' % device)
             execute(cmd, interactive=True)
         return device_connected(device, mode)
     elif mode == 'bootloader':
@@ -561,8 +568,8 @@ def connect_device(device='192.168.42.1', mode='system'):
         return device_connected(device, mode)
 
 
-def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android', arch='x86_64', device='192.168.42.1', type='tombstone', date=20140101):
-    if device == '192.168.42.1':
+def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android', arch='x86_64', device='', type='tombstone', date=20140101):
+    if device == '' or device == '192.168.42.1:5555':
         device_type = 'baytrail'
     product = get_product(arch, device_type, date)
     if arch == 'x86_64':
@@ -575,7 +582,7 @@ def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/work
         dir_chromium + '/src/out-%s/out/Release/lib' % arch,
     ]
 
-    connect_device(device)
+    connect_device(device=device)
 
     count_line_max = 1000
     count_valid_max = 40
@@ -722,7 +729,7 @@ def singleton(lock):
         exit(0)
 
 
-def chrome_android_cleanup(device='192.168.42.1'):
+def chrome_android_cleanup(device=''):
     for key in chromium_android_info:
         execute(adb('uninstall ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device))
 
@@ -730,7 +737,7 @@ def chrome_android_cleanup(device='192.168.42.1'):
     #execute(adb('shell rm -rf /data/dalvik-cache/*', device=device))
 
 
-def chrome_android_get_ver_type(device='192.168.42.1'):
+def chrome_android_get_ver_type(device=''):
     ver_type = ''
     for key in chromium_android_info:
         if not re.match('^chrome', key):
@@ -826,19 +833,19 @@ def get_logger(name, dir_log, level=logging.DEBUG):
 
 
 # <android>
-def android_unlock_screen(device='192.168.42.1'):
+def android_unlock_screen(device=''):
     execute(adb(cmd='shell input keyevent 82', device=device))
 
 
-def android_set_screen_lock_none(device='192.168.42.1'):
+def android_set_screen_lock_none(device=''):
     execute_adb_shell(cmd='am start -n com.android.settings/.SecuritySettings && sleep 5 && input tap 200 150 && sleep 5 && input tap 200 100 && am force-stop com.android.settings', device=device)
 
 
-def android_set_display_sleep_30mins(device='192.168.42.1'):
+def android_set_display_sleep_30mins(device=''):
     execute_adb_shell(cmd='am start -n com.android.settings/.DisplaySettings && sleep 5 && input tap 200 250 && sleep 5 && input tap 500 550 && am force-stop com.android.settings', device=device)
 
 
-def android_is_screen_on(device='192.168.42.1'):
+def android_is_screen_on(device=''):
     result = execute(adb(cmd='shell dumpsys power', device=device) + ' |grep mScreenOn=true')
     if result[0]:
         return False
@@ -847,28 +854,28 @@ def android_is_screen_on(device='192.168.42.1'):
 
 
 # Just trigger once
-def android_trigger_screen_on(device='192.168.42.1'):
+def android_trigger_screen_on(device=''):
     if not android_is_screen_on(device):
         # Bring up screen by pressing power
         execute(adb('shell input keyevent 26'), device=device)
 
 
 # Keep screen on when charging
-def android_keep_screen_on(device='192.168.42.1'):
+def android_keep_screen_on(device=''):
     execute(adb(cmd='shell svc power stayon usb', device=device))
 
 
-def android_tap(x=1300, y=700, device='192.168.42.1'):
+def android_tap(x=1300, y=700, device=''):
     execute(adb(cmd='shell input tap %s %s' % (str(x), str(y)), device=device))
 
 
-def android_get_info(key, device='192.168.42.1'):
+def android_get_info(key, device=''):
     cmd = adb(cmd='shell grep %s= system/build.prop' % key, device=device)
     result = execute(cmd, return_output=True, show_cmd=False)
     return result[1].replace(key + '=', '').rstrip('\r\n')
 
 
-def android_get_target_arch(device='192.168.42.1'):
+def android_get_target_arch(device=''):
     abi = android_get_info(key='ro.product.cpu.abi', device=device)
     target_arch = ''
     for key in target_arch_info:

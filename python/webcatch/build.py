@@ -19,50 +19,14 @@ import sys
 sys.path.append(sys.path[0] + '/..')
 from util import *
 
-revs = {}
-
-# target_os -> [build, rev_min, rev_max, fetch_time, rev_git_max]
-# build -> [[target_arch, target_module, rev_next], [target_arch, target_module, rev_next]]
-# Example: {'android': [[['x86', 'webview', 100000], ['x86', 'content_shell', 200000]], 10000, 999999, 1408649648, 150000]}
-
-target_os_info = {}
-TARGET_OS_INFO_INDEX_BUILD = 0
-TARGET_OS_INFO_INDEX_REV_MIN = 1
-TARGET_OS_INFO_INDEX_REV_MAX = 2
-TARGET_OS_INFO_INDEX_TIME = 3
-TARGET_OS_INFO_INDEX_REV_GIT = 4
-
-TARGET_OS_INFO_INDEX_BUILD_ARCH = 0
-TARGET_OS_INFO_INDEX_BUILD_MODULE = 1
-TARGET_OS_INFO_INDEX_BUILD_REV_NEXT = 2
-
-# build_next = [target_os, target_arch, target_module, rev_next, index_next]
-BUILD_NEXT_INDEX_OS = 0
-BUILD_NEXT_INDEX_ARCH = 1
-BUILD_NEXT_INDEX_MODULE = 2
-BUILD_NEXT_INDEX_REV_NEXT = 3
-BUILD_NEXT_INDEX_INDEX_NEXT = 4
-
 DRYRUN = False
-
-time_sleep_default = 300
-
-# [reva, revb], where reva is bad, and revb is good
-expectfail = [
-    233707, 236662, 234213, 234223, 234517, 234689, [235193, 235195], 237586,
-    241661, 241848,
-    [262675, 262701],  # Because of v8 error
-    [275269, 275271],  # pdfium build
-]
-
-rev_expectfail = []
-
-run_chromium_script = 'python ' + dir_python + '/chromium.py'
-
-dir_webcatch = dir_python + '/webcatch'
 dir_patch = dir_webcatch + '/patch'
 
-# comb: [binary_format, rev_min_built, rev_max_built]
+rev_min = 0
+rev_max = 0
+build_fail = 0
+
+# (target_os, target_arch, target_module): [binary_format, rev_min_built, rev_max_built]
 comb_valid = {
     ('android', 'x86', 'content_shell'): ['(.*).apk$', 233137, 233137],  # 250735
     ('android', 'x86_64', 'content_shell'): ['(.*).apk$', 233137, 278978],
@@ -73,6 +37,23 @@ comb_valid = {
 COMB_VALID_INDEX_FORMAT = 0
 COMB_VALID_INDEX_REV_MIN = 1
 COMB_VALID_INDEX_REV_MAX = 2
+
+# [target_os, target_arch, target_module, rev]
+combs = []
+COMB_INDEX_TARGET_OS = 0
+COMB_INDEX_TARGET_ARCH = 1
+COMB_INDEX_TARGET_MODULE = 2
+COMB_INDEX_REV = 3
+
+# [reva, revb], where reva is bad, and revb is good
+expectfail = [
+    233707, 236662, 234213, 234223, 234517, 234689, [235193, 235195], 237586,
+    241661, 241848,
+    [262675, 262701],  # Because of v8 error
+    [275269, 275271],  # pdfium build
+]
+
+rev_expectfail = []
 
 ################################################################################
 
@@ -106,24 +87,18 @@ examples:
 
 
 def setup():
-    global target_os_info, build_every, build_fail_max, rev_expectfail
-
-    set_proxy()
+    global rev_min, rev_max, dir_chromium_src_main, combs, build_every, rev_expectfail
 
     if not args.slave_only:
         for server in servers_webcatch:
-            result = execute(remotify_cmd('ls ' + dir_server_chromium, server=server), show_cmd=True)
+            result = execute(remotify_cmd('ls ' + dir_server_chromium, server=server), show_cmd=False)
             if result[0]:
                 error('Can not connect to build server')
 
-    build_every = args.build_every
-    build_fail_max = args.build_fail_max
-
-    backup_dir(get_symbolic_link_dir())
-    # Packages is split by white space so that you may easily install them all
+    set_proxy()
+    ensure_dir(dir_project_webcatch_log)
+    ensure_dir(dir_project_webcatch_out)
     ensure_package('libnss3-dev ant libcups2-dev libcap-dev libxtst-dev libasound2-dev libxss-dev')
-
-    setenv('JAVA_HOME', '/usr/lib/jvm/jdk1.6.0_45')
 
     if args.target_os == 'all':
         arg_target_os = target_os_all
@@ -140,47 +115,41 @@ def setup():
     else:
         arg_target_module = args.target_module.split(',')
 
+    build_every = args.build_every
+
+    if args.rev:
+        revs_temp = [int(x) for x in args.rev.split('-')]
+        if len(revs_temp) > 1:
+            rev_min = revs_temp[0]
+            rev_max = revs_temp[1]
+        else:
+            rev_min = revs_temp[0]
+            rev_max = revs_temp[0]
+    else:
+        rev_min = rev_default[0]
+        rev_max = rev_default[1]
+
+    if rev_min > rev_max:
+        error('rev_min should not be greater than rev_max')
+
+    target_os_main = ''
     for target_os, target_arch, target_module in [(target_os, target_arch, target_module) for target_os in arg_target_os for target_arch in arg_target_arch for target_module in arg_target_module]:
         if not (target_os, target_arch, target_module) in comb_valid:
             continue
+        comb_name = _get_comb_name(target_os, target_arch, target_module)
+        dir_comb_slave = dir_project_webcatch_out + '/' + comb_name
+        ensure_dir(dir_comb_slave)
+        dir_comb_server = dir_server_chromium + '/' + comb_name
+        ensure_dir(dir_comb_server, server=server_webcatch)
 
-        if target_os not in target_os_info:
-            target_os_info[target_os] = [[], 0, 0, 0, 0]
-            if args.rev:
-                revs_temp = [int(x) for x in args.rev.split('-')]
-                if len(revs_temp) > 1:
-                    rev_min = revs_temp[0]
-                    rev_max = revs_temp[1]
-                else:
-                    rev_min = revs_temp[0]
-                    rev_max = revs_temp[0]
+        if not target_os_main:
+            target_os_main = target_os
 
-                target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_MIN] = rev_min
-                target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_MAX] = rev_max
-            else:
-                target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_MIN] = rev_default[0]
-                target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_MAX] = rev_default[1]
+        rev_min_round = roundup(rev_min, build_every)
+        if rev_min_round <= rounddown(rev_max, build_every):
+            combs.append([target_os, target_arch, target_module, rev_min_round])
 
-        target_os_info[target_os][TARGET_OS_INFO_INDEX_BUILD].append([target_arch, target_module, target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_MIN]])
-
-    _update_git_info()
-
-    ensure_dir(dir_webcatch_log)
-    ensure_dir(dir_project_webcatch_out)
-
-    for target_os in target_os_info:
-        for build in target_os_info[target_os][TARGET_OS_INFO_INDEX_BUILD]:
-            target_arch = build[TARGET_OS_INFO_INDEX_BUILD_ARCH]
-            target_module = build[TARGET_OS_INFO_INDEX_BUILD_MODULE]
-            dir_comb_slave = dir_project_webcatch_out + '/' + get_comb_name(splitter='-', target_os, target_arch, target_module)
-            dir_comb_server = dir_server_chromium + '/' + get_comb_name(splitter='-', target_os, target_arch, target_module)
-            # Make dir_comb for slave
-            if not os.path.exists(dir_comb_slave):
-                os.mkdir(dir_comb_slave)
-            # Make dir_comb for server
-            result = execute(remotify_cmd('ls ' + dir_comb_server, server=server_webcatch))
-            if result[0]:
-                execute(remotify_cmd('mkdir -p ' + dir_comb_server, server=server_webcatch))
+    dir_chromium_src_main = dir_project_webcatch_project + '/chromium-' + target_os_main + '/src'
 
     for rev in expectfail:
         if isinstance(rev, list):
@@ -189,60 +158,35 @@ def setup():
         else:
             rev_expectfail.append(rev)
 
-    restore_dir()
-
 
 def build():
     if not args.build:
         return
 
-    fail_number = 0
-    need_sleep = False
+    build_fail = 0
+    interval_git = 300
+    rev_git_max = _chromium_get_rev_max()
+    time_git = get_epoch_second()
     while True:
-        build_next = _get_build_next()
-        target_os_next = build_next[BUILD_NEXT_INDEX_OS]
-        rev_next = build_next[BUILD_NEXT_INDEX_REV_NEXT]
-        index_next = build_next[BUILD_NEXT_INDEX_INDEX_NEXT]
-        if rev_next in revs:
-            target_os_info[target_os_next][TARGET_OS_INFO_INDEX_BUILD][index_next][TARGET_OS_INFO_INDEX_BUILD_REV_NEXT] = rev_next + 1
-            result = _build_one(build_next)
-            if result:
-                fail_number += 1
-                if fail_number >= build_fail_max:
-                    error('You have reached maximum failure number')
-            else:
-                fail_number = 0
+        comb_next = _get_comb_next()
+        rev_next = comb_next[COMB_INDEX_REV]
+
+        if rev_next > rev_max:
+            return
+        elif rev_next <= rev_git_max:
+            _build(comb_next)
         else:
-            target_os = build_next[BUILD_NEXT_INDEX_OS]
-            rev_max = target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_MAX]
-            if rev_next > rev_max:
-                return
-
-            time_fetch = target_os_info[target_os][TARGET_OS_INFO_INDEX_TIME]
-            time_diff = get_epoch_second() - time_fetch
-
-            if time_diff < time_sleep_default:
-                time_sleep = time_sleep_default - time_diff
-            else:
-                time_sleep = time_sleep_default
-
-            if need_sleep:
-                info('Sleeping ' + str(time_sleep) + ' seconds...')
-                time.sleep(time_sleep)
-            else:
-                need_sleep = True
-            _update_git_info()
-
-        # Allow pause
-        seconds = 3
-        info('You have ' + str(seconds) + ' seconds to type "enter" to pause')
-        i, o, e = select.select([sys.stdin], [], [], seconds)
-        if i:
-            info('Please type "r" to resume')
             while True:
-                input = raw_input()
-                if input == 'r':
-                    break
+                time_diff = get_epoch_second() - time_git
+                if time_diff > interval_git:
+                    rev_git_max = _chromium_get_rev_max()
+                    time_git = get_epoch_second()
+                    if rev_next <= rev_git_max:
+                        _build(comb_next)
+                        break
+
+                info('Sleeping ' + str(interval_git) + ' seconds...')
+                time.sleep(interval_git)
 
 
 def clean_lock():
@@ -255,9 +199,9 @@ def clean_lock():
             target_module = comb[1]
 
             if args.slave_only:
-                cmd = 'rm ' + dir_project_webcatch_out + '/' + get_comb_name(splitter='-', target_os, target_arch, target_module) + '/*.LOCK'
+                cmd = 'rm ' + dir_project_webcatch_out + '/' + _get_comb_name(target_os, target_arch, target_module) + '/*.LOCK'
             else:
-                cmd = remotify_cmd('rm ' + dir_server_chromium + '/' + get_comb_name(splitter='-', target_os, target_arch, target_module) + '/*.LOCK', server=server_webcatch)
+                cmd = _remotify_cmd('rm ' + dir_server_chromium + '/' + _get_comb_name(target_os, target_arch, target_module) + '/*.LOCK')
 
             execute(cmd)
 
@@ -468,7 +412,7 @@ typedef user_regs_struct regs_struct;
 
 
 def _move_to_server(file, target_os, target_arch, target_module):
-    dir_comb_server = dir_server_chromium + '/' + get_comb_name(splitter='-', target_os, target_arch, target_module)
+    dir_comb_server = dir_server_chromium + '/' + _get_comb_name(target_os, target_arch, target_module)
     if re.match('ubuntu', server_webcatch):
         username = 'gyagp'
     else:
@@ -481,35 +425,56 @@ def _move_to_server(file, target_os, target_arch, target_module):
     execute('rm -f ' + file)
 
 
-def _build_one(build_next):
-    (target_os, target_arch, target_module, rev, index) = build_next
+def _build(comb_next):
+    result = _build_one(comb_next)
+    if result:
+        build_fail += 1
+        if build_fail >= args.build_fail_max:
+            error('You have reached maximum failure number')
+    else:
+        build_fail = 0
 
-    info('Begin to build ' + get_comb_name(splitter='-', target_os, target_arch, target_module) + '@' + str(rev) + '...')
-    dir_comb = dir_project_webcatch_out + '/' + get_comb_name(splitter='-', target_os, target_arch, target_module)
+    # Allow pause
+    seconds = 5
+    info('You have ' + str(seconds) + ' seconds to type "enter" to pause')
+    i, o, e = select.select([sys.stdin], [], [], seconds)
+    if i:
+        info('Please type "r" to resume')
+        while True:
+            input = raw_input()
+            if input == 'r':
+                break
+
+
+def _build_one(comb_next):
+    (target_os, target_arch, target_module, rev) = comb_next
+
+    info('Begin to build ' + _get_comb_name(target_os, target_arch, target_module) + '@' + str(rev) + '...')
+    dir_comb = dir_project_webcatch_out + '/' + _get_comb_name(target_os, target_arch, target_module)
     if rev in rev_expectfail:
         file_final = dir_comb + '/' + str(rev) + '.EXPECTFAIL'
         execute('touch ' + file_final)
         _move_to_server(file_final, target_os, target_arch, target_module)
         return 0
 
-    file_log = dir_webcatch_log + '/' + get_comb_name(splitter='-', target_os, target_arch, target_module) + '@' + str(rev) + '.log'
+    file_log = dir_project_webcatch_log + '/' + _get_comb_name(target_os, target_arch, target_module) + '@' + str(rev) + '.log'
 
     if not args.slave_only:
-        file_lock = dir_server_chromium + '/' + get_comb_name(splitter='-', target_os, target_arch, target_module) + '/' + str(rev) + '.LOCK'
-        execute(remotify_cmd('touch ' + file_lock, server=server_webcatch))
+        file_lock = dir_server_chromium + '/' + _get_comb_name(target_os, target_arch, target_module) + '/' + str(rev) + '.LOCK'
+        execute(_remotify_cmd('touch ' + file_lock))
 
     dir_repo = dir_project_webcatch_project + '/chromium-' + target_os
 
-    cmd_sync = run_chromium_script + ' --sync --dir-root ' + dir_repo + ' --rev ' + str(rev)
+    cmd_sync = python_chromium + ' --sync --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_sync, dryrun=DRYRUN, interactive=True)
     if result[0]:
-        execute(remotify_cmd('rm -f ' + file_lock, server=server_webcatch))
+        execute(_remotify_cmd('rm -f ' + file_lock))
         send_mail('webcatch@intel.com', 'yang.gu@intel.com', '[webcatch] Failed to sync at ' + host_name, '')
         error('Sync failed', error_code=result[0])
 
     _patch_after_sync(target_os, target_arch, target_module, rev)
 
-    cmd_makefile = run_chromium_script + ' --makefile --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
+    cmd_makefile = python_chromium + ' --makefile --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_makefile, dryrun=DRYRUN, show_progress=True)
     if result[0]:
         # Run hook to retry. E.g., for revision >=252065, we have to run with hook to update gn tool.
@@ -517,7 +482,7 @@ def _build_one(build_next):
         execute(cmd_sync_hook, dryrun=DRYRUN, show_progress=True)
         result = execute(cmd_makefile, dryrun=DRYRUN)
         if result[0]:
-            execute(remotify_cmd('rm -f ' + file_lock, server=server_webcatch))
+            execute(_remotify_cmd('rm -f ' + file_lock))
             send_mail('webcatch@intel.com', 'yang.gu@intel.com', '[webcatch] Failed to generate makefile at ' + host_name, '')
             error('Failed to generate makefile')
 
@@ -526,7 +491,7 @@ def _build_one(build_next):
     dir_out_build_type = dir_repo + '/src/out-%s/out/Release' % target_arch
     # Remove apks first as sometimes ninja build error doesn't actually return error.
     execute('rm -f %s/apks/*' % dir_out_build_type)
-    cmd_build = run_chromium_script + ' --build --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
+    cmd_build = python_chromium + ' --build --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_build, dryrun=DRYRUN, show_progress=True)
 
     # Retry here
@@ -598,44 +563,57 @@ def _build_one(build_next):
 
     if not args.slave_only:
         _move_to_server(file_final, target_os, target_arch, target_module)
-        execute(remotify_cmd('rm -f ' + file_lock, server=server_webcatch))
+        execute(_remotify_cmd('rm -f ' + file_lock))
 
     return result[0]
 
 
-def _rev_is_built_one(cmd):
+# get the smallest rev in combs
+def _get_comb_next():
+    comb_next = []
+    for comb in combs:
+        rev_temp = comb[COMB_INDEX_REV]
+        while (_rev_is_built(comb) and comb[COMB_INDEX_REV] < rev_max):
+            rev_temp += build_every
+
+        comb[COMB_INDEX_REV] = rev_temp
+        if not comb_next:
+            comb_next = comb
+        elif rev_temp < comb_next[COMB_INDEX_REV]:
+            comb_next = comb
+
+    return comb_next
+
+
+def _rev_is_built(comb):
+    target_os_temp = comb[COMB_INDEX_TARGET_OS]
+    target_arch_temp = comb[COMB_INDEX_TARGET_ARCH]
+    target_module_temp = comb[COMB_INDEX_TARGET_MODULE]
+    rev_temp = comb[COMB_INDEX_REV]
+    comb_name = _get_comb_name(target_os_temp, target_arch_temp, target_module_temp)
+
+    # skip the rev marked as built
+    if not args.slave_only:
+        comb_valid_rev_min = comb_valid[(target_os_temp, target_arch_temp, target_module_temp)][COMB_VALID_INDEX_REV_MIN]
+        comb_valid_rev_max = comb_valid[(target_os_temp, target_arch_temp, target_module_temp)][COMB_VALID_INDEX_REV_MAX]
+        if rev_temp >= comb_valid_rev_min and rev_temp <= comb_valid_rev_max:
+            return True
+
+    # check for slave_only
     if args.slave_only:
-        result = execute(cmd, show_cmd=True)
+        cmd = 'ls ' + dir_project_webcatch_out + '/' + comb_name + '/' + str(rev_temp) + '*'
+        result = execute(cmd, show_cmd=False)
         if result[0] == 0:
             return True
         return False
-    else:
-        for server in servers_webcatch:
-            cmd_server = remotify_cmd(cmd, server=server)
-            result = execute(cmd_server, show_cmd=True)
-            if result[0] == 0:
-                return True
-        return False
 
-
-def _rev_is_built(target_os, target_arch, target_module, rev):
-    # Skip the revision marked as built
-    if not args.slave_only:
-        rev_min = comb_valid[(target_os, target_arch, target_module)][COMB_VALID_INDEX_REV_MIN]
-        rev_max = comb_valid[(target_os, target_arch, target_module)][COMB_VALID_INDEX_REV_MAX]
-        if rev >= rev_min and rev <= rev_max:
-            return True
-
-    # Check if file exists or not
-    if args.slave_only:
-        cmd = 'ls ' + dir_project_webcatch_out + '/' + get_comb_name(splitter='-', target_os, target_arch, target_module) + '/' + str(rev) + '*'
-    else:
-        cmd = 'ls ' + dir_server_chromium + '/' + get_comb_name(splitter='-', target_os, target_arch, target_module) + '/' + str(rev) + '*'
+    # check in server
+    cmd = 'ls ' + dir_server_chromium + '/' + comb_name + '/' + str(rev_temp) + '*'
 
     if _rev_is_built_one(cmd):
         return True
 
-    # Check again to avoid conflict among parallel build machines
+    # check again to avoid conflict among parallel build machines
     second = random.randint(1, 10)
     info('sleep ' + str(second) + ' seconds and check again')
     time.sleep(second)
@@ -646,81 +624,34 @@ def _rev_is_built(target_os, target_arch, target_module, rev):
     return False
 
 
-def _get_rev_next(target_os, index):
-    target_arch = target_os_info[target_os][TARGET_OS_INFO_INDEX_BUILD][index][TARGET_OS_INFO_INDEX_BUILD_ARCH]
-    target_module = target_os_info[target_os][TARGET_OS_INFO_INDEX_BUILD][index][TARGET_OS_INFO_INDEX_BUILD_MODULE]
-    rev_next = target_os_info[target_os][TARGET_OS_INFO_INDEX_BUILD][index][TARGET_OS_INFO_INDEX_BUILD_REV_NEXT]
-    rev_max = target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_MAX]
-    rev_git = target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_GIT]
-
-    for rev in range(rev_next, rev_max + 1):
-        if rev > rev_git:
-            return rev
-
-        if not rev % build_every == 0:
-            continue
-
-        if _rev_is_built(target_os, target_arch, target_module, rev):
-            info(str(rev) + ' has been built')
-            target_os_info[target_os][TARGET_OS_INFO_INDEX_BUILD][index][TARGET_OS_INFO_INDEX_BUILD_REV_NEXT] = rev + 1
-            continue
-
-        # Does not exist from here
-        if rev in revs:
-            return rev
-
-        # Handle invalid revision number here. TODO: Need to handle other comb.
-        dir_comb = dir_project_webcatch_out + '/' + get_comb_name(splitter='-', target_os, target_arch, target_module)
-        file_final = dir_comb + '/' + str(rev) + '.NULL'
-        info(str(rev) + ' does not exist')
-        execute('touch ' + file_final)
-        if not args.slave_only:
-            _move_to_server(file_final, target_os, target_arch, target_module)
-    return rev_max + 1
+# check if rev is built in server
+def _rev_is_built_one(cmd):
+    for server in servers_webcatch:
+        cmd_server = remotify_cmd(cmd, server=server)
+        result = execute(cmd_server, show_cmd=False)
+        if result[0] == 0:
+            return True
+    return False
 
 
-# Get the smallest revision from all targeted builds
-def _get_build_next():
-    is_base = True
-    for target_os in target_os_info:
-        for index, comb in enumerate(target_os_info[target_os][TARGET_OS_INFO_INDEX_BUILD]):
-            target_arch = comb[0]
-            target_module = comb[1]
-            rev_next_temp = _get_rev_next(target_os, index)
-
-            if is_base or rev_next_temp < rev_next:
-                target_os_next = target_os
-                target_arch_next = target_arch
-                target_module_next = target_module
-                rev_next = rev_next_temp
-                index_next = index
-
-            if is_base:
-                is_base = False
-
-    build_next = [target_os_next, target_arch_next, target_module_next, rev_next, index_next]
-    return build_next
+def _get_comb_name(*subs):
+    return get_comb_name('-', *subs)
 
 
-def _update_git_info_one(target_os):
-    global revs
-
-    dir_src = dir_project_webcatch_project + '/chromium-' + target_os + '/src'
-    rev_min = target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_MIN]
-    rev_max = target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_MAX]
-    rev_git = target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_GIT]
-    rev_hash = chromium_get_rev_hash(dir_src, max(rev_min, rev_git), rev_max)
-    revs_new = sorted(rev_hash.keys())
-    rev_git_new = revs_new[-1]
-    if rev_git_new > target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_GIT]:
-        target_os_info[target_os][TARGET_OS_INFO_INDEX_REV_GIT] = rev_git_new
-    revs.extend(revs_new)
+def _remotify_cmd(cmd):
+    return remotify_cmd(cmd=cmd, server=server_webcatch)
 
 
-def _update_git_info():
-    for target_os in target_os_info:
-        target_os_info[target_os][TARGET_OS_INFO_INDEX_TIME] = get_epoch_second()
-        _update_git_info_one(target_os)
+def _roundup(num):
+    return roundup(num, build_every)
+
+
+def _rounddown(num):
+    return rounddown(num, build_every)
+
+
+def _chromium_get_rev_max():
+    return chromium_get_rev_max(dir_chromium_src_main)
 # </internal>
 
 

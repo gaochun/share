@@ -11,6 +11,7 @@ logger = ''
 dir_root = ''
 dir_test = ''
 device = ''
+governor = ''
 
 
 class Format:
@@ -267,6 +268,7 @@ examples:
     parser.add_argument('--use-running-app', dest='use_running_app', help='use running app', action='store_true', default=False)
     parser.add_argument('--device', dest='device', help='device')
     parser.add_argument('--config', dest='config', help='config file to put in all the configurations')
+    parser.add_argument('--governor', dest='governor', help='governor', default='powersave')
 
     args = parser.parse_args()
 
@@ -276,7 +278,7 @@ examples:
 
 
 def setup():
-    global dir_root, dir_test, device, logger
+    global dir_root, dir_test, device, logger, governor
 
     dir_root = get_symbolic_link_dir()
     dir_test = dir_root + '/test'
@@ -307,7 +309,18 @@ def setup():
 
     logger = get_logger(name='webmark', dir_log=dir_root + '/log')
 
+    governor = args.governor
+
+    if governor != 'powersave':
+        android_set_governor(governor=governor, device=device)
+
+
+def teardown():
+    if governor != 'powersave':
+        android_set_governor(governor='powersave', device=device)
+
 if __name__ == '__main__':
     parse_arg()
     setup()
     WebMark()
+    teardown()

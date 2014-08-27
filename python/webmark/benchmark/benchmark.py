@@ -112,7 +112,7 @@ class Benchmark(object):
 
             results_average = []
             for i in range(count_result):
-                results_average.append(results_total[i] / count_results)
+                results_average.append(round(results_total[i] / count_results, 2))
 
             return 'Result: %s,%s,[%s]' % (self.name, self.version, ','.join(str(x) for x in results_average))
 

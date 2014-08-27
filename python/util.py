@@ -499,7 +499,7 @@ def adb(cmd, device=''):
     if device == '':
         device = '192.168.42.1:5555'
 
-    if device == None:
+    if device is None:
         return 'adb ' + cmd
     return 'adb -s ' + device + ' ' + cmd
 
@@ -805,10 +805,10 @@ def chromium_get_hash(dir_src, rev):
         error('Chromium src dir does not exist')
 
     backup_dir(dir_src)
-    rev_hash = _chromium_get_rev_hash(rev_min, rev_min, force=False)
+    rev_hash = _chromium_get_rev_hash(rev, rev, force=False)
     if not rev_hash:
         execute('git fetch', dryrun=True)
-        rev_hash = _chromium_get_rev_hash(rev_min, rev_min, force=False)
+        rev_hash = _chromium_get_rev_hash(rev, rev, force=False)
     restore_dir()
 
     if not rev_hash:

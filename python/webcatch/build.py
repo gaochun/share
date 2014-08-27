@@ -76,7 +76,7 @@ examples:
     parser.add_argument('--target-module', dest='target_module', help='target module', choices=target_module_all + ['all'], default='all')
     parser.add_argument('-r', '--rev', dest='rev', help='revisions to build. E.g., 233137, 217377-225138')
     parser.add_argument('--build', dest='build', help='build', action='store_true')
-    parser.add_argument('--build-every', dest='build_every', help='build every number', type=int, default=5)
+    parser.add_argument('--build-every', dest='build_every', help='build every number', type=int, default=10)
     parser.add_argument('--build-fail-max', dest='build_fail_max', help='maximum failure number of build', type=int, default=1)
     parser.add_argument('--keep-out', dest='keep_out', help='do not remove out dir after failure', action='store_true')
     parser.add_argument('--slave-only', dest='slave_only', help='only do things at slave machine, for sake of test', action='store_true')

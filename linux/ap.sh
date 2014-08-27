@@ -10,14 +10,14 @@
 
 nmcli nm wifi off
 rfkill unblock wlan
-
+EXTERNAL=eth2
 iptables -F
 iptables -X
 iptables -t nat -F
 iptables -t nat -X
-iptables -t nat -A POSTROUTING -s 192.168.0.0/8 -o eth0 -j MASQUERADE
-iptables -A FORWARD -s 192.168.0.0/8 -o eth0 -j ACCEPT
-iptables -A FORWARD -d 192.168.0.0/8 -m conntrack --ctstate ESTABLISHED,RELATED -i eth0 -j ACCEPT
+iptables -t nat -A POSTROUTING -s 192.168.0.0/8 -o $EXTERNAL -j MASQUERADE
+iptables -A FORWARD -s 192.168.0.0/8 -o $EXTERNAL -j ACCEPT
+iptables -A FORWARD -d 192.168.0.0/8 -m conntrack --ctstate ESTABLISHED,RELATED -i $EXTERNAL -j ACCEPT
 
 killall hostapd
 ifconfig wlan0 192.168.0.1

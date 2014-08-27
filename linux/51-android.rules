@@ -1,0 +1,17 @@
+#google vendor ID for ADB
+SUBSYSTEM=="usb",ATTRS{idVendor}=="18d1",ATTRS{idProduct}=="0001",MODE="0666"
+SUBSYSTEM=="usb",ATTRS{idVendor}=="18d1",ATTRS{idProduct}=="0002",MODE="0666"
+SUBSYSTEM=="usb",ATTRS{idVendor}=="18d1",ATTRS{idProduct}=="0002",MODE="0666",OWNER="root"
+SUBSYSTEM=="usb",ATTRS{idVendor}=="18d1",ATTRS{idProduct}=="4E22",MODE="0666",OWNER="root"
+SUBSYSTEM=="usb",ATTRS{idVendor}=="0bb4", ATTRS{idProduct}=="0c02", MODE="0666", SYMLINK+="android_adb"
+SUBSYSTEM=="usb",ATTRS{idVendor}=="0bb4", ATTRS{idProduct}=="0ffc", MODE="0666", SYMLINK+="android_adb"
+SUBSYSTEM=="usb",ATTRS{idVendor}=="0bb4", ATTRS{idProduct}=="0ffe", MODE="0666"
+
+SUBSYSTEM=="usb",ATTRS{idVendor}=="18d1",MODE="0666",OWNER="root"
+SUBSYSTEM=="usb",ATTRS{idVendor}=="0bb4",MODE="0666",OWNER="root"
+
+# Intel vendor ID for ADB
+SUBSYSTEM=="usb", ATTRS{idVendor}=="8087", MODE="0666"
+
+#intel vendor ID for SOC device
+SUBSYSTEM=="usb", ATTRS{idVendor}=="8086", MODE="0666"

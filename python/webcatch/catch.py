@@ -11,7 +11,7 @@ revs = []
 baseline = []
 comb_name = ''
 dir_download = ''
-
+report = {}
 ################################################################################
 
 
@@ -34,8 +34,9 @@ examples:
     parser.add_argument('--dir-chromium', dest='dir_chromium', help='chromium dir')
     parser.add_argument('-g', '--good-rev', dest='good_rev', type=int, help='small revision, which is good')
     parser.add_argument('-b', '--bad-rev', dest='bad_rev', type=int, help='big revision, which is bad')
-    parser.add_argument('--diff', dest='diff', type=int, help='percentage gap between good and bad', default=10)
+    parser.add_argument('--diff', dest='diff', type=int, help='percentage gap between good and bad', default=5)
     parser.add_argument('--bigger-better', dest='bigger_better', help='bigger is better', default=True)
+    parser.add_argument('--governor', dest='governor', help='governor', default='powersave')
 
     args = parser.parse_args()
 
@@ -45,15 +46,16 @@ examples:
 
 
 def setup():
-    global target_os, target_arch, target_module, comb_name, benchmark, dir_download
+    global target_os, target_arch, target_module, comb_name, benchmark, dir_download, revs
 
     target_os = args.target_os
     target_arch = args.target_arch
     target_module = args.target_module
     benchmark = args.benchmark
-    comb_name = get_comb_name(splitter='-', target_os, target_arch, target_module)
+    comb_name = get_comb_name('-', target_os, target_arch, target_module)
     dir_download = dir_webcatch + '/download/' + comb_name
     ensure_dir(dir_download)
+    ensure_dir(dir_webcatch_log)
 
     if args.good_rev:
         rev_min = args.good_rev
@@ -79,6 +81,7 @@ def setup():
 
 
 def bisect(index_good, index_bad, check_boundry=False):
+    global revs
     rev_good = revs[index_good]
     rev_bad = revs[index_bad]
 
@@ -89,7 +92,14 @@ def bisect(index_good, index_bad, check_boundry=False):
         if _is_good(rev_bad):
             error('Revision ' + str(rev_bad) + ' should not be good')
 
+    # finish the bisect
     if index_good + 1 == index_bad:
+        info('<history>')
+        for key in sorted(report):
+            print '%s, %s' % (key, report[key])
+
+        info('</history>')
+
         rev_good_final = revs[index_good]
         rev_bad_final = revs[index_bad]
 
@@ -109,7 +119,7 @@ def bisect(index_good, index_bad, check_boundry=False):
             rev_hash = chromium_get_rev_hash(dir_src, rev_good_final, rev_bad_final)
             revs = sorted(rev_hash.keys())
             for rev in revs:
-                execute('git show ' + rev_hash[rev] + ' >>' + suspect_log, show_cmd=False)
+                execute('git show ' + rev_hash[rev] + ' >>' + suspect_log, show_cmd=True)
             info('Check ' + suspect_log + ' for suspected checkins')
 
         else:
@@ -148,7 +158,7 @@ def _is_good(rev):
         if result[0]:
             error('Failed to download revision %s' % str(rev))
 
-    cmd = python_webmark + ' --target-os ' + target_os + ' --target-arch ' + target_arch + ' --target-module ' + target_module + ' --benchmark ' + benchmark
+    cmd = python_webmark + ' --governor ' + args.governor + ' --target-os ' + target_os + ' --target-arch ' + target_arch + ' --target-module ' + target_module + ' --benchmark ' + benchmark
     if args.benchmark_config:
         cmd += ' --benchmark-config ' + '\'' + args.benchmark_config + '\''
     cmd += ' --target-module-path %s/%s.apk' % (dir_download, str(rev))
@@ -170,7 +180,9 @@ def _is_good(rev):
                 result_show = 'bad'
                 break
 
-    info('Rev %s, %s, result [%s]' % (str(rev), result_show, ','.join([str(x) for x in results])))
+    result = ','.join([str(x) for x in results])
+    info('Rev %s, %s, result [%s]' % (str(rev), result_show, result))
+    report[rev] = [result_show, '[%s]' % result]
     if result_show == 'good':
         return True
     else:

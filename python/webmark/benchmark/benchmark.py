@@ -72,14 +72,15 @@ class Benchmark(object):
     def get_result_one(self, driver):
         return '0.0'
 
-    def get_result_periodic(self, driver, count=3, period=3):
+    def get_result_periodic(self, driver, count=5, period=3):
         result = 0.0
         for i in range(1, count + 1):
             time.sleep(period)
             result_one = self.get_result_one(driver)
+            info('Periodic result: ' + result_one)
             result += (float(result_one) - result) / i
 
-        return [round(result, 2)]
+        return [str(round(result, 2))]
 
     # Each specific benchmark only returns result in string format, we will convert them to float here.
     def run(self):
@@ -97,7 +98,7 @@ class Benchmark(object):
                     times_skip = times_skip - 1
                     continue
                 result = self.get_result(driver)
-                info('Single result: ' + ','.join(result))
+                info('Round result: ' + ','.join(result))
                 results.append([float(x) for x in result])
 
             count_results = len(results)

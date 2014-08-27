@@ -68,6 +68,7 @@ while not os.path.exists(dir_temp + '/.git'):
 dir_share = dir_temp
 dir_python = dir_share + '/python'
 dir_webcatch = dir_python + '/webcatch'
+dir_webcatch_log = dir_webcatch + '/log'
 dir_webmark = dir_python + '/webmark'
 dir_linux = dir_share + '/linux'
 dir_common = dir_share + '/common'
@@ -937,6 +938,18 @@ def android_start_emu(target_arch):
             time.sleep(20)
         else:
             time.sleep(60)
+
+
+def android_get_memory(pkg):
+    pass
+    #dumpsys meminfo |grep org.chromium.content_shell_apk:sandbo
+
+
+def android_set_governor(governor, device='192.168.42.1:5555'):
+    if device == '192.168.42.1:5555':
+        for i in range(4):
+            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_governor' % (governor, str(i))
+            execute_adb_shell(cmd=cmd, device=device)
 # </android>
 
 

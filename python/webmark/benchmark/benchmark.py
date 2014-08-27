@@ -10,8 +10,6 @@ from util import *
 class Benchmark(object):
     def __init__(self, driver, case):
         self.driver = driver
-        self.result = []
-        self.state = 0
 
         # handle states
         funcs = [func for func in dir(self) if callable(getattr(self, func))]
@@ -81,7 +79,7 @@ class Benchmark(object):
             result_one = self.get_result_one(driver)
             result += (float(result_one) - result) / i
 
-        return round(result, 2)
+        return [round(result, 2)]
 
     # Each specific benchmark only returns result in string format, we will convert them to float here.
     def run(self):
@@ -91,6 +89,8 @@ class Benchmark(object):
 
             results = []
             for i in range(times_run):
+                self.result = []
+                self.state = 0
                 driver.get(self.path)
                 WebDriverWait(driver, self.timeout, self.sleep).until(self._is_finished)
                 if times_skip > 0:

@@ -207,8 +207,15 @@ Host:
 # enable ip forwarding
 # echo 1 > /proc/sys/net/ipv4/ip_forward
 # configurate NAT
-INTERNAL=eth1 
-EXTERNAL=eth2
+
+ubuntu-ygu5-01:
+INTERNAL=eth0
+EXTERNAL=eth1
+
+ubuntu-ygu5-02:
+INTERNAL=eth3
+EXTERNAL=eth0
+
 sudo iptables -t nat -A POSTROUTING -o $EXTERNAL -j MASQUERADE
 sudo iptables -A FORWARD -i $EXTERNAL -o $INTERNAL -m state --state RELATED,ESTABLISHED -j ACCEPT
 sudo iptables -A FORWARD -i $INTERNAL -o $EXTERNAL -j ACCEPT

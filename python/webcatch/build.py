@@ -25,6 +25,7 @@ dir_patch = dir_webcatch + '/patch'
 rev_min = 0
 rev_max = 0
 build_fail = 0
+slave_only = False
 
 # (target_os, target_arch, target_module): [binary_format, rev_min_built, rev_max_built]
 comb_valid = {
@@ -88,9 +89,12 @@ examples:
 
 
 def setup():
-    global rev_min, rev_max, dir_chromium_src_main, combs, build_every, rev_expectfail
+    global rev_min, rev_max, dir_chromium_src_main, combs, build_every, rev_expectfail, slave_only
 
-    if not args.slave_only:
+    if args.slave_only:
+        slave_only = True
+
+    if not slave_only:
         for server in servers_webcatch:
             result = execute(remotify_cmd('ls ' + dir_server_chromium, server=server), show_cmd=False)
             if result[0]:
@@ -140,8 +144,9 @@ def setup():
         comb_name = _get_comb_name(target_os, target_arch, target_module)
         dir_comb_slave = dir_project_webcatch_out + '/' + comb_name
         ensure_dir(dir_comb_slave)
-        dir_comb_server = dir_server_chromium + '/' + comb_name
-        ensure_dir(dir_comb_server, server=server_webcatch)
+        if not slave_only:
+            dir_comb_server = dir_server_chromium + '/' + comb_name
+            ensure_dir(dir_comb_server, server=server_webcatch)
 
         if not target_os_main:
             target_os_main = target_os
@@ -200,7 +205,7 @@ def clean_lock():
         target_module = comb[COMB_INDEX_TARGET_MODULE]
         comb_name = _get_comb_name(target_os, target_arch, target_module)
 
-        if args.slave_only:
+        if slave_only:
             cmd = 'rm ' + dir_project_webcatch_out + '/' + comb_name + '/*.LOCK'
         else:
             cmd = _remotify_cmd('rm ' + dir_server_chromium + '/' + comb_name + '/*.LOCK')
@@ -460,13 +465,15 @@ def _build_one(comb_next):
     if rev in rev_expectfail:
         file_final = dir_comb + '/' + str(rev) + '.EXPECTFAIL'
         execute('touch ' + file_final)
-        _move_to_server(file_final, target_os, target_arch, target_module)
+        if not slave_only:
+            _move_to_server(file_final, target_os, target_arch, target_module)
         return 0
 
     if not chromium_get_hash(dir_chromium_src_main, rev):
         file_final = dir_comb + '/' + str(rev) + '.NULL'
         execute('touch ' + file_final)
-        _move_to_server(file_final, target_os, target_arch, target_module)
+        if not slave_only:
+            _move_to_server(file_final, target_os, target_arch, target_module)
         return 0
 
     info('Begin to build ' + comb_name + '@' + str(rev) + '...')
@@ -474,7 +481,7 @@ def _build_one(comb_next):
     file_log = dir_project_webcatch_log + '/' + comb_name + '@' + str(rev) + '.log'
 
     # lock
-    if not args.slave_only:
+    if not slave_only:
         file_lock = dir_server_chromium + '/' + comb_name + '/' + str(rev) + '.LOCK'
         execute(_remotify_cmd('touch ' + file_lock))
 
@@ -578,7 +585,7 @@ def _build_one(comb_next):
             file_final = dir_comb + '/' + str(rev) + '.tar.gz'
 
     # backup
-    if not args.slave_only:
+    if not slave_only:
         _move_to_server(file_final, target_os, target_arch, target_module)
         execute(_remotify_cmd('rm -f ' + file_lock))
 
@@ -610,14 +617,14 @@ def _rev_is_built(comb):
     comb_name = _get_comb_name(target_os, target_arch, target_module)
 
     # skip the rev marked as built
-    if not args.slave_only:
+    if not slave_only:
         comb_valid_rev_min = comb_valid[(target_os, target_arch, target_module)][COMB_VALID_INDEX_REV_MIN]
         comb_valid_rev_max = comb_valid[(target_os, target_arch, target_module)][COMB_VALID_INDEX_REV_MAX]
         if rev >= comb_valid_rev_min and rev <= comb_valid_rev_max:
             return True
 
     # check for slave_only
-    if args.slave_only:
+    if slave_only:
         cmd = 'ls ' + dir_project_webcatch_out + '/' + comb_name + '/' + str(rev) + '*'
         result = execute(cmd, show_cmd=False)
         if result[0] == 0:

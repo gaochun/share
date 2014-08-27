@@ -10,14 +10,29 @@ from util import *
 class Benchmark(object):
     def __init__(self, driver, case):
         self.driver = driver
+        self.result = []
         self.state = 0
+
+        # handle states
+        funcs = [func for func in dir(self) if callable(getattr(self, func))]
+        self.states = []
+        count = 0
+        pattern_cond = re.compile('cond(\d+)')
+        for func in funcs:
+            match = pattern_cond.match(func)
+            if match:
+                count_temp = int(match.group(1))
+                if count_temp > count:
+                    count = count_temp
+        for i in range(count + 1):
+            self.states.append([getattr(self, 'cond' + str(i)), getattr(self, 'act' + str(i))])
 
         # handle general members
         config = self.CONFIG
         members = {
             'name': '',
             'metric': 'fps',
-            'version': '',
+            'version': '1.0',
             'path_type': 'internal',
             'timeout': 90,
             'sleep': 3,
@@ -54,7 +69,7 @@ class Benchmark(object):
             self.__dict__[key] = 'file:///data/local/tmp/' + self.__dict__[key]
 
     def get_result(self, driver):
-        error('This get_result() should not be called')
+        return self.result
 
     def get_result_one(self, driver):
         return '0.0'
@@ -102,10 +117,10 @@ class Benchmark(object):
             return 'Result: %s,%s,[%s]' % (self.name, self.version, ','.join(str(x) for x in results_average))
 
     def _is_finished(self, driver):
-        if self.states[self.state][0](self, driver):
+        if self.states[self.state][0](driver):
             act = self.states[self.state][1]
             if act:
-                act(self, driver)
+                act(driver)
             self.state += 1
             if self.state == len(self.states):
                 return True

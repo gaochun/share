@@ -39,20 +39,12 @@ class octane(Benchmark):
             return False
 
     def act1(self, driver):
-        pass
-
-    states = [
-        [cond0, act0],
-        [cond1, None],
-    ]
-
-    def get_result(self, driver):
-        results = []
+        result = []
         pattern = re.compile('Octane Score: (\d+)')
         match = pattern.search(self.e.text)
-        results.append(match.group(1))
+        result.append(match.group(1))
 
         subs = driver.find_elements_by_class_name('p-result')
         for sub in subs:
-            results.append(sub.get_attribute('innerText'))
-        return results
+            result.append(sub.get_attribute('innerText'))
+        self.result = result

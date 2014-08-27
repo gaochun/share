@@ -84,47 +84,42 @@ class browsermark(Benchmark):
             return True
         return False
 
-    states = [
-        [cond0, act0],
-        [cond1, None],
-    ]
-
-    def get_result(self, driver):
-        results = []
+    def act1(self, driver):
+        result = []
         if self.version == '2.0' and self.path_type == 'external':
             scores = driver.find_elements_by_class_name('console-log')
             pattern = re.compile('.*: (\d+)')
             for score in scores:
                 match = re.search(pattern, score.get_attribute('innerText'))
                 if match:
-                    results.append(match.group(1))
+                    result.append(match.group(1))
         elif self.path_type == 'internal':
             if self.test != 'all':
-                results.append(driver.find_element_by_class_name('score').get_attribute('innerText'))
+                result.append(driver.find_element_by_class_name('score').get_attribute('innerText'))
             else:
                 score = driver.find_element_by_class_name('score').get_attribute('innerText')
                 scores_group = [x.get_attribute('innerText') for x in driver.find_elements_by_class_name('group_result_score')]
                 scores_test = [x.get_attribute('innerText') for x in driver.find_elements_by_class_name('test_result_score')]
                 # overall score
-                results.append(score)
+                result.append(score)
                 # CSS 2.1
-                results.append(scores_group[0])
+                result.append(scores_group[0])
                 for i in range(0, 4):
-                    results.append(scores_test[i])
+                    result.append(scores_test[i])
                 # DOM 2.1
-                results.append(scores_group[1])
+                result.append(scores_group[1])
                 for i in range(4, 8):
-                    results.append(scores_test[i])
+                    result.append(scores_test[i])
                 # GRAPHICS 2.1
-                results.append(scores_group[2])
+                result.append(scores_group[2])
                 for i in range(8, 11):
-                    results.append(scores_test[i])
+                    result.append(scores_test[i])
                 # JAVASCRIPT 2.1
-                results.append(scores_group[3])
+                result.append(scores_group[3])
                 for i in range(11, 15):
-                    results.append(scores_test[i])
+                    result.append(scores_test[i])
                 # SCALABLE SOLUTIONS 2.1
-                results.append(scores_group[4])
+                result.append(scores_group[4])
                 for i in range(15, 19):
-                    results.append(scores_test[i])
-        return results
+                    result.append(scores_test[i])
+        self.result = result

@@ -112,7 +112,6 @@ def chrome_android():
 def daemon():
     if device_connected():
         android_tap()
-    return ''
 
 
 def test_x64_aosp_build():
@@ -125,7 +124,7 @@ def _run_one(cb):
     if not os.path.exists(file_cb) or not has_recent_change(file_cb, interval=cb_interval[cb]):
         execute('touch ' + file_cb)
         cmd = globals()[cb]()
-        if cmd != '':
+        if cmd:
             cmd = 'python ' + dir_python + '/' + cmd + ' 2>&1 |tee ' + dir_server_log + '/' + cb + '.log'
             execute(cmd, interactive=True)
 

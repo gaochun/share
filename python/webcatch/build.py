@@ -1,5 +1,4 @@
 # TODO:
-# Update revs once all builds are finished for a rev, which would free some memory.
 # From 245002, may need to manually execute "gclient sync -f" with hook to check out gn related code.
 
 # Build speed
@@ -29,7 +28,7 @@ slave_only = False
 
 # (target_os, target_arch, target_module): [binary_format, rev_min_built, rev_max_built]
 comb_valid = {
-    ('android', 'x86', 'content_shell'): ['(.*).apk$', 233137, 233137],  # 250735
+    ('android', 'x86', 'content_shell'): ['(.*).apk$', 260368, 262170],
     ('android', 'x86_64', 'content_shell'): ['(.*).apk$', 233137, 278978],
     ('android', 'x86', 'webview'): ['(.*).apk$', 233137, 252136],
     ('linux', 'x86', 'chrome'): ['(.*).tar.gz$', 233137, 236088],
@@ -652,7 +651,7 @@ def _rev_is_built(comb):
 def _rev_is_built_one(cmd):
     for server in servers_webcatch:
         cmd_server = remotify_cmd(cmd, server=server)
-        result = execute(cmd_server, show_cmd=True)
+        result = execute(cmd_server, show_cmd=False)
         if result[0] == 0:
             return True
     return False

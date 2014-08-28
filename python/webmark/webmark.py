@@ -11,7 +11,7 @@ logger = ''
 dir_root = ''
 dir_test = ''
 device = ''
-governor = ''
+device_config = False
 
 
 class Format:
@@ -266,9 +266,12 @@ examples:
     parser.add_argument('--benchmark', dest='benchmark', help='benchmark', default='sunspider')
     parser.add_argument('--benchmark-config', dest='benchmark_config', help='benchmark config')
     parser.add_argument('--use-running-app', dest='use_running_app', help='use running app', action='store_true', default=False)
-    parser.add_argument('--device', dest='device', help='device')
     parser.add_argument('--config', dest='config', help='config file to put in all the configurations')
-    parser.add_argument('--governor', dest='governor', help='governor', default='powersave')
+
+    parser.add_argument('--device', dest='device', help='device')
+    parser.add_argument('--device-config', dest='device_config', help='need device config or not', action='store_true')
+    parser.add_argument('--governor', dest='governor', help='governor')
+    parser.add_argument('--freq', dest='freq', type=int, help='freq')
 
     args = parser.parse_args()
 
@@ -278,7 +281,8 @@ examples:
 
 
 def setup():
-    global dir_root, dir_test, device, logger, governor
+    global dir_root, dir_test, device, device_product, logger
+    global device_config
 
     dir_root = get_symbolic_link_dir()
     dir_test = dir_root + '/test'
@@ -292,8 +296,7 @@ def setup():
     time.sleep(1)
 
     unsetenv('http_proxy')
-
-    (devices, devices_name, devices_type, devices_target_arch, devices_mode) = setup_device()
+    (devices, devices_product, devices_type, devices_target_arch, devices_mode) = setup_device()
 
     if len(devices) == 0:
         warning('No device is connected')
@@ -307,17 +310,22 @@ def setup():
     else:
         device = devices[0]
 
+    device_product = devices_product[0]
+
     logger = get_logger(name='webmark', dir_log=dir_root + '/log')
 
-    governor = args.governor
+    if args.device_config:
+        device_config = True
 
-    if governor != 'powersave':
-        android_set_governor(governor=governor, device=device)
+    if device_config:
+        governor = args.governor
+        freq = args.freq
+        android_config_device(device=device, device_product=device_product, default=False, governor=governor, freq=freq)
 
 
 def teardown():
-    if governor != 'powersave':
-        android_set_governor(governor='powersave', device=device)
+    if device_config:
+        android_config_device(device=device, device_product=device_product, default=True)
 
 if __name__ == '__main__':
     parse_arg()

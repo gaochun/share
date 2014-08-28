@@ -27,7 +27,7 @@ sys.setdefaultencoding('utf-8')
 host_os = platform.system().lower()
 host_name = socket.gethostname()
 username = os.getenv('USER')
-number_cpu = str(multiprocessing.cpu_count() * 2)
+count_cpu = str(multiprocessing.cpu_count() * 2)
 args = argparse.Namespace()
 dir_stack = []
 timer = {}
@@ -57,6 +57,29 @@ target_arch_info = {
 TARGET_ARCH_INFO_INDEX_ABI = 0
 
 target_module_all = ['webview', 'chrome', 'content_shell', 'chrome_stable', 'chrome_beta', 'webview_shell', 'chrome_shell', 'stock_browser']
+
+# /sys/devices/system/cpu/cpu0/cpufreq
+device_product_info = {
+    'asus_t100': {
+        'governors': ['performance', 'powersave'],
+        'governor': 'powersave',
+        'freqs': [],
+        'freq_min': 400000,
+        'freq_max': 1400000,
+        'count_cpu': 4,
+        'scaling_driver': '',
+    },
+    # ZTE Geek
+    'V975': {
+        'governors': ['ondemand', 'userspace', 'interactive', 'performance'],
+        'governor': 'interactive',
+        'freqs': [2000000, 1866000, 1600000, 1333000, 933000, 800000],
+        'freq_min': 800000,
+        'freq_max': 2000000,
+        'count_cpu': 4,
+        'scaling_driver': 'sfi-cpufreq'
+    }
+}
 
 
 # <path>
@@ -405,10 +428,23 @@ def stop_prixoxy():
         execute('sudo killall privoxy')
 
 
-# Setup devices and their names
+# [device, device_product, device_type, device_mode, device_target_arch]
+# device: used to connect to it
+# device_product: from product:xxx
+# device_type: baytrail, generic
+# device_mode: system, fastboot
+# device_target_arch: x86, arm, etc.
+
+# Example:
+# T100: xxx, asus_t100, baytrail, system, x86
+# V975: xxx, V975, clovertrail, system, x86
+# Emulator: xxx, generic, arm
+
+# device_model: AOSP_on_Intel_Platform, ZTE_V975. This is unused.
+# device_product: get from device:xxx, asus_t100, redhookbay. This is unused.
 def setup_device(devices_limit=[]):
     devices = []
-    devices_name = []
+    devices_product = []
     devices_type = []
     devices_mode = []
     devices_target_arch = []
@@ -417,26 +453,14 @@ def setup_device(devices_limit=[]):
     cmd = 'fastboot devices -l'
     device_lines += commands.getoutput(cmd).split('\n')
 
-    pattern_system = re.compile('device:(.*)')
     pattern_fastboot = re.compile('(\S+)\s+fastboot')
     pattern_nofastboot = re.compile('fastboot: not found')
+    pattern_product = re.compile('product:(.*)')
     for device_line in device_lines:
         if re.match('List of devices attached', device_line):
             continue
         elif re.match('^\s*$', device_line):
             continue
-
-        match = pattern_system.search(device_line)
-        if match:
-            device = device_line.split(' ')[0]
-            devices.append(device)
-            device_name = match.group(1)
-            devices_name.append(device_name)
-            if re.search('192.168.42.1', device):
-                devices_type.append('baytrail')
-            elif re.search('emulator', device):
-                devices_type.append('generic')
-            devices_mode.append('system')
 
         match = pattern_nofastboot.search(device_line)
         if match:
@@ -446,26 +470,48 @@ def setup_device(devices_limit=[]):
         if match:
             device = match.group(1)
             devices.append(device)
-            devices_name.append('')
+            devices_product.append('')
             devices_type.append('')
             devices_mode.append('fastboot')
+            continue
 
+        # may contain more than one space
+        items = device_line.split()
+        for item in items:
+            match = pattern_product.search(item)
+            if match:
+                device_product = match.group(1)
+                devices_product.append(device_product)
+                break
+
+        device = items[0]
+        devices.append(device)
+        if re.search('asus_t100', device_product):
+            devices_type.append('baytrail')
+        elif re.search('V975', device_product):
+            devices_type.append('clovertrail')
+        elif re.search('sdk', device_product):
+            devices_type.append('generic')
+        devices_mode.append('system')
+
+    # filter out unnecessary
     if devices_limit:
         # This has to be reversed and deleted from end
         for index, device in reversed(list(enumerate(devices))):
             if device not in devices_limit:
                 del devices[index]
-                del devices_name[index]
+                del devices_product[index]
                 del devices_type[index]
                 del devices_mode[index]
 
+    # set up mode
     for index, device in enumerate(devices):
         if devices_mode[index] == 'fastboot':
             devices_target_arch = ''
         else:
             devices_target_arch.append(android_get_target_arch(device=device))
 
-    return (devices, devices_name, devices_type, devices_target_arch, devices_mode)
+    return (devices, devices_product, devices_type, devices_target_arch, devices_mode)
 
 
 def timer_start(tag):
@@ -507,10 +553,16 @@ def adb(cmd, device=''):
 
 # Execute a adb shell command and know the return value
 # adb shell would always return 0, so a trick has to be used here to get return value
-def execute_adb_shell(cmd, device=''):
-    cmd_adb = adb(cmd='shell "' + cmd + ' || echo FAIL"', device=device)
-    result = execute(cmd_adb, return_output=True, show_cmd=False)
+def execute_adb_shell(cmd, device='', su=False, abort=False, show_cmd=False):
+    cmd_adb = 'shell'
+    if su:
+        cmd_adb += ' su -c'
+    cmd_adb += ' "' + cmd + ' || echo FAIL"'
+    cmd_adb = adb(cmd=cmd_adb, device=device)
+    result = execute(cmd_adb, return_output=True, show_cmd=show_cmd)
     if re.search('FAIL', result[1].rstrip('\n')):
+        if abort:
+            error('Failed to execute ' + cmd_adb)
         return False
     else:
         return True
@@ -945,11 +997,46 @@ def android_get_memory(pkg):
     #dumpsys meminfo |grep org.chromium.content_shell_apk:sandbo
 
 
-def android_set_governor(governor, device='192.168.42.1:5555'):
-    if device == '192.168.42.1:5555':
-        for i in range(4):
+def android_config_device(device, device_product, default, governor='', freq=0):
+    count_cpu = device_product_info[device_product]['count_cpu']
+    freq_min = device_product_info[device_product]['freq_min']
+    freq_max = device_product_info[device_product]['freq_max']
+    governor_default = device_product_info[device_product]['governor']
+    if not default and (freq < freq_min or freq > freq_max):
+        error('The frequency is not in range')
+
+    if device_product == 'asus_t100':
+        su = False
+    elif device_product == 'V975':
+        su = True
+
+    for i in range(count_cpu):
+        if default:
+            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_governor' % (governor_default, str(i))
+            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
+            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_setspeed' % ('<unsupported>', str(i))
+            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
+            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_min_freq' % (freq_min, str(i))
+            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
+            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_max_freq' % (freq_max, str(i))
+            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
+            # fix to C0
+            for j in range(1, 7):
+                cmd = 'echo "0" > /sys/devices/system/cpu/cpu%s/cpuidle/state%s/disable' % (str(i), str(j))
+                execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
+        else:
+            #peeknpoke s w 0 670 0
             cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_governor' % (governor, str(i))
-            execute_adb_shell(cmd=cmd, device=device)
+            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
+            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_setspeed' % (freq, str(i))
+            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
+            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_min_freq' % (freq, str(i))
+            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
+            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_max_freq' % (freq, str(i))
+            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
+            for j in range(1, 7):
+                cmd = 'echo "1" > /sys/devices/system/cpu/cpu%s/cpuidle/state%s/disable' % (str(i), str(j))
+                execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
 # </android>
 
 

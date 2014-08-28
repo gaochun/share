@@ -25,7 +25,7 @@ target_archs = []
 target_devices_type = []
 target_modules = []
 devices = []
-devices_name = []
+devices_product = []
 devices_type = []
 devices_target_arch = []
 devices_mode = []
@@ -123,7 +123,7 @@ examples:
 
 def setup():
     global dir_root, dir_chromium, dir_out, dir_backup, target_archs, target_devices_type, target_modules, chromium_version
-    global devices, devices_name, devices_type, devices_target_arch, devices_mode, timestamp, use_upstream_chromium, patches_build
+    global devices, devices_product, devices_type, devices_target_arch, devices_mode, timestamp, use_upstream_chromium, patches_build
     global repo_type, repo_date, file_log, variant
     global product_brand, product_name
 
@@ -138,7 +138,7 @@ def setup():
     dir_out = dir_root + '/out'
     dir_backup = dir_root + '/backup'
 
-    (devices, devices_name, devices_type, devices_target_arch, devices_mode) = setup_device()
+    (devices, devices_product, devices_type, devices_target_arch, devices_mode) = setup_device()
 
     os.chdir(dir_root)
 

@@ -29,7 +29,7 @@ name_file = sys._getframe().f_code.co_filename
 file_log = ''
 
 devices = []
-devices_name = []
+devices_product = []
 devices_type = []
 devices_target_arch = []
 devices_mode = []
@@ -353,7 +353,7 @@ examples:
 def setup():
     global dir_root, dir_src, dir_out_build_type, dir_test, dir_test_timestamp
     global target_os, target_arch, target_module
-    global devices, devices_name, devices_type, devices_target_arch
+    global devices, devices_product, devices_type, devices_target_arch
     global file_log, timestamp, test_suite, build_type, rev, dir_patches, patches, test_filter, repo_type
     global ver, ver_type, chrome_android_soname, chrome_android_dir_server_root, chrome_android_file_readme, chrome_android_apk
 
@@ -440,7 +440,7 @@ def setup():
             devices_limit = []
 
         connect_device()
-        (devices, devices_name, devices_type, devices_target_arch, devices_mode) = setup_device(devices_limit=devices_limit)
+        (devices, devices_product, devices_type, devices_target_arch, devices_mode) = setup_device(devices_limit=devices_limit)
 
         _hack_app_process()
 
@@ -617,9 +617,7 @@ def prebuild(force=False):
             return
 
         dir_prebuilt = '%s/prebuilt-%s' % (dir_src, target_arch)
-        if not os.path.exists(dir_prebuilt):
-            os.mkdir(dir_prebuilt)
-
+        ensure_dir(dir_prebuilt)
         backup_dir(dir_prebuilt)
         cmd = 'wget -c -i http://storage.googleapis.com/chrome-browser-components/' + build_id + '/index.html'
         execute(cmd, interactive=True, abort=True)
@@ -720,7 +718,7 @@ def build(force=False):
     if need_makefile:
         makefile(force=True)
 
-    cmd_ninja = 'ninja -k' + str(build_fail_max) + ' -j' + number_cpu + ' -C ' + dir_out_build_type
+    cmd_ninja = 'ninja -k' + str(build_fail_max) + ' -j' + count_cpu + ' -C ' + dir_out_build_type
     if target_os == 'android' and target_module == 'webview':
         cmd_ninja += ' android_webview_apk libwebviewchromium'
     elif target_os == 'android' and target_module == 'content_shell':
@@ -1024,7 +1022,7 @@ def analyze():
 
 ########## Internal function begin ##########
 def _test_build_name(command, name):
-    cmd = 'ninja -j' + number_cpu + ' -C ' + dir_out_build_type + ' ' + name
+    cmd = 'ninja -j' + count_cpu + ' -C ' + dir_out_build_type + ' ' + name
     result = execute(cmd, interactive=True)
     if result[0]:
         return False
@@ -1036,14 +1034,14 @@ def _test_run_device(index_device, results):
     timer_start('test_run_' + str(index_device))
 
     device = devices[index_device]
-    device_name = devices_name[index_device]
+    device_product = devices_product[index_device]
     device_type = devices_type[index_device]
-    dir_test_device_name = dir_test_timestamp + '-' + device_name
+    dir_test_device_product = dir_test_timestamp + '-' + device_product
 
     connect_device(device=device)
 
-    if not os.path.exists(dir_test_device_name):
-        os.mkdir(dir_test_device_name)
+    if not os.path.exists(dir_test_device_product):
+        os.mkdir(dir_test_device_product)
 
     if not args.test_dryrun:
         # Ensure screen stays on
@@ -1135,7 +1133,7 @@ def _test_run_device(index_device, results):
                 cmd += ' -d ' + device + ' --' + build_type
                 if args.test_verbose:
                     cmd += ' -v'
-                cmd += ' 2>&1 | tee ' + dir_test_device_name + '/' + suite + '.log'
+                cmd += ' 2>&1 | tee ' + dir_test_device_product + '/' + suite + '.log'
                 result = execute(cmd, interactive=True)
                 if result[0]:
                     warning('Failed to run "' + suite + '"')
@@ -1145,7 +1143,7 @@ def _test_run_device(index_device, results):
     timer_stop('test_run_' + str(index_device))
     # Generate report
     html = _test_gen_report(index_device, results)
-    file_html = dir_test_device_name + '/report.html'
+    file_html = dir_test_device_product + '/report.html'
     file_report = open(file_html, 'w')
     file_report.write(html)
     file_report.close()
@@ -1153,7 +1151,7 @@ def _test_run_device(index_device, results):
     if args.test_formal:
         # Backup
         backup_dir(dir_test)
-        backup_smb('//wp-03.sh.intel.com/chromium-x64', 'test', timestamp + '-' + device_name)
+        backup_smb('//wp-03.sh.intel.com/chromium-x64', 'test', timestamp + '-' + device_product)
         restore_dir()
 
         # Send mail
@@ -1162,20 +1160,20 @@ def _test_run_device(index_device, results):
 
 def _test_sendmail(index_device, html):
     report_name = 'Chromium Tests Report'
-    device_name = devices_name[index_device]
+    device_product = devices_product[index_device]
     if args.test_to:
         to = args.test_to.split(',')
     else:
         to = 'webperf@intel.com'
 
-    send_mail('webperf@intel.com', to, report_name + '-' + timestamp + '-' + device_name, html, type='html')
+    send_mail('webperf@intel.com', to, report_name + '-' + timestamp + '-' + device_product, html, type='html')
 
 
 def _test_gen_report(index_device, results):
     device = devices[index_device]
-    device_name = devices_name[index_device]
+    device_product = devices_product[index_device]
     device_type = devices_type[index_device]
-    dir_test_device_name = dir_test_timestamp + '-' + device_name
+    dir_test_device_product = dir_test_timestamp + '-' + device_product
 
     html_start = '''
 <html>
@@ -1201,7 +1199,7 @@ def _test_gen_report(index_device, results):
           <h2 id="Environment">Environment</h2>
           <ul>
             <li>Chromium Revision: ''' + str(rev) + '''</li>
-            <li>Target Device: ''' + device_name + '''</li>
+            <li>Target Device: ''' + device_product + '''</li>
             <li>Target Image: ''' + android_get_info(key='ro.build.display.id', device=device) + '''</li>
             <li>Build Duration: ''' + timer_diff('build') + '''</li>
             <li>Test Build Duration: ''' + timer_diff('test_build') + '''</li>
@@ -1214,7 +1212,7 @@ def _test_gen_report(index_device, results):
     html_end = '''
           <h2>Log</h2>
           <ul>
-            <li>http://wp-03.sh.intel.com/chromium-x64/test/''' + timestamp + '-' + device_name + '''</li>
+            <li>http://wp-03.sh.intel.com/chromium-x64/test/''' + timestamp + '-' + device_product + '''</li>
           </ul>
         </div>
       </div>
@@ -1245,7 +1243,7 @@ def _test_gen_report(index_device, results):
 
         for index, suite in enumerate(test_suite[command]):
             bs = results[command][index]
-            suite_log = dir_test_device_name + '/' + suite + '.log'
+            suite_log = dir_test_device_product + '/' + suite + '.log'
             ut_all = '0'
             ut_pass = '0'
             ut_fail = '0'
@@ -1253,7 +1251,7 @@ def _test_gen_report(index_device, results):
             if bs == 'FAIL' or not os.path.exists(suite_log):
                 rs = 'FAIL'
             else:
-                ut_result = open(dir_test_device_name + '/' + suite + '.log', 'r')
+                ut_result = open(dir_test_device_product + '/' + suite + '.log', 'r')
                 lines = ut_result.readlines()
                 pattern_all = '\[==========\] (\d*) test'
                 pattern_pass = '\[  PASSED  \] (\d*) test'
@@ -1359,7 +1357,7 @@ def _run_gclient(cmd_type):
     cmd = 'gclient ' + cmd_type
     if cmd_type != 'runhooks' and cmd_type != 'fetch':
         cmd += ' -n'
-    cmd += ' -j' + number_cpu
+    cmd += ' -j' + count_cpu
 
     if repo_type == 'chrome-android' and cmd_type == 'runhooks' and ver_ge(ver_envsetup, ver):
         cmd = 'source src/build/android/envsetup.sh --target-arch=' + target_arch + ' && ' + cmd
@@ -1560,7 +1558,7 @@ def _update_phase(phase):
 
 # get one device for each target_arch
 def _get_target_arch_device():
-    (devices, devices_name, devices_type, devices_target_arch, devices_mode) = setup_device()
+    (devices, devices_product, devices_type, devices_target_arch, devices_mode) = setup_device()
     target_arch_device = {}
     for index, device in enumerate(devices):
         target_arch_temp = devices_target_arch[index]

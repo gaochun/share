@@ -7,7 +7,7 @@ am start content shell
 
 <useful>
 * svc power stayon usb // ensure screen on when charging
-
+* LD_LIBRARY_PATH=/workspace/tool/adt/sdk/tools/lib /workspace/tool/adt/sdk/tools/emulator64-x86 -avd x86 -no-audio
 
 </useful>
 

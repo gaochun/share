@@ -9,7 +9,8 @@ class guimark3compute(Benchmark):
             'external': 'http://www.craftymind.com/factory/guimark3/compute/GM3_JS_Compute.html',
             'internal': 'webbench/GUIMark3/compute/GM3_JS_Compute.html'
         },
-        'times_run': 3,
+        'times_run': 6,
+        'times_skip': 1,
     }
 
     def cond0(self, driver):

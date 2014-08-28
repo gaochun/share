@@ -118,8 +118,10 @@ def bisect(index_good, index_bad, check_boundry=False):
             suspect_log = dir_webcatch_log + '/suspect.log'
             rev_hash = chromium_get_rev_hash(dir_src, rev_good_final, rev_bad_final)
             revs = sorted(rev_hash.keys())
+            backup_dir(dir_src)
             for rev in revs:
                 execute('git show ' + rev_hash[rev] + ' >>' + suspect_log, show_cmd=True)
+            restore_dir()
             info('Check ' + suspect_log + ' for suspected checkins')
 
         else:

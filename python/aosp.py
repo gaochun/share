@@ -138,10 +138,6 @@ def setup():
     dir_out = dir_root + '/out'
     dir_backup = dir_root + '/backup'
 
-    if repo_type == 'stable':
-        connect_device()
-    (devices, devices_product, devices_type, devices_target_arch, devices_mode) = setup_device()
-
     os.chdir(dir_root)
 
     if not os.path.exists('.repo'):
@@ -152,6 +148,10 @@ def setup():
         (repo_type, repo_date) = _get_repo_info()
 
     info('repo type is ' + repo_type)
+
+    if repo_type == 'stable':
+        connect_device()
+    (devices, devices_product, devices_type, devices_target_arch, devices_mode) = setup_device()
 
     if args.time_fixed:
         timestamp = get_datetime(format='%Y%m%d')

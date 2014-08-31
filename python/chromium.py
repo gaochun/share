@@ -311,7 +311,7 @@ examples:
     group_basic.add_argument('--makefile', dest='makefile', help='generate makefile', action='store_true')
     group_basic.add_argument('--build', dest='build', help='build', action='store_true')
     group_basic.add_argument('--build-skip-mk', dest='build_skip_mk', help='skip the generation of makefile', action='store_true')
-    group_basic.add_argument('--build-fail-max', dest='build_fail_max', help='allow n build failures before it stops', type=int, default=0)
+    group_basic.add_argument('--build-fail-max', dest='build_fail_max', help='allow n build failures before it stops', type=int, default=1)
     group_basic.add_argument('--build-verbose', dest='build_verbose', help='output verbose info. Find log at out/Release/.ninja_log', action='store_true')
     group_basic.add_argument('--postbuild', dest='postbuild', help='postbuild', action='store_true')
     group_basic.add_argument('--verify', dest='verify', help='verify', action='store_true')

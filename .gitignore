@@ -1,4 +1,5 @@
 *.pyc
 python/webcatch/download
 python/webcatch/log
+python/webcatch/pause
 python/webmark/log

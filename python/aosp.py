@@ -138,6 +138,8 @@ def setup():
     dir_out = dir_root + '/out'
     dir_backup = dir_root + '/backup'
 
+    if repo_type == 'stable':
+        connect_device()
     (devices, devices_product, devices_type, devices_target_arch, devices_mode) = setup_device()
 
     os.chdir(dir_root)
@@ -395,9 +397,6 @@ def flash_image():
 
     if len(target_devices_type) > 1 or target_devices_type[0] != 'baytrail':
         error('Only baytrail can burn the image')
-
-    if repo_type == 'stable':
-        connect_device()
 
     if len(devices) < 1:
         error('You must have device connected')

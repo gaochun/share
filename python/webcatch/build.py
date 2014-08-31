@@ -50,9 +50,10 @@ expectfail = [
     233707, 236662, 234213, 234223, 234517, 234689, [235193, 235195], 237586,
     241661, 241848,
     [260605, 260606],  # roll angle
-    [262675, 262701],  # Because of v8 error
+    [262675, 262701],  # v8 error
     [275269, 275271],  # pdfium build
     [264517, 264545],  # accidental dartium code push
+    [284080, 284249],  # warning: shared library text segment is not shareable for ld.gold, and warning is treated as error. We may fix this if needed using linker option.
 ]
 
 rev_expectfail = []

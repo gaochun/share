@@ -922,6 +922,17 @@ def get_logger(name, dir_log, level=logging.DEBUG):
     return logger
 
 
+def pause_resume(seconds=5):
+    info('You have ' + str(seconds) + ' seconds to type "enter" to pause')
+    i, o, e = select.select([sys.stdin], [], [], seconds)
+    if i:
+        info('Please type "r" to resume')
+        while True:
+            input = raw_input()
+            if input == 'r':
+                break
+
+
 # <android>
 def android_unlock_screen(device=''):
     execute(adb(cmd='shell input keyevent 82', device=device))

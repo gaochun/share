@@ -52,6 +52,7 @@ expectfail = [
     [260605, 260606],  # roll angle
     [262675, 262701],  # Because of v8 error
     [275269, 275271],  # pdfium build
+    [264517, 264545],  # accidental dartium code push
 ]
 
 rev_expectfail = []
@@ -447,15 +448,14 @@ def _build(comb_next):
     if comb_next[COMB_INDEX_REV] > rev_max:
         return
 
-    seconds = 5
-    info('You have ' + str(seconds) + ' seconds to type "enter" to pause')
-    i, o, e = select.select([sys.stdin], [], [], seconds)
-    if i:
-        info('Please type "r" to resume')
+    if os.path.exists(dir_webcatch + '/pause'):
+        info('Please type "r" to resume, type "q" to quit')
         while True:
             input = raw_input()
             if input == 'r':
                 break
+            elif input == 'q':
+                exit(0)
 
 
 def _build_one(comb_next):
@@ -551,8 +551,8 @@ def _build_one(comb_next):
             execute('touch ' + file_final)
         else:
             os.mkdir(dir_test)
-            config_file = dir_repo + '/src/chrome/tools/build/' + target_os + '/FILES.cfg'
-            file = open(config_file)
+            file_config = dir_repo + '/src/chrome/tools/build/' + target_os + '/FILES.cfg'
+            file = open(file_config)
             lines = file.readlines()
             file.close()
             pattern = re.compile("'filename': '(.*)'")

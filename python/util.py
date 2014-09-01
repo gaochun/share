@@ -859,7 +859,7 @@ def chromium_get_rev_max(dir_src):
         error('Chromium src dir does not exist')
 
     backup_dir(dir_src)
-    execute('git fetch', dryrun=True)
+    execute('git fetch', dryrun=False)
     rev_hash = _chromium_get_rev_hash(chromium_rev_max)
     restore_dir()
     return rev_hash.keys()[0]
@@ -873,7 +873,7 @@ def chromium_get_hash(dir_src, rev):
     backup_dir(dir_src)
     rev_hash = _chromium_get_rev_hash(rev, rev, force=False)
     if not rev_hash:
-        execute('git fetch', dryrun=True)
+        execute('git fetch', dryrun=False)
         rev_hash = _chromium_get_rev_hash(rev, rev, force=False)
     restore_dir()
 
@@ -903,7 +903,7 @@ def chromium_get_rev_hash(dir_src, rev_min, *rev_extra):
     else:
         rev_hash = _chromium_get_rev_hash(rev_min, rev_max, force=False)
     if not rev_hash:
-        execute('git fetch', dryrun=True)
+        execute('git fetch', dryrun=False)
         rev_hash = _chromium_get_rev_hash(rev_min, rev_max, force=True)
     restore_dir()
 

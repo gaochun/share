@@ -1028,7 +1028,7 @@ def analyze():
     if not args.analyze:
         return
 
-    analyze_issue(dir_chromium=dir_root, arch='x86_64', date=20140624)
+    analyze_issue(dir_chromium=dir_root, date=20140624)
 
 
 ########## Internal function begin ##########

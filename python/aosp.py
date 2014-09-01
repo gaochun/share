@@ -584,7 +584,7 @@ def analyze():
 
     arch = target_archs[0]
     connect_device()
-    analyze_issue(dir_aosp=dir_root, arch=arch, type=args.analyze, date=repo_date)
+    analyze_issue(dir_aosp=dir_root, type=args.analyze, date=repo_date)
 
 
 def push():

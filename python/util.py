@@ -623,18 +623,19 @@ def connect_device(device='', mode='system'):
         return device_connected(device, mode)
 
 
-def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android', arch='x86_64', device='', type='tombstone', date=20140101):
+def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android', device='', type='tombstone', date=20140101):
     if device == '' or device == '192.168.42.1:5555':
         device_type = 'baytrail'
-    product = get_product(arch, device_type, date)
-    if arch == 'x86_64':
-        arch_str = '64'
+    target_arch = android_get_target_arch(device=device)
+    product = get_product(target_arch, device_type, date)
+    if target_arch == 'x86_64':
+        target_arch_str = '64'
     else:
-        arch_str = ''
+        target_arch_str = ''
 
     dirs = [
-        dir_aosp + '/out/target/product/%s/symbols/system/lib%s' % (product, arch_str),
-        dir_chromium + '/src/out-%s/out/Release/lib' % arch,
+        dir_aosp + '/out/target/product/%s/symbols/system/lib%s' % (product, target_arch_str),
+        dir_chromium + '/src/out-%s/out/Release/lib' % target_arch,
     ]
 
     connect_device(device=device)

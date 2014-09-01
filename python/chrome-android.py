@@ -20,6 +20,7 @@ dir_log = dir_root + '/log'
 vers = []
 ver_types = []
 target_archs = []
+run_act = 0
 
 ACT_DOWNLOAD = 1 << 0
 ACT_FILE = 1 << 1
@@ -39,6 +40,7 @@ examples:
   python %(prog)s --ver 36.0.1985.81 --ver-type stable --target-arch x86
 ''')
     parser.add_argument('--run', dest='run', help='run', action='store_true')
+    parser.add_argument('--run-act', dest='run_act', help='run act', type=int, default=ACT_ALL)
     parser.add_argument('--check', dest='check', help='check if there is new apk', action='store_true')
     parser.add_argument('--download', dest='download', help='download apk from google play', action='store_true')
     parser.add_argument('--download_type', dest='download_type', help='version type to download', default='all')
@@ -57,7 +59,7 @@ examples:
 
 
 def setup():
-    global vers, ver_types, target_archs
+    global vers, ver_types, target_archs, run_act
 
     if not os.path.exists(dir_log):
         os.mkdir(dir_log)
@@ -80,6 +82,7 @@ def setup():
     ensure_dir(dir_server_chrome_android_todo)
     set_path()
     set_proxy()
+    run_act = args.run_act
 
 
 def run(force=False, act=ACT_ALL):
@@ -164,7 +167,7 @@ def check(force=False):
     vers_all = pattern.findall(html)
     combos_all = []
     for ver in vers_all:
-        if not ver_ge(ver, '33.0.1750.132'):
+        if ver_cmp(ver, '33.0.1750.132') < 0:
             continue
         for target_arch in target_arch_chrome_android:
             combos_all.append((target_arch, ver))
@@ -284,7 +287,7 @@ def _handle_todo_dir():
 if __name__ == "__main__":
     parse_arg()
     setup()
-    run()
+    run(act=run_act)
     check()
     download()
     backup()

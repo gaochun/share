@@ -759,20 +759,22 @@ def ensure_package(packages):
             error('You need to install package: ' + package)
 
 
-# return True if ver_a is greater or equal to ver_b
 # ver is in format a.b.c.d
-def ver_ge(ver_a, ver_b):
+# return 1 if ver_a > ver_b
+# return 0 if ver_a == ver_b
+# return -1 if ver_a < ver_b
+def ver_cmp(ver_a, ver_b):
     vers_a = [int(x) for x in ver_a.split('.')]
     vers_b = [int(x) for x in ver_b.split('.')]
 
     index = 0
     while index < len(vers_a):
         if vers_a[index] > vers_b[index]:
-            return True
+            return 1
         elif vers_a[index] < vers_b[index]:
-            return False
+            return -1
         index += 1
-    return True
+    return 0
 
 
 def singleton(lock):

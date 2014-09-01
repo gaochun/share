@@ -477,7 +477,7 @@ def setup():
             if not getenv('ANDROID_SDK_ROOT'):
                 error('Environment is not well set')
 
-        if repo_type != 'chrome-android' and rev < rev_gyp_defines or repo_type == 'chrome-android' and not args.chrome_android_apk and ver_ge(ver_gyp_defines, ver):
+        if repo_type != 'chrome-android' and rev < rev_gyp_defines or repo_type == 'chrome-android' and not args.chrome_android_apk and ver_cmp(ver, ver_gyp_defines) < 0:
             setenv('GYP_DEFINES', 'werror= disable_nacl=1 enable_svg=0')
         else:
             setenv('GYP_DEFINES', 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os)
@@ -537,8 +537,9 @@ def init(force=False):
         return
 
     if repo_type == 'chrome-android':
-        execute('gclient config https://src.chromium.org/chrome/releases/' + ver, abort=True)
-        execute('echo "target_os = [\'android\']" >> .gclient', abort=True)
+        if ver_cmp(ver, '37.0.2062.117') < 0:
+            execute('gclient config https://src.chromium.org/chrome/releases/' + ver, abort=True)
+            execute('echo "target_os = [\'android\']" >> .gclient', abort=True)
         _update_phase(get_caller_name())
 
 
@@ -560,29 +561,37 @@ def sync(force=False):
     if not args.sync and not force:
         return
 
-    # Judge if the repo is managed or not
-    managed = False
-    f = open('.gclient')
-    lines = f.readlines()
-    f.close()
-    pattern = re.compile('managed.*(True|False)')
-    for line in lines:
-        match = pattern.search(line)
-        if match and match.group(1) == 'True':
-                managed = True
+    if repo_type == 'chrome-android' and ver_cmp(ver, '37.0.2062.117') >= 0:
+        if not os.path.exists(dir_src):
+            backup_dir(dir_project_chrome_android + '/chromium-android/src')
+            execute('git checkout -f master && git pull && gclient sync -f -n -j16 && git fetch --tags', interactive=True, abort=True)
+            execute('git checkout -B cr-%s tags/%s && gclient sync --with_branch_heads -j16 -n' % (ver, ver), interactive=True, abort=True)
+            restore_dir()
+            execute('cp -rf %s/chromium-android/* %s' % (dir_project_chrome_android, dir_root), interactive=True, abort=True)
+    else:
+        # Judge if the repo is managed or not
+        managed = False
+        f = open('.gclient')
+        lines = f.readlines()
+        f.close()
+        pattern = re.compile('managed.*(True|False)')
+        for line in lines:
+            match = pattern.search(line)
+            if match and match.group(1) == 'True':
+                    managed = True
 
-    if not managed:
-        backup_dir(dir_src)
-        execute('git pull --rebase origin master')
-        restore_dir()
+        if not managed:
+            backup_dir(dir_src)
+            execute('git pull --rebase origin master')
+            restore_dir()
 
-    cmd_type = 'sync'
-    if rev != chromium_rev_max:
-        hash_temp = chromium_get_rev_hash(dir_src, rev)
-        if not hash_temp:
-            error('Could not find hash for rev ' + str(rev))
-        cmd_type += ' --revision src@' + hash_temp
-    _run_gclient(cmd_type)
+        cmd_type = 'sync'
+        if rev != chromium_rev_max:
+            hash_temp = chromium_get_rev_hash(dir_src, rev)
+            if not hash_temp:
+                error('Could not find hash for rev ' + str(rev))
+            cmd_type += ' --revision src@' + hash_temp
+        _run_gclient(cmd_type)
 
     if repo_type == 'chrome-android':
         _update_phase(get_caller_name())
@@ -654,7 +663,7 @@ def makefile(force=False):
             # gyp file must be in src dir, and contained in one level of directory
 
             cmd = 'GYP_DEFINES="%s libpeer_target_type=loadable_module host_os=linux" CHROMIUM_GYP_FILE="prebuilt-%s/%s_target.gyp"' % (getenv('GYP_DEFINES'), target_arch, chrome_android_soname) + ' build/gyp_chromium -Dtarget_arch='
-            if ver_ge(ver_no_android_gyp, ver):
+            if ver_cmp(ver, ver_no_android_gyp) < 0:
                 cmd += target_arch
             else:
                 cmd += target_arch_temp
@@ -1359,7 +1368,7 @@ def _run_gclient(cmd_type):
         cmd += ' -n'
     cmd += ' -j' + count_cpu
 
-    if repo_type == 'chrome-android' and cmd_type == 'runhooks' and ver_ge(ver_envsetup, ver):
+    if repo_type == 'chrome-android' and cmd_type == 'runhooks' and ver_cmp(ver, ver_envsetup) < 0:
         cmd = 'source src/build/android/envsetup.sh --target-arch=' + target_arch + ' && ' + cmd
 
     if re.search('source', cmd):

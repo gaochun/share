@@ -28,7 +28,7 @@ slave_only = False
 
 # (target_os, target_arch, target_module): [binary_format, rev_min_built, rev_max_built]
 comb_valid = {
-    ('android', 'x86', 'content_shell'): ['(.*).apk$', 260368, 262600],
+    ('android', 'x86', 'content_shell'): ['(.*).apk$', 260368, 271340],
     ('android', 'x86_64', 'content_shell'): ['(.*).apk$', 233137, 278978],
     ('android', 'x86', 'webview'): ['(.*).apk$', 233137, 252136],
     ('linux', 'x86', 'chrome'): ['(.*).tar.gz$', 233137, 236088],
@@ -51,8 +51,8 @@ expectfail = [
     241661, 241848,
     [260605, 260606],  # roll angle
     [262675, 262701],  # v8 error
-    [275269, 275271],  # pdfium build
     [264517, 264545],  # accidental dartium code push
+    [275269, 275271],  # pdfium build
     [284080, 284249],  # warning: shared library text segment is not shareable for ld.gold, and warning is treated as error. We may fix this if needed using linker option.
 ]
 
@@ -445,18 +445,19 @@ def _build(comb_next):
     else:
         build_fail = 0
 
-    # Allow pause
+    # no need to pause
     if comb_next[COMB_INDEX_REV] > rev_max:
         return
 
-    if os.path.exists(dir_webcatch + '/pause'):
-        info('Please type "r" to resume, type "q" to quit')
+    file_pause = dir_webcatch + '/pause'
+    if os.path.exists(file_pause):
+        info('Paused, and please remove pause file to continue')
         while True:
-            input = raw_input()
-            if input == 'r':
+            time.sleep(1)
+            if os.path.exists(file_pause):
+                continue
+            else:
                 break
-            elif input == 'q':
-                exit(0)
 
 
 def _build_one(comb_next):

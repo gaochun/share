@@ -67,7 +67,7 @@ device_product_info = {
         'freq_min': 400000,
         'freq_max': 1400000,
         'count_cpu': 4,
-        'scaling_driver': '',
+        'scaling_driver': 'intel_pstate',
     },
     # ZTE Geek
     'V975': {
@@ -78,6 +78,15 @@ device_product_info = {
         'freq_max': 2000000,
         'count_cpu': 4,
         'scaling_driver': 'sfi-cpufreq'
+    },
+    'cruise7': {
+        'governors': ['performance', 'powersave'],
+        'governor': 'powersave',
+        'freqs': [],
+        'freq_min': 600000,
+        'freq_max': 2200000,
+        'count_cpu': 4,
+        'scaling_driver': 'intel_pstate'
     }
 }
 
@@ -1019,38 +1028,40 @@ def android_config_device(device, device_product, default, governor='', freq=0):
     if not default and (freq < freq_min or freq > freq_max):
         error('The frequency is not in range')
 
-    if device_product == 'asus_t100':
-        su = False
-    elif device_product == 'V975':
-        su = True
-
+    cmds = []
     for i in range(count_cpu):
         if default:
-            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_governor' % (governor_default, str(i))
-            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
-            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_setspeed' % ('<unsupported>', str(i))
-            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
-            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_min_freq' % (freq_min, str(i))
-            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
-            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_max_freq' % (freq_max, str(i))
-            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
-            # fix to C0
+            cmds.append('echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_governor' % (governor_default, str(i)))
+            #cmds.append('echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_setspeed' % ('<unsupported>', str(i)))
+            cmds.append('echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_min_freq' % (freq_min, str(i)))
+            cmds.append('echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_max_freq' % (freq_max, str(i)))
             for j in range(1, 7):
-                cmd = 'echo "0" > /sys/devices/system/cpu/cpu%s/cpuidle/state%s/disable' % (str(i), str(j))
-                execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
+                cmds.append('echo "0" > /sys/devices/system/cpu/cpu%s/cpuidle/state%s/disable' % (str(i), str(j)))
         else:
             #peeknpoke s w 0 670 0
-            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_governor' % (governor, str(i))
-            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
-            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_setspeed' % (freq, str(i))
-            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
-            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_min_freq' % (freq, str(i))
-            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
-            cmd = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_max_freq' % (freq, str(i))
-            execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
+            cmds.append('echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_governor' % (governor, str(i)))
+            #cmds.append('echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_setspeed' % (freq, str(i)))
+
+            # special handle to avoid error during setting if freq < freq_min_old or freq > freq_max_old
+            cmd_min = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_min_freq' % (freq, str(i))
+            cmd_max = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_max_freq' % (freq, str(i))
+            result = execute(adb(cmd='shell cat /sys/devices/system/cpu/cpu%s/cpufreq/scaling_min_freq' % str(i), device=device), return_output=True, show_cmd=False)
+            freq_min_old = int(result[1])
+            if freq < freq_min_old:
+                cmds.append(cmd_min)
+                cmds.append(cmd_max)
+            else:
+                cmds.append(cmd_max)
+                cmds.append(cmd_min)
+            # fix to C0
             for j in range(1, 7):
-                cmd = 'echo "1" > /sys/devices/system/cpu/cpu%s/cpuidle/state%s/disable' % (str(i), str(j))
-                execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
+                cmds.append('echo "1" > /sys/devices/system/cpu/cpu%s/cpuidle/state%s/disable' % (str(i), str(j)))
+
+    su = False
+    if device_product == 'V975':
+        su = True
+    for cmd in cmds:
+        execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
 # </android>
 
 

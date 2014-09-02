@@ -20,6 +20,7 @@ from util import *
 # set automatic login
 
 interval_cron = 20  # minutes
+file_lock = dir_server + '/lock'
 
 cb_interval = {
     'update_share': 1800,
@@ -49,6 +50,9 @@ examples:
 
 
 def setup():
+    if os.path.exists(file_lock):
+        info('Server is running')
+        exit(0)
     ensure_dir(dir_server_log)
     setenv('DISPLAY', ':0')
     set_path()
@@ -101,6 +105,10 @@ def update_share():
     restore_dir()
 
 
+def teardown():
+    execute('rm -f %s' % file_server)
+
+
 def test_x64_all():
     return 'test-x64.py --target-arch x86_64,x86'
 
@@ -131,9 +139,8 @@ def _run_one(cb):
 
 if __name__ == '__main__':
     _run_one('daemon')
-    lock = open(os.path.realpath(__file__), 'r')
-    singleton(lock)
     parse_arg()
     setup()
     cron()
     start()
+    teardown()

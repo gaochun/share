@@ -489,7 +489,7 @@ def _build_one(comb_next):
         execute(_remotify_cmd('touch ' + file_lock))
 
     # sync
-    cmd_sync = python_chromium + ' --sync --dir-root ' + dir_repo + ' --rev ' + str(rev)
+    cmd_sync = python_chromium + ' --sync --sync-reset --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_sync, dryrun=DRYRUN, interactive=True)
     if result[0]:
         cmd = python_chromium + ' --revert --dir-root ' + dir_repo

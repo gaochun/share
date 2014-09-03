@@ -298,6 +298,7 @@ examples:
     group_gclient = parser.add_argument_group('gclient')
     group_gclient.add_argument('--revert', dest='revert', help='revert', action='store_true')
     group_gclient.add_argument('--fetch', dest='fetch', help='fetch', action='store_true')
+    group_gclient.add_argument('--cleanup', dest='cleanup', help='cleanup', action='store_true')
     group_gclient.add_argument('--sync', dest='sync', help='sync', action='store_true')
     group_gclient.add_argument('--sync-upstream', dest='sync_upstream', help='sync with upstream latest', action='store_true')
     group_gclient.add_argument('--runhooks', dest='runhooks', help='runhooks', action='store_true')
@@ -555,6 +556,13 @@ def fetch(force=False):
         return
 
     _run_gclient('fetch')
+
+
+def cleanup(force=False):
+    if not args.cleanup and not force:
+        return
+
+    _run_gclient('cleanup')
 
 
 def sync(force=False):
@@ -1595,6 +1603,7 @@ if __name__ == '__main__':
     # gclient
     revert()
     fetch()
+    cleanup()
     sync()
     runhooks()
     # basic

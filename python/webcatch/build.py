@@ -492,9 +492,16 @@ def _build_one(comb_next):
     cmd_sync = python_chromium + ' --sync --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_sync, dryrun=DRYRUN, interactive=True)
     if result[0]:
-        execute(_remotify_cmd('rm -f ' + file_lock))
-        send_mail('webcatch@intel.com', 'yang.gu@intel.com', '[webcatch] Failed to sync at ' + host_name, '')
-        error('Sync failed', error_code=result[0])
+        cmd = python_chromium + ' --revert --dir-root ' + dir_repo
+        result = execute(cmd, dryrun=DRYRUN, interactive=True)
+        if result[0]:
+            send_mail('webcatch@intel.com', 'yang.gu@intel.com', '[webcatch] Failed to revert at ' + host_name, '')
+            error('Revert failed', error_code=result[0])
+        result = execute(cmd_sync, dryrun=DRYRUN, interactive=True)
+        if result[0]:
+            execute(_remotify_cmd('rm -f ' + file_lock))
+            send_mail('webcatch@intel.com', 'yang.gu@intel.com', '[webcatch] Failed to sync at ' + host_name, '')
+            error('Sync failed', error_code=result[0])
 
     _patch_after_sync(target_os, target_arch, target_module, rev)
 

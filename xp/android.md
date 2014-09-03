@@ -156,6 +156,10 @@ adb shell am start -n com.chrome.beta/com.chrome.beta.Main -d "chrome://version"
 * content shell
 adb shell am start -n org.chromium.content_shell/.ContentShellApplication -d "about:version"
 
+* self-build chrome
+adb shell am start -n com.android.chromium/com.google.android.apps.chrome.Main -d "chrome://version"
+
+
 * security setting
 am start -n com.android.settings/.SecuritySettings
 

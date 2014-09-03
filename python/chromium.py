@@ -300,6 +300,7 @@ examples:
     group_gclient.add_argument('--fetch', dest='fetch', help='fetch', action='store_true')
     group_gclient.add_argument('--cleanup', dest='cleanup', help='cleanup', action='store_true')
     group_gclient.add_argument('--sync', dest='sync', help='sync', action='store_true')
+    group_gclient.add_argument('--sync-reset', dest='sync_reset', help='sync reset', action='store_true')
     group_gclient.add_argument('--sync-upstream', dest='sync_upstream', help='sync with upstream latest', action='store_true')
     group_gclient.add_argument('--runhooks', dest='runhooks', help='runhooks', action='store_true')
 
@@ -544,11 +545,11 @@ def init(force=False):
         _update_phase(get_caller_name())
 
 
-def revert(force=False):
-    if not args.revert and not force:
+def cleanup(force=False):
+    if not args.cleanup and not force:
         return
 
-    _run_gclient('revert')
+    _run_gclient('cleanup')
 
 
 def fetch(force=False):
@@ -558,11 +559,21 @@ def fetch(force=False):
     _run_gclient('fetch')
 
 
-def cleanup(force=False):
-    if not args.cleanup and not force:
+def revert(force=False):
+    if not args.revert and not force:
         return
 
-    _run_gclient('cleanup')
+    _run_gclient('revert')
+
+
+def runhooks(force=False):
+    if not args.runhooks and not force:
+        return
+
+    _run_gclient('runhooks')
+
+    if repo_type == 'chrome-android':
+        _update_phase(get_caller_name())
 
 
 def sync(force=False):
@@ -595,23 +606,13 @@ def sync(force=False):
             execute('git pull --rebase origin master')
             restore_dir()
 
-        cmd_type = 'sync'
+        cmd_extra = ''
         if rev != chromium_rev_max:
             hash_temp = chromium_get_rev_hash(dir_src, rev)
             if not hash_temp:
                 error('Could not find hash for rev ' + str(rev))
-            cmd_type += ' --revision src@' + hash_temp
-        _run_gclient(cmd_type)
-
-    if repo_type == 'chrome-android':
-        _update_phase(get_caller_name())
-
-
-def runhooks(force=False):
-    if not args.runhooks and not force:
-        return
-
-    _run_gclient('runhooks')
+            cmd_extra = '--revision src@' + hash_temp
+        _run_gclient(cmd_type='sync', cmd_extra=cmd_extra)
 
     if repo_type == 'chrome-android':
         _update_phase(get_caller_name())
@@ -1372,10 +1373,16 @@ def _setup_list(var):
     return list_temp
 
 
-def _run_gclient(cmd_type):
+# cleanup, fetch, revert, runhooks, sync
+def _run_gclient(cmd_type, cmd_extra=''):
     cmd = 'gclient ' + cmd_type
-    if cmd_type != 'runhooks' and cmd_type != 'fetch':
+    if cmd_extra:
+        cmd += ' ' + cmd_extra
+    if cmd_type == 'revert' or cmd_type == 'sync':
         cmd += ' -n'
+
+    if cmd_type == 'sync' and args.sync_reset:
+        cmd += ' -R'
     cmd += ' -j' + count_cpu
 
     if repo_type == 'chrome-android' and cmd_type == 'runhooks' and ver_cmp(ver, ver_envsetup) < 0:

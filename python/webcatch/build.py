@@ -28,7 +28,7 @@ slave_only = False
 
 # (target_os, target_arch, target_module): [binary_format, rev_min_built, rev_max_built]
 comb_valid = {
-    ('android', 'x86', 'content_shell'): ['(.*).apk$', 260368, 272200],
+    ('android', 'x86', 'content_shell'): ['(.*).apk$', 260368, 272770],
     ('android', 'x86_64', 'content_shell'): ['(.*).apk$', 260368, 290084],
     ('android', 'x86', 'webview'): ['(.*).apk$', 233137, 252136],
     ('linux', 'x86', 'chrome'): ['(.*).tar.gz$', 233137, 236088],
@@ -429,21 +429,21 @@ def _move_to_server(file, target_os, target_arch, target_module):
         username = 'wp'
     result = execute('scp %s %s@%s:%s' % (file, username, server_webcatch, dir_comb_server))
     if result[0]:
-        # If the failure is caused by network issue of slave machine, most likely it could not send mail too.
-        send_mail('webcatch@intel.com', 'yang.gu@intel.com', '[webcatch] Failed to upload files at ' + host_name, '')
-        error('Failed to upload files to server')
-    execute('rm -f ' + file)
+        return False
+    else:
+        execute('rm -f ' + file)
+        return True
 
 
 def _build(comb_next):
     result = _build_one(comb_next)
     comb_next[COMB_INDEX_REV] += build_every
     if result:
+        build_fail = 0
+    else:
         build_fail += 1
         if build_fail >= args.build_fail_max:
             error('You have reached maximum failure number')
-    else:
-        build_fail = 0
 
     # no need to pause
     if comb_next[COMB_INDEX_REV] > rev_max:
@@ -469,15 +469,17 @@ def _build_one(comb_next):
         file_final = dir_comb + '/' + str(rev) + '.EXPECTFAIL'
         execute('touch ' + file_final)
         if not slave_only:
-            _move_to_server(file_final, target_os, target_arch, target_module)
-        return 0
+            if not _move_to_server(file_final, target_os, target_arch, target_module):
+                _report_fail('upload')
+        return True
 
     if not chromium_get_hash(dir_chromium_src_main, rev):
         file_final = dir_comb + '/' + str(rev) + '.NULL'
         execute('touch ' + file_final)
         if not slave_only:
-            _move_to_server(file_final, target_os, target_arch, target_module)
-        return 0
+            if not _move_to_server(file_final, target_os, target_arch, target_module):
+                _report_fail('upload')
+        return True
 
     info('Begin to build ' + comb_name + '@' + str(rev) + '...')
     dir_repo = dir_project_webcatch_project + '/chromium-' + target_os
@@ -495,13 +497,10 @@ def _build_one(comb_next):
         cmd = python_chromium + ' --revert --dir-root ' + dir_repo
         result = execute(cmd, dryrun=DRYRUN, interactive=True)
         if result[0]:
-            send_mail('webcatch@intel.com', 'yang.gu@intel.com', '[webcatch] Failed to revert at ' + host_name, '')
-            error('Revert failed', error_code=result[0])
+            _report_fail('revert', file_lock)
         result = execute(cmd_sync, dryrun=DRYRUN, interactive=True)
         if result[0]:
-            execute(_remotify_cmd('rm -f ' + file_lock))
-            send_mail('webcatch@intel.com', 'yang.gu@intel.com', '[webcatch] Failed to sync at ' + host_name, '')
-            error('Sync failed', error_code=result[0])
+            _report_fail('sync', file_lock)
 
     _patch_after_sync(target_os, target_arch, target_module, rev)
 
@@ -514,9 +513,7 @@ def _build_one(comb_next):
         execute(cmd_sync_hook, dryrun=DRYRUN, show_progress=True)
         result = execute(cmd_makefile, dryrun=DRYRUN)
         if result[0]:
-            execute(_remotify_cmd('rm -f ' + file_lock))
-            send_mail('webcatch@intel.com', 'yang.gu@intel.com', '[webcatch] Failed to generate makefile at ' + host_name, '')
-            error('Failed to generate makefile')
+            _report_fail('makefile', file_lock)
 
     # build
     _patch_before_build(target_os, target_arch, target_module, rev)
@@ -596,10 +593,15 @@ def _build_one(comb_next):
 
     # backup
     if not slave_only:
-        _move_to_server(file_final, target_os, target_arch, target_module)
+        result = _move_to_server(file_final, target_os, target_arch, target_module)
         execute(_remotify_cmd('rm -f ' + file_lock))
+        if not result:
+            _report_fail('upload')
 
-    return result[0]
+    if result[0]:
+        return False
+    else:
+        return True
 
 
 # get the smallest rev in combs
@@ -686,6 +688,13 @@ def _rounddown(num):
 
 def _chromium_get_rev_max():
     return chromium_get_rev_max(dir_chromium_src_main)
+
+
+def _report_fail(phase, file_lock=''):
+    if file_lock:
+        execute(_remotify_cmd('rm -f ' + file_lock))
+    send_mail('webcatch@intel.com', 'yang.gu@intel.com', '[webcatch] Failed to %s at %s' % (phase, host_name), '')
+    error('Failed to %s' % phase)
 # </internal>
 
 

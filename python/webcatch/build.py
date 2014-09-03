@@ -521,40 +521,46 @@ def _build_one(comb_next):
     dir_out_build_type = dir_repo + '/src/out-%s/out/Release' % target_arch
     ## remove apks first as sometimes ninja build error doesn't actually return error.
     execute('rm -f %s/apks/*' % dir_out_build_type)
+    execute('rm -f %s/apks/chrome' % dir_out_build_type)
     cmd_build = python_chromium + ' --build --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
-    result = execute(cmd_build, dryrun=DRYRUN, show_progress=True)
+    result_build = execute(cmd_build, dryrun=DRYRUN, show_progress=True)
 
     ## retry here
-    if result[0]:
+    if result_build[0]:
         if target_os == 'android':
             execute('sudo ' + dir_repo + '/src/build/install-build-deps-android.sh', interactive=True, dryrun=DRYRUN)
-        if result[0] and not args.keep_out:
+            result_build = execute(cmd_build, dryrun=DRYRUN, show_progress=True)
+        if result_build[0] and not args.keep_out:
             execute('rm -rf ' + dir_repo + '/src/out*', dryrun=DRYRUN)
-
-        result = execute(cmd_build, dryrun=DRYRUN)
+            result_build = execute(cmd_build, dryrun=DRYRUN)
 
     ## handle result, either success or failure. TODO: Need to handle other comb.
     if target_os == 'android' and target_module == 'content_shell':
-        if result[0] or not os.path.exists(dir_out_build_type + '/apks/ContentShell.apk'):
+        if result_build[0] or not os.path.exists(dir_out_build_type + '/apks/ContentShell.apk'):
             file_final = dir_comb + '/' + str(rev) + '.FAIL'
             execute('touch ' + file_final)
+            result = False
         else:
             file_final = dir_comb + '/' + str(rev) + '.apk'
             execute('cp ' + dir_out_build_type + '/apks/ContentShell.apk ' + file_final, dryrun=DRYRUN)
             execute('rm -f ' + file_log)
+            result = True
     elif target_os == 'android' and target_module == 'webview':
-        if result[0] or not os.path.exists(dir_out_build_type + '/apks/AndroidWebView.apk'):
+        if result_build[0] or not os.path.exists(dir_out_build_type + '/apks/AndroidWebView.apk'):
             file_final = dir_comb + '/' + str(rev) + '.FAIL'
             execute('touch ' + file_final)
+            result = False
         else:
             file_final = dir_comb + '/' + str(rev) + '.apk'
             execute('cp ' + dir_out_build_type + '/apks/AndroidWebView.apk ' + file_final, dryrun=DRYRUN)
             execute('rm -f ' + file_log)
+            result = True
     elif target_os == 'linux' and target_module == 'chrome':
         dir_test = dir_comb + '/' + str(rev)
-        if result[0]:
+        if result_build[0] or not os.path.exists(dir_out_build_type + '/chrome'):
             file_final = dir_test + '.FAIL'
             execute('touch ' + file_final)
+            result = False
         else:
             os.mkdir(dir_test)
             file_config = dir_repo + '/src/chrome/tools/build/' + target_os + '/FILES.cfg'
@@ -590,6 +596,7 @@ def _build_one(comb_next):
             restore_dir()
 
             file_final = dir_comb + '/' + str(rev) + '.tar.gz'
+            result = True
 
     # backup
     if not slave_only:
@@ -598,10 +605,7 @@ def _build_one(comb_next):
         if not result:
             _report_fail('upload')
 
-    if result[0]:
-        return False
-    else:
-        return True
+    return result
 
 
 # get the smallest rev in combs

@@ -643,15 +643,12 @@ def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/work
     else:
         target_arch_str = ''
 
-    dirs = [
+    dirs_symbol = [
         dir_aosp + '/out/target/product/%s/symbols/system/lib%s' % (product, target_arch_str),
         dir_chromium + '/src/out-%s/out/Release/lib' % target_arch,
     ]
 
     connect_device(device=device)
-
-    count_line_max = 1000
-    count_valid_max = 40
 
     if type == 'tombstone':
         result = execute(adb(cmd='shell \ls /data/tombstones'), return_output=True)
@@ -666,7 +663,17 @@ def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/work
         result = execute('cat /tmp/traces.txt', return_output=True)
         lines = result[1].split('\n')
 
-    pattern = re.compile('pc (.*)  .*lib(.*)\.so')
+    get_symbol(lines, dirs_symbol)
+
+
+def get_symbol(lines, dirs_symbol):
+    if not dirs_symbol:
+        error('No symbol file is designated')
+
+    count_line_max = 1000
+    count_valid_max = 40
+
+    pattern = re.compile('pc (.*)  .*/lib(.*)\.so')
     count_line = 0
     count_valid = 0
     for line in lines:
@@ -677,8 +684,8 @@ def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/work
         if match:
             print line
             name = match.group(2)
-            for dir in dirs:
-                path = dir + '/lib%s.so' % name
+            for dir_symbol in dirs_symbol:
+                path = dir_symbol + '/lib%s.so' % name
                 if not os.path.exists(path):
                     continue
                 cmd = dir_linux + '/x86_64-linux-android-addr2line -C -e %s -f %s' % (path, match.group(1))
@@ -1152,4 +1159,9 @@ def _chromium_get_rev_hash(rev_min, rev_max=0, force=False):
                 rev_hash[rev_temp] = hash_temp
             elif rev_temp < rev_min:
                 return rev_hash
+
+
+def _surpress_warning():
+    fileinput
+    random
 # </internal>

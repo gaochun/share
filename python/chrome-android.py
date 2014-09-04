@@ -49,6 +49,7 @@ examples:
     parser.add_argument('--ver', dest='ver', help='version', default='all')
     parser.add_argument('--ver-type', dest='ver_type', help='ver type', default='all')
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', default='all')
+    parser.add_argument('--analyze', dest='analyze', help='analyze tombstone file')
 
     args = parser.parse_args()
     args_dict = vars(args)
@@ -231,6 +232,31 @@ def backup():
             restore_dir()
 
 
+def analyze():
+    if not args.analyze:
+        return
+
+    f = open(args.analyze)
+    lines = f.readlines()
+    f.close()
+    dirs_symbol = []
+    pattern = re.compile('libchrome\.(.*)\.so')
+    for line in lines:
+        match = pattern.search(line)
+        if match:
+            ver_part = match.group(1)
+            break
+
+    dir_android_chrome = dir_server_chromium + '/android-x86-chrome'
+    dirs = os.listdir(dir_android_chrome)
+    for d in dirs:
+        if re.search(ver_part, d):
+            dirs_symbol.append(dir_android_chrome + '/' + d)
+            break
+
+    get_symbol(lines, dirs_symbol)
+
+
 def _get_combos(dirs_check, target_arch):
     combos = []
     pattern = re.compile('(\d+\.\d+\.\d+\.\d+)-(stable|beta)')
@@ -291,3 +317,4 @@ if __name__ == "__main__":
     check()
     download()
     backup()
+    analyze()

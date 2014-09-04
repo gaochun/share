@@ -530,6 +530,7 @@ def buildid(force=False):
             error('The apk %s/%s-%s has been tracked, so will be moved to trash' % (target_arch_temp, ver_temp, ver_type_temp))
 
     os.makedirs(dir_todo)
+    execute('chmod +r "%s"' % chrome_android_apk)
     execute('mv "%s" %s/Chrome.apk' % (chrome_android_apk, dir_todo))
     execute('echo "phase=buildid\nbuild-id=%s" >%s/README' % (build_id_temp, dir_todo), show_cmd=False)
 

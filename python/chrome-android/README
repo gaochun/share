@@ -11,14 +11,19 @@ VERSION_COMBO: <VERSION>-<VERSION_TYPE>
 VERSION: An combination of <MAJOR>.<MINOR>.<BUILD>.<PATCH>. E.g.,
 36.0.1985.128.
 <VERSION_TYPE>: stable, beta, etc.
-In each VERSION_COMBO directory, Chrome.apk is the one acquired directly from Google Play, Chromium.apk is the one repacked by ourselves, while libchromexxx.so is the one with symbols.
-
+In each VERSION_COMBO directory,
+Chrome.apk is the one acquired directly from Google Play.
+Chromium.apk and Chromium2.apk are ones repacked by ourselves. Chromium.apk has app name "Chromium" and package name "com.android.chromium" or "com.chromium.beta" (for stable and beta respectively). Chromium2.apk has app name "Chromium2" and package name "com.android.chrome" and "com.chrome.beta" that are same with the ones released by Google so that they can be used well under some circumstance, such as MTBF tests. Providers in AndroidManifest.xml is also changed so that these two self-built apks can coexist well. Note the Chromium2.apk would not coexist with Chrome.apk as they have same package name.
+libchromexxx.so is the one with symbols.
 
 If the specific apk is missed (might happen for x86 as we can not get old apks), a simple Null.apk will be placed at the specific directory.
 
 
-
-
 history:
 
-20140807: Skip the build of arm/34.0.1847.45-beta, arm/34.0.1847.114-stable and x86/34.0.1847.62-beta due to build issues. These are quite old versions so we don't put more effort on them. 
+20140905:
+Add Chromium2.apk
+Change app name, pkg name and provider in AndroidManifest.xml for both Chromium.apk and Chromium2.apk.
+Only android-x86-chrome/36.0.1985.135-stable from old builds (version <= 37.0.2062.117 for both stable and beta) are regenerated with above changes.
+
+20140807: Skip the build of arm/34.0.1847.45-beta, arm/34.0.1847.114-stable and x86/34.0.1847.62-beta due to build issues. These are quite old versions so we don't put more effort on them.

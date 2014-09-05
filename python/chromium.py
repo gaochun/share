@@ -72,7 +72,7 @@ chrome_android_phase_all = ['buildid', 'init', 'sync', 'runhooks', 'prebuild', '
 ver = ''
 ver_type = ''
 chrome_android_soname = ''
-chrome_android_dir_server_root = ''
+dir_server_chrome_android_todo_comb = ''
 chrome_android_file_readme = ''
 
 test_command_default = [
@@ -357,7 +357,7 @@ def setup():
     global target_os, target_arch, target_module
     global devices, devices_product, devices_type, devices_target_arch
     global file_log, timestamp, test_suite, build_type, rev, dir_patches, patches, test_filter, repo_type
-    global ver, ver_type, chrome_android_soname, chrome_android_dir_server_root, chrome_android_file_readme, chrome_android_apk
+    global ver, ver_type, chrome_android_soname, dir_server_chrome_android_todo_comb, chrome_android_file_readme, chrome_android_apk
 
     if args.dir_root:
         dir_root = args.dir_root
@@ -458,8 +458,8 @@ def setup():
             ver = args.ver
             ver_type = args.ver_type
             chrome_android_soname = _get_soname()
-            chrome_android_dir_server_root = dir_server_chrome_android_todo + '/' + target_arch + '/' + ver + '-' + ver_type
-            chrome_android_file_readme = chrome_android_dir_server_root + '/README'
+            dir_server_chrome_android_todo_comb = dir_server_chrome_android_todo + '/' + target_arch + '/' + ver + '-' + ver_type
+            chrome_android_file_readme = dir_server_chrome_android_todo_comb + '/README'
 
     if target_os == 'windows':
         setenv('GYP_DEFINES', 'werror= disable_nacl=1 component=shared_library enable_svg=0 windows_sdk_path="d:/user/ygu5/project/chromium/win_toolchain/win8sdk"')
@@ -772,42 +772,94 @@ def postbuild(force=False):
         return
 
     if repo_type == 'chrome-android':
-        dir_chrome = chrome_android_dir_server_root + '/Chrome'
+        # get combs
+        combs = []
+        if ver_type == 'stable':
+            name_app = 'Chromium'
+            name_pkg = 'com.android.chromium'
+        else:
+            name_app = 'Chromium Beta'
+            name_pkg = 'com.chromium.beta'
+        combs.append([name_app, name_pkg, 'Chromium'])
+
+        # align package name with Google
+        if ver_type == 'stable':
+            name_app = 'Chromium2'
+            name_pkg = 'com.android.chrome'
+        else:
+            name_app = 'Chromium2 Beta'
+            name_pkg = 'com.chrome.beta'
+        combs.append([name_app, name_pkg, 'Chromium2'])
+
+        # get target_arch_temp for directory name that holds libchrome
         if target_arch == 'arm':
             target_arch_temp = 'armeabi-v7a'
         else:
             target_arch_temp = target_arch
-        dir_chrome_lib = dir_chrome + '/lib/%s' % target_arch_temp
 
-        # unpack
-        execute('java -jar %s/apktool.jar d %s/Chrome.apk -o %s' % (dir_tool, chrome_android_dir_server_root, dir_chrome), interactive=True, abort=True)
-        # rename
-        execute('python %s/prebuilt-%s/change_chromium_package.py -u %s' % (dir_src, target_arch, dir_chrome), interactive=True, abort=True)
+        # hack the script to allow same package name with Google
+        for line in fileinput.input('%s/prebuilt-%s/change_chromium_package.py' % (dir_src, target_arch), inplace=1):
+            if re.search('\'com.android.chrome\'', line) and line.lstrip()[0] != '#':
+                line = line.replace('\'com.android.chrome\'', '#\'com.android.chrome\'')
+            elif re.search('\'com.chrome.beta\'', line) and line.lstrip()[0] != '#':
+                line = line.replace('\'com.chrome.beta\'', '#\'com.chrome.beta\'')
+            sys.stdout.write(line)
 
-        # replace libchrome(view).so
-        result = execute('ls %s/libchrome*.so' % dir_chrome_lib, return_output=True)
-        file_chrome = result[1].split('/')[-1].strip('\n')
-        backup_dir(dir_out_build_type + '/lib')
-        ## backup the one with symbol
-        execute('cp -f lib*prebuilt.so %s/%s' % (chrome_android_dir_server_root, file_chrome), interactive=True, abort=True, dryrun=False)
-        ## copy, strip and replace
-        execute('cp -f lib*prebuilt.so %s' % (file_chrome), interactive=True, abort=True, dryrun=False)
-        execute(dir_tool + '/' + target_arch_strip[target_arch] + ' ' + file_chrome, abort=True, dryrun=False)
-        execute('cp -f %s %s/' % (file_chrome, dir_chrome_lib), interactive=True, abort=True)
-        restore_dir()
+        for comb in combs:
+            name_app = comb[0]
+            name_pkg = comb[1]
+            name_apk = comb[2]
 
-        # replace libpeerconnection.so
-        cmd = 'cp -f %s/prebuilt-%s/libpeerconnection_prebuilt.so %s/libpeerconnection.so' % (dir_src, target_arch, dir_chrome_lib)
-        execute(cmd, interactive=True, abort=True)
+            dir_chromium = '%s/%s' % (dir_server_chrome_android_todo_comb, name_apk)
+            dir_chromium_lib = dir_chromium + '/lib/%s' % target_arch_temp
 
-        # repackage the new chromium.apk
-        # --zipalign: can be found in SDK
-        backup_dir(chrome_android_dir_server_root)
-        execute('java -jar %s/apktool.jar b Chrome -o Chromium_unaligned.apk' % dir_tool, interactive=True, abort=True)
-        execute('jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s/debug.keystore -storepass android Chromium_unaligned.apk androiddebugkey' % dir_tool, interactive=True, abort=True)
-        execute('%s/zipalign -f -v 4 Chromium_unaligned.apk Chromium.apk' % dir_tool, interactive=True, abort=True)
-        execute('rm -f Chromium_unaligned.apk', abort=True)
-        restore_dir()
+            # unpack
+            execute('rm -rf %s' % dir_chromium)
+            execute('java -jar %s/apktool.jar d %s/Chrome.apk -o %s' % (dir_tool, dir_server_chrome_android_todo_comb, dir_chromium), interactive=True, abort=True)
+
+            # replace libchrome(view).so
+            ## get the name
+            result = execute('ls %s/libchrome*.so' % dir_chromium_lib, return_output=True)
+            file_libchrome = result[1].split('/')[-1].strip('\n')
+            backup_dir(dir_out_build_type + '/lib')
+            ## backup the one with symbol, which should be done only once
+            path_file_libchrome = '%s/%s' % (dir_server_chrome_android_todo_comb, file_libchrome)
+            if not os.path.exists(path_file_libchrome):
+                execute('cp -f lib*prebuilt.so %s' % path_file_libchrome, interactive=True, abort=True, dryrun=False)
+            ## strip if needed
+            if not os.path.exists(file_libchrome):
+                execute('cp -f lib*prebuilt.so %s' % (file_libchrome), interactive=True, abort=True, dryrun=False)
+                execute(dir_tool + '/' + target_arch_strip[target_arch] + ' ' + file_libchrome, abort=True, dryrun=False)
+            ## replace the original one
+            execute('cp -f %s %s/' % (file_libchrome, dir_chromium_lib), interactive=True, abort=True)
+            restore_dir()
+
+            # replace libpeerconnection.so
+            cmd = 'cp -f %s/prebuilt-%s/libpeerconnection_prebuilt.so %s/libpeerconnection.so' % (dir_src, target_arch, dir_chromium_lib)
+            execute(cmd, interactive=True, abort=True)
+
+            # change app name and package name to avoid conflict
+            # This has to be done before the hack of AndroidManifest.xml
+            execute('python %s/prebuilt-%s/change_chromium_package.py -u %s -a %s -p %s' % (dir_src, target_arch, dir_chromium, name_app, name_pkg), interactive=True, abort=True)
+
+            # hack the AndroidManifest.xml to avoid provider conflict
+            for line in fileinput.input('%s/AndroidManifest.xml' % dir_chromium, inplace=1):
+                if re.search('com.example.chromium', line):
+                    line = line.replace('com.example.chromium', name_pkg)
+                if re.search('android:authorities="com.android.chrome', line):
+                    line = line.replace('android:authorities="com.android.chrome', 'android:authorities="%s' % name_pkg)
+                if re.search('android:authorities="com.chrome.beta', line):
+                    line = line.replace('android:authorities="com.chrome.beta', 'android:authorities="%s' % name_pkg)
+                sys.stdout.write(line)
+
+            # repackage the new apk
+            # --zipalign: can be found in SDK
+            backup_dir(dir_server_chrome_android_todo_comb)
+            execute('java -jar %s/apktool.jar b %s -o %s_unaligned.apk' % (dir_tool, name_apk, name_apk), interactive=True, abort=True)
+            execute('jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s/debug.keystore -storepass android %s_unaligned.apk androiddebugkey' % (dir_tool, name_apk), interactive=True, abort=True)
+            execute('%s/zipalign -f -v 4 %s_unaligned.apk %s.apk' % (dir_tool, name_apk, name_apk), interactive=True, abort=True)
+            execute('rm -f %s_unaligned.apk' % name_apk, abort=True)
+            restore_dir()
 
         _update_phase(get_caller_name())
 
@@ -817,7 +869,9 @@ def verify(force=False):
         return
 
     if repo_type == 'chrome-android':
-        _chrome_android_get_info(target_arch, chrome_android_dir_server_root + '/Chromium.apk', bypass=True)
+        _chrome_android_get_info(target_arch, dir_server_chrome_android_todo_comb + '/Chromium.apk', bypass=True)
+        if os.path.exists(dir_server_chrome_android_todo_comb + '/Chromium2.apk'):
+            _chrome_android_get_info(target_arch, dir_server_chrome_android_todo_comb + '/Chromium2.apk', bypass=True)
         _update_phase(get_caller_name())
 
 
@@ -829,10 +883,12 @@ def backup(force=False):
         if host_name == 'wp-03':
             dir_chrome = 'chromium/android-%s-chrome/%s-%s' % (target_arch, ver, ver_type)
             execute('smbclient %s -N -c "prompt; recurse; mkdir %s;"' % (path_server_backup, dir_chrome))
-            backup_dir(chrome_android_dir_server_root)
+            backup_dir(dir_server_chrome_android_todo_comb)
             if os.path.exists('Chrome.apk'):
                 backup_smb(path_server_backup, dir_chrome, 'Chrome.apk')
                 backup_smb(path_server_backup, dir_chrome, 'Chromium.apk')
+                if os.path.exists('Chromium2.apk'):
+                    backup_smb(path_server_backup, dir_chrome, 'Chromium2.apk')
                 backup_smb(path_server_backup, dir_chrome, 'README')
             else:
                 backup_smb(path_server_backup, dir_chrome, 'Null.apk')
@@ -847,7 +903,9 @@ def notify(force=False):
 
     if repo_type == 'chrome-android':
         _update_phase(get_caller_name())
-        execute('mv %s %s/android-%s-chrome/%s-%s' % (chrome_android_dir_server_root, dir_server_chromium, target_arch, ver, ver_type))
+        dir_server_chrome_android_comb = '%s/android-%s-chrome/%s-%s' % (dir_server_chromium, target_arch, ver, ver_type)
+        ensure_nodir(dir_server_chrome_android_comb)
+        execute('mv %s %s/android-%s-chrome/%s-%s' % (dir_server_chrome_android_todo_comb, dir_server_chromium, target_arch, ver, ver_type))
 
         target_arch_done = {}
         all_done = True

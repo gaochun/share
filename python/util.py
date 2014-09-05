@@ -139,12 +139,21 @@ chromium_rev_max = 9999999
 chromium_android_info = {
     'chrome_stable': ['com.android.chrome', ''],
     'chrome_beta': ['com.chrome.beta', ''],
-    'chrome_example': ['com.example.chromium', 'com.google.android.apps.chrome.Main'],
-    'chrome_example_stable': ['com.chromium.stable', 'com.google.android.apps.chrome.Main'],
-    'chrome_example_beta': ['com.chromium.beta', 'com.google.android.apps.chrome.Main'],
+    'stock_browser': ['com.android.browser', 'com.android.browser.BrowserActivity'],
     'content_shell': ['org.chromium.content_shell_apk', ''],
     #'webview_shell': 'com.android.webview_shell_apk?',
-    'stock_browser': ['com.android.browser', 'com.android.browser.BrowserActivity'],
+
+    # self defined
+    ## after the change of package name and AndroidManifest.xml
+    'chromium_stable': ['com.android.chromium', 'com.google.android.apps.chrome.Main'],
+    'chromium_beta': ['com.chromium.beta', 'com.google.android.apps.chrome.Main'],
+    'chromium2_stable': ['com.android.chrome', ''],
+    'chromium2_beta': ['com.chrome.beta', ''],
+    ## before the change of package name and AndroidManifest.xml
+    'chrome_example': ['com.example.chromium', 'com.google.android.apps.chrome.Main'],
+    ## old builds before transition, including some M33 builds
+    'chrome_example_stable': ['com.chromium.stable', 'com.google.android.apps.chrome.Main'],
+    'chrome_example_beta': ['com.chromium.beta', 'com.google.android.apps.chrome.Main'],
 }
 CHROMIUM_ANDROID_INFO_INDEX_PKG = 0
 CHROMIUM_ANDROID_INFO_INDEX_ACT = 1
@@ -755,14 +764,24 @@ def apply_patch(patches, dir_patches):
                     error('Fail to apply patch ' + patch)
 
 
-def ensure_dir(dir, server=''):
+def ensure_dir(dir_check, server=''):
     if server == '':
-        if not os.path.exists(dir):
-            os.makedirs(dir)
+        if not os.path.exists(dir_check):
+            os.makedirs(dir_check)
     else:
-        result = execute(remotify_cmd('ls ' + dir, server=server), show_cmd=False)
+        result = execute(remotify_cmd('ls ' + dir_check, server=server), show_cmd=False)
         if result[0]:
-            execute(remotify_cmd('mkdir -p ' + dir, server=server))
+            execute(remotify_cmd('mkdir -p ' + dir_check, server=server))
+
+
+def ensure_nodir(dir_check, server=''):
+    if server == '':
+        if os.path.exists(dir_check):
+            execute('rm -rf %s' % dir_check)
+    else:
+        result = execute(remotify_cmd('ls ' + dir_check, server=server), show_cmd=False)
+        if result[0] == 0:
+            execute(remotify_cmd('rm -rf ' + dir_check, server=server))
 
 
 def get_dir(path):
@@ -815,7 +834,7 @@ def chrome_android_cleanup(device=''):
 def chrome_android_get_ver_type(device=''):
     ver_type = ''
     for key in chromium_android_info:
-        if not re.match('^chrome', key):
+        if not re.match('^chrom', key):
             continue
         if execute_adb_shell(cmd='pm -l |grep ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device):
             ver_type = key

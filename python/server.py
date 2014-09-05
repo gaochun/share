@@ -50,9 +50,10 @@ examples:
 
 
 def setup():
-    if os.path.exists(file_lock):
+    if os.path.exists(file_lock) and has_recent_change(file_lock, interval=24 * 3600):
         info('Server is running')
         exit(0)
+    execute('touch ' + file_lock)
     ensure_dir(dir_server_log)
     setenv('DISPLAY', ':0')
     set_path()
@@ -106,7 +107,7 @@ def update_share():
 
 
 def teardown():
-    execute('rm -f %s' % file_server)
+    execute('rm -f %s' % file_lock)
 
 
 def test_x64_all():

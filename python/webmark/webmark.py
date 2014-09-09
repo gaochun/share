@@ -64,6 +64,7 @@ class Case:
 
     def __init__(self, data):
         self.data = data
+        self.dryrun = args.dryrun
         Format.format(self)
 
     def run(self, driver):
@@ -267,6 +268,7 @@ examples:
     parser.add_argument('--benchmark-config', dest='benchmark_config', help='benchmark config')
     parser.add_argument('--use-running-app', dest='use_running_app', help='use running app', action='store_true', default=False)
     parser.add_argument('--config', dest='config', help='config file to put in all the configurations')
+    parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true', default=False)
 
     parser.add_argument('--device', dest='device', help='device')
     parser.add_argument('--device-config', dest='device_config', help='need device config or not', action='store_true')

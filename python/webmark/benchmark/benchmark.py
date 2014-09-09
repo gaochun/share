@@ -36,6 +36,7 @@ class Benchmark(object):
             'sleep': 3,
             'times_run': 1,
             'times_skip': 0,
+            'dryrun': False,
         }
         for key in members:
             if key == 'name':
@@ -67,7 +68,10 @@ class Benchmark(object):
             self.__dict__[key] = 'file:///data/local/tmp/' + self.__dict__[key]
 
     def get_result(self, driver):
-        return self.result
+        if self.dryrun:
+            return ['60']
+        else:
+            return self.result
 
     def get_result_one(self, driver):
         return '0.0'
@@ -84,6 +88,7 @@ class Benchmark(object):
 
     # Each specific benchmark only returns result in string format, we will convert them to float here.
     def run(self):
+            info('Begin to run "%s" version "%s"' % (self.name, self.version))
             times_run = self.times_run
             times_skip = self.times_skip
             driver = self.driver
@@ -92,12 +97,16 @@ class Benchmark(object):
             for i in range(times_run):
                 self.result = []
                 self.state = 0
-                driver.get(self.path)
-                WebDriverWait(driver, self.timeout, self.sleep).until(self._is_finished)
+                if not self.dryrun:
+                    driver.get(self.path)
+                    WebDriverWait(driver, self.timeout, self.sleep).until(self._is_finished)
                 if times_skip > 0:
                     times_skip = times_skip - 1
                     continue
-                result = self.get_result(driver)
+                if self.dryrun:
+                    result = ['60']
+                else:
+                    result = self.get_result(driver)
                 info('Round result: ' + ','.join(result))
                 results.append([float(x) for x in result])
 

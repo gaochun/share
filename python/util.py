@@ -102,6 +102,8 @@ dir_python = dir_share + '/python'
 dir_webcatch = dir_python + '/webcatch'
 dir_webcatch_log = dir_webcatch + '/log'
 dir_webmark = dir_python + '/webmark'
+dir_webmark_log = dir_webmark + '/log'
+dir_webmark_result = dir_webmark + '/result'
 dir_linux = dir_share + '/linux'
 dir_common = dir_share + '/common'
 file_chromium = dir_python + '/chromium.py'
@@ -944,13 +946,17 @@ def chromium_get_rev_hash(dir_src, rev_min, *rev_extra):
             return ''
 
 
-def get_logger(name, dir_log, level=logging.DEBUG):
+def get_logger(tag, dir_log, datetime='', level=logging.DEBUG):
     ensure_dir(dir_log)
-    formatter = logging.Formatter('[%(asctime)s - %(levelname)s] %(message)s', "%Y-%m-%d %H:%M:%S")
-    logger = logging.getLogger(name)
+    formatter = logging.Formatter('[%(asctime)s - %(levelname)s] %(message)s', '%Y-%m-%d %H:%M:%S')
+    logger = logging.getLogger(tag)
     logger.setLevel(level)
 
-    file_log = logging.FileHandler(dir_log + '/' + get_datetime(format='%Y-%m-%d-%X') + '.log')
+    if datetime:
+        dt = datetime
+    else:
+        dt = get_datetime()
+    file_log = logging.FileHandler(dir_log + '/' + dt + '.log')
     file_log.setFormatter(formatter)
     logger.addHandler(file_log)
 

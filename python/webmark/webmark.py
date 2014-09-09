@@ -12,6 +12,7 @@ dir_root = ''
 dir_test = ''
 device = ''
 device_config = False
+file_result = ''
 
 
 class Format:
@@ -71,7 +72,9 @@ class Case:
         name = self.name
         exec 'from benchmark.' + name.lower() + ' import ' + name
         benchmark = eval(name)(driver, self)
-        logger.info(benchmark.run())
+        result = benchmark.run()
+        execute('echo ' + result + ' >>' + file_result, show_cmd=False)
+        logger.info('Result: ' + result)
 
 
 class Proxy:
@@ -284,7 +287,7 @@ examples:
 
 def setup():
     global dir_root, dir_test, device, device_product, logger
-    global device_config
+    global device_config, file_result
 
     dir_root = get_symbolic_link_dir()
     dir_test = dir_root + '/test'
@@ -314,7 +317,9 @@ def setup():
 
     device_product = devices_product[0]
 
-    logger = get_logger(name='webmark', dir_log=dir_root + '/log')
+    datetime = get_datetime()
+    logger = get_logger(tag='webmark', dir_log=dir_webmark_log, datetime=datetime)
+    file_result = dir_webmark_result + '/' + datetime
 
     if args.device_config:
         device_config = True

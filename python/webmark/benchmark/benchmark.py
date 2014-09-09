@@ -124,7 +124,7 @@ class Benchmark(object):
             for i in range(count_result):
                 results_average.append(round(results_total[i] / count_results, 2))
 
-            return 'Result: %s,%s,[%s]' % (self.name, self.version, ','.join(str(x) for x in results_average))
+            return '%s,%s,%s' % (self.name, self.version, ','.join(str(x) for x in results_average))
 
     def _is_finished(self, driver):
         if self.states[self.state][0](driver):

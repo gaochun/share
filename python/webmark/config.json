@@ -1,0 +1,16 @@
+{
+  "suites": [
+    {
+      "name": "Chrome Linux Smoke Test",
+      "description": "Chrome Linux Smoke Test",
+      "module": {
+        "name": "content_shell",
+        "target_os": "android"
+      },
+      "cases": [
+        {"name":"guimark3compute"},
+        {"name":"fishietank"}
+      ]
+    }
+  ]
+}

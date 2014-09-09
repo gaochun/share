@@ -94,7 +94,7 @@ class Module:
     FORMAT = [
         ['target_os', 'M', 'P'],
         ['name', 'M', 'P'],
-        ['path', 'M', 'P'],
+        ['path', 'O', 'P'],
         ['mode', 'O', 'P'],
         ['proxy', 'O', 'O'],
         ['switches', 'O', 'P'],
@@ -152,7 +152,7 @@ class Suite:
             self.driver.switch_to_new_window(handles)
 
         # Install module if needed
-        if self.module.path:
+        if hasattr(self.module, 'path'):
             result = execute('adb install -r ' + self.module.path, interactive=True)
             if result[0]:
                 error('Can not install ' + self.module.path)
@@ -183,10 +183,10 @@ class WebMark:
 
         # Parse
         if args.config:
-            if not os.path.isfile(config_file):
-                logger.error(config_file + ' is not a valid file.')
-                return [1, '']
-            f = file(config_file)
+            file_config = args.config
+            if not os.path.isfile(file_config):
+                error(file_config + ' is not a valid file.')
+            f = file(file_config)
             self.data = json.load(f)
             f.close()
         else:

@@ -103,6 +103,11 @@ crash, anr, wtf, strictmode, lowmem, watchdog, netstats_error, BATTERY_DISCHARGE
 SYSTEM_LAST_KMSG, APANIC_CONSOLE, APANIC_THREADS, SYSTEM_RECOVERY_LOG, SYSTEM_TOMBSTONE
 </dropbox>
 
+* adb logcat -v threadtime -b main -b system -b events
+* tcp dump
+adb shell setprop dev.log.cws.wifi.dump ON (to make sure /system/xbin/tcpdump is running)
+* ro.sf.lcd_density
+
 
 java:
 import android.util.Log;

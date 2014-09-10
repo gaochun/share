@@ -6,11 +6,18 @@ class fishietank(Benchmark):
         'name': 'FishIETank',
         'metric': 'FPS',
         'path': {
-            'external': 'http://ie.microsoft.com/testdrive/Performance/FishIETank/Default.html',
-            'internal': 'webbench/microsoft/testdrive/Performance/FishIETank/Default.html'
+            'setinterval': {
+                'external': 'http://ie.microsoft.com/testdrive/Performance/FishIETank/Default.html',
+                'internal': 'webbench/microsoft/testdrive/Performance/FishIETank/Default.html'
+            },
+            'raf': {
+                'external': '',
+                'internal': 'webbench/fishtank-raf/'
+            }
         },
         'counts_fish': [1, 10, 20, 50, 100, 250, 500, 1000],
         'count_fish': 50,
+        'version': 'setinterval'
     }
 
     def __init__(self, driver, case):
@@ -32,7 +39,7 @@ class fishietank(Benchmark):
         index = 0
         counts_fish = self.CONFIG['counts_fish']
         for i in range(len(counts_fish)):
-            if self.count_fish == counts_fish[i]:
+            if str(self.count_fish) == str(counts_fish[i]):
                 index = i * 2 + 2
         if (index == 0):
             warning('count_fish in FishIETank is not correct, will use 100 instead')

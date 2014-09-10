@@ -3,11 +3,11 @@ from benchmark import *
 
 class canvasmark(Benchmark):
     CONFIG = {
-        'name': 'CanvasMark',
+        'name': 'canvasmark',
         'metric': 'Score',
         'path': {
             'external': 'http://www.kevs3d.co.uk/dev/canvasmark/index.html?auto=true',
-            'internal': 'webbench/CanvasMark/index.html?auto=true'
+            'internal': 'webbench/canvasmark/index.html?auto=true'
         },
         'version': '2013'
     }

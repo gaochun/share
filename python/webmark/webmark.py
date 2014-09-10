@@ -156,7 +156,7 @@ class Suite:
             self.driver.switch_to_new_window(handles)
 
         # Install module if needed
-        if hasattr(self.module, 'path'):
+        if hasattr(self.module, 'path') and self.module.path:
             result = execute('adb install -r ' + self.module.path, interactive=True)
             if result[0]:
                 error('Can not install ' + self.module.path)

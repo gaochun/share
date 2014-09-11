@@ -33,6 +33,7 @@ examples:
     parser.add_argument('--dir-aosp', dest='dir_aosp', help='dir for aosp', default='aosp-stable')
     parser.add_argument('--dir-chromium', dest='dir_chromium', help='dir for chromium', default='chromium-android-x64')
     parser.add_argument('--phase', dest='phase', help='phase, including ' + ','.join(phases_all), default='all')
+    add_argument_common(parser)
 
     args = parser.parse_args()
     args_dict = vars(args)
@@ -45,10 +46,14 @@ examples:
 def setup():
     global target_archs, target_devices_type, phases
     global dir_aosp, dir_chromium
+    global dir_root, log, timestamp
 
-    backup_dir(dir_project)
-    dir_aosp = args.dir_aosp
-    dir_chromium = args.dir_chromium
+    (timestamp, dir_root, log) = setup_common(args, _teardown)
+
+    dir_aosp = dir_project + '/' + args.dir_aosp
+    dir_chromium = dir_project + '/' + args.dir_chromium
+    copy_file(file_aosp, dir_aosp, is_sylk=True)
+    copy_file(file_chromium, dir_chromium, is_sylk=True)
 
     pkgs = ['android-tools-adb']
     for pkg in pkgs:
@@ -57,11 +62,8 @@ def setup():
 
     projects = ['depot_tools', 'share']
     for project in projects:
-        if not os.path.exists(project):
+        if not os.path.exists(dir_project + '/' + project):
             error('You need to put project ' + project + ' into ' + dir_project)
-
-    set_path()
-    set_proxy()
 
     if args.target_arch == 'all':
         target_archs = ['x86_64', 'x86']
@@ -73,9 +75,6 @@ def setup():
     else:
         target_devices_type = args.target_device_type.split(',')
 
-    copy_file(file_aosp, dir_aosp, is_sylk=True)
-    copy_file(file_chromium, dir_chromium, is_sylk=True)
-
     if args.phase == 'all':
         phases = phases_all
     else:
@@ -83,13 +82,12 @@ def setup():
 
 
 def test():
-    cmd_aosp = python_aosp + ' --path-extra=/workspace/project/depot_tools '
-
     if 'aosp-prebuild' in phases:
         if not os.path.exists(dir_aosp):
             error(dir_aosp + ' does not exist')
         backup_dir(dir_aosp)
-        cmd = cmd_aosp + '--sync --patch --remove-out'
+        cmd = python_aosp + ' --sync --patch --remove-out'
+        cmd = suffix_cmd(cmd, args, log)
         execute(cmd, interactive=True, abort=True, dryrun=dryrun)
         restore_dir()
 
@@ -98,7 +96,8 @@ def test():
             error(dir_aosp + ' does not exist')
         for arch in target_archs:
             backup_dir(dir_aosp)
-            cmd = cmd_aosp + '--target-arch %s --target-device-type %s --build --backup' % (arch, args.target_device_type)
+            cmd = python_aosp + ' --target-arch %s --target-device-type %s --build --backup' % (arch, args.target_device_type)
+            cmd = suffix_cmd(cmd, args, log)
             execute(cmd, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
 
@@ -107,7 +106,8 @@ def test():
             if not os.path.exists(dir_aosp):
                 error(dir_aosp + ' does not exist')
             backup_dir(dir_aosp)
-            cmd = cmd_aosp + '--target-arch %s --target-device-type %s --flash-image' % (arch, args.target_device_type)
+            cmd = python_aosp + ' --target-arch %s --target-device-type %s --flash-image ' % (arch, args.target_device_type)
+            cmd = suffix_cmd(cmd, args, log)
             execute(cmd, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
 
@@ -115,8 +115,14 @@ def test():
             if not os.path.exists(dir_chromium):
                 error(dir_chromium + ' does not exist')
             backup_dir(dir_chromium)
-            execute(python_chromium + ' --path-extra=/workspace/project/depot_tools --target-arch %s --repo-type x64 --sync --runhooks --patch --build --test-run --test-formal ' % arch, abort=True, interactive=True, dryrun=dryrun)
+            cmd = python_chromium + ' --target-arch %s --repo-type x64 --sync --runhooks --patch --build --test-run --test-formal' % arch
+            cmd = suffix_cmd(cmd, args, log)
+            execute(cmd, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
+
+
+def _teardown():
+    pass
 
 
 if __name__ == '__main__':

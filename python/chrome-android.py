@@ -16,7 +16,6 @@ import urllib2
 from util import *
 
 dir_root = dir_project + '/chrome-android'
-dir_log = dir_root + '/log'
 vers = []
 ver_types = []
 target_archs = []
@@ -45,11 +44,11 @@ examples:
     parser.add_argument('--download', dest='download', help='download apk from google play', action='store_true')
     parser.add_argument('--download_type', dest='download_type', help='version type to download', default='all')
     parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
-
     parser.add_argument('--ver', dest='ver', help='version', default='all')
     parser.add_argument('--ver-type', dest='ver_type', help='ver type', default='all')
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', default='all')
     parser.add_argument('--analyze', dest='analyze', help='analyze tombstone file')
+    add_argument_common(parser)
 
     args = parser.parse_args()
     args_dict = vars(args)
@@ -61,9 +60,9 @@ examples:
 
 def setup():
     global vers, ver_types, target_archs, run_act
+    global dir_root, log, timestamp
 
-    if not os.path.exists(dir_log):
-        os.mkdir(dir_log)
+    (timestamp, dir_root, log) = setup_common(args, _teardown)
 
     if args.ver_type == 'all':
         ver_types = ['stable', 'beta']
@@ -81,8 +80,6 @@ def setup():
             os.makedirs(dir_temp)
 
     ensure_dir(dir_server_chrome_android_todo)
-    set_path()
-    set_proxy()
     run_act = args.run_act
 
 
@@ -119,7 +116,7 @@ def download(force=False):
         options = webdriver.ChromeOptions()
         options.add_experimental_option('excludeSwitches', ['user-data-dir', 'ignore-certificate-errors', 'disable-default-apps'])
         options.add_argument('user-data-dir=%s' % (dir_tool + '/' + target_arch + '/chrome-profile'))
-        driver = webdriver.Chrome(executable_path=dir_tool + '/chromedriver', chrome_options=options, service_args=['--verbose', '--log-path=%s/log/chromedriver.log' % dir_root])
+        driver = webdriver.Chrome(executable_path=dir_tool + '/chromedriver', chrome_options=options, service_args=['--verbose', '--log-path=%s/chromedriver-%s.log' % (dir_share_ignore_log, timestamp)])
 
         if args.download_type == 'all' or args.download_type == 'stable':
             driver.get('https://play.google.com/store/apps/details?id=' + chromium_android_info['chrome_stable'][CHROMIUM_ANDROID_INFO_INDEX_PKG])
@@ -308,6 +305,10 @@ def _handle_todo_dir():
 
                 execute(cmd, interactive=True)
     restore_dir()
+
+
+def _teardown():
+    pass
 
 
 if __name__ == "__main__":

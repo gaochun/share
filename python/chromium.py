@@ -26,7 +26,6 @@ dir_out_build_type = ''  # /workspace/project/chromium-android/src/out-x86_64/ou
 dir_test_timestamp = ''  # /workspace/project/chromium-android/test
 
 name_file = sys._getframe().f_code.co_filename
-file_log = ''
 
 devices = []
 devices_product = []
@@ -284,10 +283,7 @@ examples:
     group_common.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'arm', 'x86_64', 'arm64'], default='x86')
     group_common.add_argument('--target-module', dest='target_module', help='target module to build', choices=['chrome', 'webview', 'content_shell', 'chromedriver'], default='webview')
     group_common.add_argument('--devices', dest='devices', help='device id list separated by ","', default='')
-    group_common.add_argument('--dir-root', dest='dir_root', help='set root directory')
     group_common.add_argument('--just-out', dest='just_out', help='stick to out, instead of out-x86_64/out', action='store_true')
-    group_common.add_argument('--path-extra', dest='path_extra', help='extra path for execution, such as path for depot_tools')
-    group_common.add_argument('--time-fixed', dest='time_fixed', help='fix the time for test sake. We may run multiple tests and results are in same dir', action='store_true')
     group_common.add_argument('--rev', dest='rev', type=int, help='revision, will override --sync-upstream')
     group_common.add_argument('--ver', dest='ver', help='ver for chrome-android')
     group_common.add_argument('--ver-type', dest='ver_type', help='ver type, stable or beta')
@@ -344,6 +340,8 @@ examples:
     group_misc.add_argument('--owner', dest='owner', help='find owner for latest commit', action='store_true')
     group_misc.add_argument('--layout', dest='layout', help='layout test')
 
+    add_argument_common(parser)
+
     args = parser.parse_args()
     args_dict = vars(args)
 
@@ -353,18 +351,14 @@ examples:
 
 
 def setup():
-    global dir_root, dir_src, dir_out_build_type, dir_test, dir_test_timestamp
+    global dir_src, dir_out_build_type, dir_test, dir_test_timestamp
     global target_os, target_arch, target_module
     global devices, devices_product, devices_type, devices_target_arch
-    global file_log, timestamp, test_suite, build_type, rev, dir_patches, patches, test_filter, repo_type
+    global test_suite, build_type, rev, dir_patches, patches, test_filter, repo_type
     global ver, ver_type, chrome_android_soname, dir_server_chrome_android_todo_comb, chrome_android_file_readme, chrome_android_apk
+    global dir_root, log, timestamp
 
-    if args.dir_root:
-        dir_root = args.dir_root
-    elif os.path.islink(sys.argv[0]):
-        dir_root = get_symbolic_link_dir()
-    else:
-        dir_root = os.path.abspath(os.getcwd())
+    (timestamp, dir_root, log) = setup_common(args, _teardown)
 
     repo_type = args.repo_type
 
@@ -381,14 +375,6 @@ def setup():
     if args.rev:
         rev = args.rev
 
-    if args.time_fixed:
-        timestamp = get_datetime(format='%Y%m%d')
-    else:
-        timestamp = get_datetime()
-
-    set_path(args.path_extra)
-    set_proxy()
-
     for cmd in ['adb', 'git', 'gclient']:
         result = execute('which ' + cmd, show_cmd=False)
         if result[0]:
@@ -403,9 +389,6 @@ def setup():
     else:
         target_module = args.target_module
 
-    if not os.path.exists(dir_root):
-        os.makedirs(dir_root)
-
     dir_src = dir_root + '/src'
     build_type = args.build_type
     if args.just_out:
@@ -416,7 +399,6 @@ def setup():
     dir_test_timestamp = dir_test + '/' + timestamp
 
     setenv('GYP_GENERATORS', 'ninja')
-    backup_dir(dir_root)
 
     # set target_os
     if args.target_os:
@@ -445,10 +427,6 @@ def setup():
         (devices, devices_product, devices_type, devices_target_arch, devices_mode) = setup_device(devices_limit=devices_limit)
 
         _hack_app_process()
-
-    dir_log = dir_root + '/log'
-    ensure_dir(dir_log)
-    file_log = dir_log + '/' + timestamp + '.txt'
 
     # repo type specific variables
     if repo_type == 'chrome-android':
@@ -483,15 +461,6 @@ def setup():
             setenv('GYP_DEFINES', 'werror= disable_nacl=1 enable_svg=0')
         else:
             setenv('GYP_DEFINES', 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os)
-
-    print '''
-========== Configuration Begin ==========
-PATH=%(path)s
-http_proxy=%(http_proxy)s
-https_proxy=%(http_proxy)s
-no_proxy=%(no_proxy)s
-========== Configuration End ==========
-    ''' % {'path': getenv('PATH'), 'http_proxy': getenv('http_proxy'), 'https_proxy': getenv('https_proxy'), 'no_proxy': getenv('no_proxy')}
 
     # Setup test_suite
     for command in _setup_list('test_command'):
@@ -730,7 +699,7 @@ def build(force=False):
     print '======================='
 
     if repo_type != 'chrome-android' and rev >= rev_clang and not os.path.exists('src/third_party/llvm-build'):
-        info('From revision %s, llvm is used for build. Now will download it for you.')
+        info('From revision %s, llvm is used for build. Now will download it for you.' % rev_clang)
         execute('src/tools/clang/scripts/update.sh')
 
     name_func = get_caller_name()
@@ -754,7 +723,7 @@ def build(force=False):
     if args.build_verbose:
         cmd_ninja += ' -v'
 
-    cmd_ninja += ' 2>&1 |tee -a ' + file_log
+    cmd_ninja += ' 2>&1 |tee -a ' + log
     result = execute(cmd_ninja, interactive=True)
     timer_stop(name_func)
     if result[0]:
@@ -1099,6 +1068,10 @@ def analyze():
     analyze_issue(dir_chromium=dir_root, date=20140624)
 
 
+def teardown():
+    restore_log()
+
+
 ########## Internal function begin ##########
 def _test_build_name(command, name):
     cmd = 'ninja -j' + count_cpu + ' -C ' + dir_out_build_type + ' ' + name
@@ -1322,15 +1295,15 @@ def _test_gen_report(index_device, results):
 
         for index, suite in enumerate(test_suite[command]):
             bs = results[command][index]
-            suite_log = dir_test_device_product + '/' + suite + '.log'
+            log_suite = dir_test_device_product + '/' + suite + '.log'
             ut_all = '0'
             ut_pass = '0'
             ut_fail = '0'
 
-            if bs == 'FAIL' or not os.path.exists(suite_log):
+            if bs == 'FAIL' or not os.path.exists(log_suite):
                 rs = 'FAIL'
             else:
-                ut_result = open(dir_test_device_product + '/' + suite + '.log', 'r')
+                ut_result = open(log_suite, 'r')
                 lines = ut_result.readlines()
                 pattern_all = '\[==========\] (\d*) test'
                 pattern_pass = '\[  PASSED  \] (\d*) test'
@@ -1658,6 +1631,10 @@ def _has_element_ver(driver):
         return True
     else:
         return False
+
+
+def _teardown():
+    pass
 ########## Internal function end ##########
 
 

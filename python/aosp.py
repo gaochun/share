@@ -33,7 +33,6 @@ chromium_version = ''
 ip = '192.168.42.1'
 timestamp = ''
 use_upstream_chromium = False
-file_log = ''
 variant = ''
 product_brand = ''
 product_name = ''
@@ -101,10 +100,7 @@ examples:
     parser.add_argument('--analyze', dest='analyze', help='analyze tombstone or ANR file')
     parser.add_argument('--push', dest='push', help='push updates to system', action='store_true')
     parser.add_argument('--remove-out', dest='remove_out', help='remove out dir before build', action='store_true')
-    parser.add_argument('--path-extra', dest='path_extra', help='extra path for execution, such as path for depot_tools')
     parser.add_argument('--hack-app-process', dest='hack_app_process', help='hack app_process', action='store_true')
-    parser.add_argument('--time-fixed', dest='time_fixed', help='fix the time for test sake. We may run multiple tests and results are in same dir', action='store_true')
-    parser.add_argument('--dir-root', dest='dir_root', help='set root directory')
     parser.add_argument('--cts-run', dest='cts_run', help='package to run with cts, such as android.webkit, com.android.cts.browserbench')
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'all'], default='x86_64')
@@ -115,6 +111,8 @@ examples:
     parser.add_argument('--product-brand', dest='product_brand', help='product brand', choices=['ecs', 'fxn'], default='ecs')
     parser.add_argument('--product-name', dest='product_name', help='product name', choices=['e7', 'anchor8'], default='e7')
 
+    add_argument_common(parser)
+
     args = parser.parse_args()
 
     if len(sys.argv) <= 1:
@@ -122,23 +120,20 @@ examples:
 
 
 def setup():
-    global dir_root, dir_chromium, dir_out, dir_backup, target_archs, target_devices_type, target_modules, chromium_version
-    global devices, devices_product, devices_type, devices_target_arch, devices_mode, timestamp, use_upstream_chromium, patches_build
-    global repo_type, repo_date, file_log, variant
+    global dir_chromium, dir_out, dir_backup, target_archs, target_devices_type, target_modules, chromium_version
+    global devices, devices_product, devices_type, devices_target_arch, devices_mode, use_upstream_chromium, patches_build
+    global repo_type, repo_date, variant
     global product_brand, product_name
+    global dir_root, log, timestamp
 
-    if args.dir_root:
-        dir_root = args.dir_root
-    elif os.path.islink(sys.argv[0]):
-        dir_root = get_symbolic_link_dir()
-    else:
-        dir_root = os.path.abspath(os.getcwd())
+    (timestamp, dir_root, log) = setup_common(args, _teardown)
 
     dir_chromium = dir_root + '/external/chromium_org'
     dir_out = dir_root + '/out'
     dir_backup = dir_root + '/backup'
-
-    os.chdir(dir_root)
+    variant = args.variant
+    product_brand = args.product_brand
+    product_name = args.product_name
 
     if not os.path.exists('.repo'):
         if not args.repo_type:
@@ -146,20 +141,11 @@ def setup():
         repo_type = args.repo_type
     else:
         (repo_type, repo_date) = _get_repo_info()
-
     info('repo type is ' + repo_type)
 
     if repo_type == 'stable':
         connect_device()
     (devices, devices_product, devices_type, devices_target_arch, devices_mode) = setup_device()
-
-    if args.time_fixed:
-        timestamp = get_datetime(format='%Y%m%d')
-    else:
-        timestamp = get_datetime()
-
-    set_path(args.path_extra)
-    set_proxy()
 
     for cmd in ['adb', 'git', 'gclient']:
         result = execute('which ' + cmd, show_cmd=False)
@@ -186,17 +172,13 @@ def setup():
     else:
         chromium_version = 'cr30'
 
-    if os.path.exists('external/chromium_org/src'):
+    if os.path.exists(dir_chromium + '/src'):
         use_upstream_chromium = True
 
     if use_upstream_chromium:
         patches_build = dict(patches_build_common, **patches_build_upstream_chromium)
     else:
         patches_build = dict(patches_build_common, **patches_build_aosp_chromium)
-
-    dir_log = dir_root + '/log'
-    ensure_dir(dir_log)
-    file_log = dir_log + '/' + timestamp + '.txt'
 
     # Set up JDK
     backup_dir(dir_python)
@@ -205,10 +187,6 @@ def setup():
     else:
         execute('python version.py -t java -s java-7-openjdk-amd64')
     restore_dir()
-
-    variant = args.variant
-    product_brand = args.product_brand
-    product_name = args.product_name
 
 
 def init():
@@ -338,7 +316,7 @@ def build():
 
         if args.build_showcommands:
             cmd += ' showcommands'
-        cmd += ' -j16 2>&1 |tee -a ' + file_log
+        cmd += ' -j16 2>&1 |tee -a ' + log
         cmd = bashify_cmd(cmd)
         result = execute(cmd, interactive=True, dryrun=False)
         if result[0]:
@@ -674,7 +652,7 @@ def cts_run():
 
 def _sync_repo(dir, cmd):
     backup_dir(dir)
-    result = execute(cmd + ' 2>&1 |tee -a ' + file_log, interactive=True)
+    result = execute(cmd + ' 2>&1 |tee -a ' + log, interactive=True, dryrun=False)
     if result[0]:
         error('Failed to sync ' + dir)
     restore_dir()
@@ -884,6 +862,10 @@ def _get_repo_info():
         repo_date = 0
 
     return (repo_type, repo_date)
+
+
+def _teardown():
+    pass
 
 
 if __name__ == "__main__":

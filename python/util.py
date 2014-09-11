@@ -20,16 +20,19 @@ import commands
 import fileinput
 import random
 import select
+import atexit
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
+log = ''
 host_os = platform.system().lower()
 host_name = socket.gethostname()
 username = os.getenv('USER')
 count_cpu = str(multiprocessing.cpu_count() * 2)
 args = argparse.Namespace()
 dir_stack = []
+log_stack = []
 timer = {}
 
 # servers that webcatch can build on
@@ -98,6 +101,10 @@ dir_temp = _get_real_dir(__file__)
 while not os.path.exists(dir_temp + '/.git'):
     dir_temp = _get_real_dir(dir_temp)
 dir_share = dir_temp
+dir_share_ignore = dir_share + '/ignore'
+dir_share_ignore_log = dir_share_ignore + '/log'
+dir_share_ignore_timestamp = dir_share_ignore + '/timestamp'
+
 dir_python = dir_share + '/python'
 dir_webcatch = dir_python + '/webcatch'
 dir_webcatch_log = dir_webcatch + '/log'
@@ -118,7 +125,6 @@ dir_server = dir_workspace + '/server'
 dir_server_aosp = dir_server + '/aosp'
 dir_server_chromium = dir_server + '/chromium'
 dir_server_chrome_android_todo = dir_server_chromium + '/android-chrome-todo'
-dir_server_log = dir_server + '/log'
 dir_project = dir_workspace + '/project'
 dir_project_chrome_android = dir_project + '/chrome-android'
 dir_project_webcatch = dir_project + '/webcatch'
@@ -182,27 +188,48 @@ chromium_rev_default = [chromium_majorver_info[36][CHROMIUM_MAJORVER_INFO_INDEX_
 # </chromium>
 
 
+def backup_log(log_new, verbose=False):
+    global log_stack, log
+    log_stack.append(log)
+    log = log_new
+
+    if verbose:
+        info('Switched to new log file ' + log)
+
+
+def restore_log(verbose=False):
+    global log_stack, log
+    log_old = log_stack.pop()
+    log = log_old
+    if verbose:
+        info('Switched to old log file ' + log)
+
+
 def info(msg):
-    print "[INFO] " + msg + "."
+    _msg(msg)
 
 
 def warning(msg):
-    print '[WARNING] ' + msg + '.'
-
-
-def error(msg, abort=True, error_code=1):
-    print "[ERROR] " + msg + "!"
-    if abort:
-        quit(error_code)
+    _msg(msg)
 
 
 def cmd(msg):
-    print '[COMMAND] ' + msg
+    _msg(msg)
 
 
 # Used for debug, so that it can be cleaned up easily
 def debug(msg):
-    print '[DEBUG] ' + msg
+    _msg(msg)
+
+
+def trace(msg):
+    _msg(msg)
+
+
+def error(msg, abort=True, error_code=1):
+    _msg(msg)
+    if abort:
+        quit(error_code)
 
 
 def get_datetime(format='%Y%m%d%H%M%S'):
@@ -279,6 +306,14 @@ def execute(command, show_cmd=True, show_duration=False, show_progress=False, re
 
 def bashify_cmd(cmd):
     return 'bash -c "' + cmd + '"'
+
+
+def suffix_cmd(cmd, args, log):
+    if args.trace:
+        cmd += ' --trace'
+    if log:
+        cmd += ' --log ' + log
+    return cmd
 
 
 # Patch command if it needs to run on server
@@ -365,7 +400,6 @@ def send_mail(sender, to, subject, content, type='plain'):
     try:
         smtp = smtplib.SMTP('localhost')
         smtp.sendmail(sender, to, msg.as_string())
-        print msg.as_string()
         info('Email was sent successfully')
     except Exception:
         error('Failed to send mail at ' + host_name, abort=False)
@@ -693,7 +727,6 @@ def get_symbol(lines, dirs_symbol):
             break
         match = pattern.search(line)
         if match:
-            print line
             name = match.group(2)
             for dir_symbol in dirs_symbol:
                 path = dir_symbol + '/lib%s.so' % name
@@ -701,7 +734,6 @@ def get_symbol(lines, dirs_symbol):
                     continue
                 cmd = dir_linux + '/x86_64-linux-android-addr2line -C -e %s -f %s' % (path, match.group(1))
                 result = execute(cmd, return_output=True, show_cmd=False)
-                print result[1]
 
                 count_valid += 1
                 if count_valid >= count_valid_max:
@@ -1116,7 +1148,71 @@ def rounddown(num, base):
     return num - remainder
 
 
+def setup_common(args, teardown):
+    atexit.register(teardown)
+
+    if args.trace:
+        sys.settrace(trace_func)
+
+    if args.time_fixed:
+        timestamp = get_datetime(format='%Y%m%d')
+    else:
+        timestamp = get_datetime()
+
+    if args.dir_root:
+        dir_root = args.dir_root
+    elif os.path.islink(sys.argv[0]):
+        dir_root = get_symbolic_link_dir()
+    else:
+        dir_root = os.path.abspath(os.getcwd())
+
+    ensure_dir(dir_root)
+    ensure_dir(dir_share_ignore_log)
+    ensure_dir(dir_share_ignore_timestamp)
+
+    if args.log:
+        log = args.log
+    else:
+        name_script = sys.argv[0].split('/')[-1].replace('.py', '')
+        log = dir_share_ignore_log + '/' + name_script + '-' + timestamp + '.log'
+        info('Log file: ' + log)
+    backup_log(log, verbose=False)
+
+    set_path(args.path_extra)
+    set_proxy()
+    os.chdir(dir_root)
+
+    return (timestamp, dir_root, log)
+
+
+def add_argument_common(parser):
+    parser.add_argument('--dir-root', dest='dir_root', help='set root directory')
+    parser.add_argument('--log', dest='log', help='log')
+    parser.add_argument('--path-extra', dest='path_extra', help='extra path for execution, such as path for depot_tools')
+    parser.add_argument('--time-fixed', dest='time_fixed', help='fix the time for test sake. We may run multiple tests and results are in same dir', action='store_true')
+    parser.add_argument('--trace', dest='trace', help='trace', action='store_true')
+
+
+def trace_func(frame, event, arg, indent=[0]):
+    path_file = frame.f_code.co_filename
+    name_func = frame.f_code.co_name
+    name_file = path_file.split('/')[-1]
+    if path_file[:4] != '/usr' and path_file != '<string>':
+        if event == 'call':
+            indent[0] += 2
+            trace('-' * indent[0] + '> call %s:%s' % (name_file, name_func))
+        elif event == 'return':
+            trace('<' + '-' * indent[0] + ' exit %s:%s' % (name_file, name_func))
+            indent[0] -= 2
+    return trace_func
+
+
 # <internal>
+def _surpress_warning():
+    fileinput
+    random
+
+
 # dir_repo: repo dir
 # path_patch: Full path of patch
 # count: Recent commit count to check
@@ -1186,7 +1282,11 @@ def _chromium_get_rev_hash(rev_min, rev_max=0, force=False):
                 return rev_hash
 
 
-def _surpress_warning():
-    fileinput
-    random
+def _msg(msg):
+    msg = '[' + inspect.stack()[1][3].upper() + '] ' + msg
+    # This is legal usage of print
+    print msg
+    execute('echo "%s" >>"%s"' % (msg, log), show_cmd=False)
+
+
 # </internal>

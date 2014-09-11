@@ -20,7 +20,7 @@ from util import *
 # set automatic login
 
 interval_cron = 20  # minutes
-file_lock = dir_server + '/lock'
+file_lock = dir_share_ignore_timestamp + '/server'
 
 cb_interval = {
     'update_share': 1800,
@@ -43,21 +43,26 @@ examples:
 
     parser.add_argument('--cron', dest='cron', help='cron', action='store_true')
     parser.add_argument('--start', dest='start', help='start', action='store_true')
+    add_argument_common(parser)
 
     args = parser.parse_args()
     if len(sys.argv) <= 1:
         parser.print_help()
+        quit()
 
 
 def setup():
+    global dir_root, log, timestamp
+
+    (timestamp, dir_root, log) = setup_common(args, _teardown)
+    args.trace = True
+    _run_one('daemon')
+
     if os.path.exists(file_lock) and has_recent_change(file_lock, interval=24 * 3600):
         info('Server is running')
         exit(0)
     execute('touch ' + file_lock)
-    ensure_dir(dir_server_log)
     setenv('DISPLAY', ':0')
-    set_path()
-    set_proxy()
 
 
 def cron():
@@ -66,7 +71,7 @@ def cron():
 
     file_cron = '/var/spool/cron/crontabs/' + username
     result = execute('sudo cat ' + file_cron, return_output=True)
-    print result[1]
+
     if re.search('server.py', result[1]):
         info('server.py has been added to cron jobs')
     else:
@@ -96,6 +101,7 @@ def start():
         pass
 
     elif host_name == 'ubuntu-ygu5-02':
+        #_run_one('test_x64_aosp_build')
         pass
 
 
@@ -104,10 +110,6 @@ def update_share():
     #execute('git reset --hard')
     execute('git pull')
     restore_dir()
-
-
-def teardown():
-    execute('rm -f %s' % file_lock)
 
 
 def test_x64_all():
@@ -129,19 +131,22 @@ def test_x64_aosp_build():
 
 # If callback does not start within interval, start it
 def _run_one(cb):
-    file_cb = dir_server_log + '/' + cb
+    file_cb = dir_share_ignore_timestamp + '/' + cb
     if not os.path.exists(file_cb) or not has_recent_change(file_cb, interval=cb_interval[cb]):
         execute('touch ' + file_cb)
         cmd = globals()[cb]()
         if cmd:
-            cmd = 'python ' + dir_python + '/' + cmd + ' 2>&1 |tee ' + dir_server_log + '/' + cb + '.log'
+            cmd = 'python ' + dir_python + '/' + cmd
+            cmd = suffix_cmd(cmd, args, log)
             execute(cmd, interactive=True)
 
 
+def _teardown():
+    execute('rm -f %s' % file_lock)
+
+
 if __name__ == '__main__':
-    _run_one('daemon')
     parse_arg()
     setup()
     cron()
     start()
-    teardown()

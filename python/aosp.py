@@ -467,12 +467,12 @@ def flash_image():
     elif repo_type == 'irdakk' or repo_type == 'gminl' or repo_type == 'gminl64':
         execute('./flash-base.sh', interactive=True, dryrun=False)
         execute('./flash-all.sh', interactive=True, dryrun=False)
-        execute('rm -rf ' + dir_extract, dryrun=False)
         execute('timeout 10s %s -s %s reboot' % (path_fastboot, device))
+        execute('rm -rf ' + dir_extract, dryrun=False)
     elif repo_type == 'stable':
         execute('./flash-all.sh -t ' + ip, interactive=True, dryrun=False)
-        execute('rm -rf ' + dir_extract, dryrun=False)
         execute('timeout 10s %s -t %s reboot' % (path_fastboot, ip))
+        execute('rm -rf ' + dir_extract, dryrun=False)
 
     restore_dir()
 

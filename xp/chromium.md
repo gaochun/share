@@ -3,6 +3,21 @@
 
 </commit>
 
+<option>
+chrome://chrome-urls
+
+chrome://version # command line
+chrome://flags  # higher priority than command line
+chrome://memory == about://memory
+chrome://newtab == chrome-native://newtab/
+
+ --enable-new-ntp
+
+available for both chrome stable and beta
+adb shell 'echo "chrome --disable-fre --disable-web-security --enable-remote-debugging --ignore-certificate-errors --metrics-recording-only" > /data/local/tmp/chrome-command-line'
+
+</option>
+
 git config rietveld.server https://codereview.chromium.org
 *
 fatal: ref HEAD is not a symbolic ref

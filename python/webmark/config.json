@@ -1,11 +1,12 @@
 {
   "suites": [
     {
-      "name": "Chrome Linux Smoke Test",
-      "description": "Chrome Linux Smoke Test",
-      "module": {
-        "name": "content_shell",
-        "target_os": "android"
+      "name": "Chrome for Android Performance Test",
+      "description": "Chrome for Android Performance Test",
+      "target": {
+        "os": "android",
+        "arch": "x86",
+        "module": "chrome_beta"
       },
       "cases": [
         {"name":"guimark3compute"},

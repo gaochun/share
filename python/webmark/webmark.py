@@ -94,43 +94,44 @@ class Proxy:
             self.noproxy = 'localhost,127.0.0.1,*.intel.com'
 
 
-class Module:
+class Target:
     FORMAT = [
-        ['target_os', 'M', 'P'],
-        ['name', 'M', 'P'],
-        ['path', 'O', 'P'],
-        ['mode', 'O', 'P'],
-        ['proxy', 'O', 'O'],
-        ['switches', 'O', 'P'],
-        ['driver', 'O', 'P']
+        ['os', 'M', 'P'],
+        ['arch', 'M', 'P'],
+        ['module', 'M', 'P'],
+        ['module_path', 'O', 'P'],
+        ['module_mode', 'O', 'P'],
+        ['module_proxy', 'O', 'O'],
+        ['module_switches', 'O', 'P'],
+        ['module_driver', 'O', 'P']
     ]
 
     def __init__(self, data):
         self.data = data
         Format.format(self)
 
-        if not hasattr(self, 'mode'):
-            self.mode = 'browser'
+        if not hasattr(self, 'module_mode'):
+            self.module_mode = 'browser'
 
-        if not hasattr(self, 'proxy'):
-            self.proxy = Proxy()
+        if not hasattr(self, 'module_proxy'):
+            self.module_proxy = Proxy()
 
-        if not hasattr(self, 'switches'):
-            if self.target_os == 'linux' and self.name == 'chrome':
-                self.switches = '--flag-switches-begin --enable-experimental-web-platform-features --flag-switches-end --disable-setuid-sandbox --disable-hang-monitor --allow-file-access-from-files --user-data-dir=./'
-            elif self.target_os == 'android' and self.name == 'content_shell':
-                self.switches = '--flag-switches-begin --enable-experimental-web-platform-features --flag-switches-end --disable-setuid-sandbox --disable-hang-monitor --allow-file-access-from-files --user-data-dir=./'
+        if not hasattr(self, 'module_switches'):
+            if self.os == 'linux' and self.module == 'chrome':
+                self.module_switches = '--flag-switches-begin --enable-experimental-web-platform-features --flag-switches-end --disable-setuid-sandbox --disable-hang-monitor --allow-file-access-from-files --user-data-dir=./'
+            elif self.os == 'android' and self.module == 'content_shell':
+                self.module_switches = '--flag-switches-begin --enable-experimental-web-platform-features --flag-switches-end --disable-setuid-sandbox --disable-hang-monitor --allow-file-access-from-files --user-data-dir=./'
 
-        if not hasattr(self, 'driver'):
-            if self.target_os == 'linux' and self.name == 'chrome':
-                self.driver = 'driver/chromedriver'
-            elif self.target_os == 'android' and self.name == 'content_shell':
-                self.driver = 'driver/chromedriver'
+        if not hasattr(self, 'module_driver'):
+            if self.os == 'linux' and self.module == 'chrome':
+                self.module_driver = 'driver/chromedriver'
+            elif self.os == 'android' and self.module == 'content_shell':
+                self.module_driver = 'driver/chromedriver'
 
 
 class Suite:
     FORMAT = [
-        ['module', 'M', 'O'],
+        ['target', 'M', 'O'],
         ['cases', 'M', 'A'],
         ['name', 'O', 'P'],
         ['description', 'O', 'P']
@@ -142,28 +143,28 @@ class Suite:
         Format.format(self)
 
     def run(self):
-        # driver_name = self.module.name.capitalize() + 'Driver'
+        # driver_name = self.target.name.capitalize() + 'Driver'
         # exec 'from driver.' + driver_name.lower() + ' import ' + driver_name
-        # self.driver = eval(driver_name)(self.module)
+        # self.driver = eval(driver_name)(self.target)
 
         # Handle app mode
-        if self.module.mode == 'app':
+        if self.target.module_mode == 'app':
             app_path = dir_root + '/hosted_app'
             self.extension = self.driver.install_extension(app_path)
-            self.driver.get('chrome:newtab')
+            self.driver.get('chrome://newtab')
             handles = self.driver.window_handles
             self.driver.find_element_by_xpath("//div[@title='Hosted App Benchmark']").click()
             self.driver.switch_to_new_window(handles)
 
-        # Install module if needed
-        if hasattr(self.module, 'path') and self.module.path:
-            result = execute('adb install -r ' + self.module.path, interactive=True)
+        # Install target if needed
+        if hasattr(self.target, 'module_path') and self.target.module_path:
+            result = execute('adb install -r ' + self.target.module_path, interactive=True)
             if result[0]:
-                error('Can not install ' + self.module.path)
+                error('Can not install ' + self.target.module_path)
 
         capabilities = {}
         capabilities['chromeOptions'] = {}
-        capabilities['chromeOptions']['androidPackage'] = chromium_android_info[args.target_module][CHROMIUM_ANDROID_INFO_INDEX_PKG]
+        capabilities['chromeOptions']['androidPackage'] = chromium_android_info[self.target.module][CHROMIUM_ANDROID_INFO_INDEX_PKG]
         capabilities['chromeOptions']['androidUseRunningApp'] = args.use_running_app
         capabilities['chromeOptions']['args'] = ['--disable-web-security']
         capabilities['chromeOptions']['androidDeviceSerial'] = device
@@ -194,8 +195,10 @@ class WebMark:
             self.data = json.load(f)
             f.close()
         else:
-            target_module = args.target_module
             target_os = args.target_os
+            target_arch = args.target_arch
+            target_module = args.target_module
+            target_module_path = args.target_module_path
 
             # TODO: Handle other comb here
             if target_os == 'linux' and target_module == 'chrome':
@@ -222,10 +225,11 @@ class WebMark:
 {
   "suites": [
     {
-      "module": {
-        "name": "%s",
-        "target_os": "%s",
-        "path": "%s"
+      "target": {
+        "os": "%s",
+        "arch": "%s",
+        "module": "%s",
+        "module_path": "%s"
       },
       "cases": [
         {"name": "%s"%s}
@@ -233,7 +237,7 @@ class WebMark:
     }
   ]
 }
-            ''' % (target_module, target_os, target_module_path, benchmark, benchmark_config))
+            ''' % (target_os, target_arch, target_module, target_module_path, benchmark, benchmark_config))
 
         self.suites = []
         Format.format(self)

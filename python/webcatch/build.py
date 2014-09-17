@@ -611,56 +611,55 @@ def _build_one(comb_next):
 # get the smallest rev in combs
 def _get_comb_next():
     comb_next = []
-    for comb in combs:
-        while (comb[COMB_INDEX_REV] <= rev_max and _rev_is_built(comb)):
-            info(str(comb) + ' has been built')
-            comb[COMB_INDEX_REV] += build_every
+    while True:
+        for comb in combs:
+            while (comb[COMB_INDEX_REV] <= rev_max and _rev_is_built(comb)):
+                info(str(comb) + ' has been built')
+                comb[COMB_INDEX_REV] += build_every
 
-        if not comb_next:
-            comb_next = comb
-        elif comb[COMB_INDEX_REV] < comb_next[COMB_INDEX_REV]:
-            comb_next = comb
+            if not comb_next:
+                comb_next = comb
+            elif comb[COMB_INDEX_REV] < comb_next[COMB_INDEX_REV]:
+                comb_next = comb
 
-    return comb_next
+        if comb_next[COMB_INDEX_REV] > rev_max:
+            return comb_next
+        elif _rev_is_built(comb_next, rand=True):
+            comb_next[COMB_INDEX_REV] += build_every
+        else:
+            return comb_next
 
 
-def _rev_is_built(comb):
+def _rev_is_built(comb, rand=False):
     target_os = comb[COMB_INDEX_TARGET_OS]
     target_arch = comb[COMB_INDEX_TARGET_ARCH]
     target_module = comb[COMB_INDEX_TARGET_MODULE]
     rev = comb[COMB_INDEX_REV]
     comb_name = _get_comb_name(target_os, target_arch, target_module)
 
-    # skip the rev marked as built
-    if not slave_only:
-        comb_valid_rev_min = comb_valid[(target_os, target_arch, target_module)][COMB_VALID_INDEX_REV_MIN]
-        comb_valid_rev_max = comb_valid[(target_os, target_arch, target_module)][COMB_VALID_INDEX_REV_MAX]
-        if rev >= comb_valid_rev_min and rev <= comb_valid_rev_max:
-            return True
-
-    # check for slave_only
     if slave_only:
         cmd = 'ls ' + dir_project_webcatch_out + '/' + comb_name + '/' + str(rev) + '*'
         result = execute(cmd, show_cmd=False)
         if result[0] == 0:
             return True
         return False
+    else:
+        # skip the rev marked as built
+        comb_valid_rev_min = comb_valid[(target_os, target_arch, target_module)][COMB_VALID_INDEX_REV_MIN]
+        comb_valid_rev_max = comb_valid[(target_os, target_arch, target_module)][COMB_VALID_INDEX_REV_MAX]
+        if rev >= comb_valid_rev_min and rev <= comb_valid_rev_max:
+            return True
 
-    # check in server
-    cmd = 'ls ' + dir_server_chromium + '/' + comb_name + '/' + str(rev) + '*'
+        if rand:
+            second = random.randint(1, 10)
+            info('sleep ' + str(second) + ' seconds and check again')
+            time.sleep(second)
 
-    if _rev_is_built_one(cmd):
-        return True
-
-    # check again to avoid conflict among parallel build machines
-    second = random.randint(1, 10)
-    info('sleep ' + str(second) + ' seconds and check again')
-    time.sleep(second)
-
-    if _rev_is_built_one(cmd):
-        return True
-
-    return False
+        cmd = 'ls ' + dir_server_chromium + '/' + comb_name + '/' + str(rev) + '*'
+        if _rev_is_built_one(cmd):
+            return True
+        else:
+            return False
 
 
 # check if rev is built in server

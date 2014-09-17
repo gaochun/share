@@ -28,8 +28,8 @@ slave_only = False
 
 # (target_os, target_arch, target_module): [binary_format, rev_min_built, rev_max_built]
 comb_valid = {
-    ('android', 'x86', 'content_shell'): ['(.*).apk$', 260368, 272770],
-    ('android', 'x86_64', 'content_shell'): ['(.*).apk$', 260368, 290520],
+    ('android', 'x86', 'content_shell'): ['(.*).apk$', 260368, 295230],
+    ('android', 'x86_64', 'content_shell'): ['(.*).apk$', 260368, 293910],
     ('android', 'x86', 'webview'): ['(.*).apk$', 233137, 252136],
     ('linux', 'x86', 'chrome'): ['(.*).tar.gz$', 233137, 236088],
     #['android', 'arm', 'content_shell'],
@@ -72,9 +72,9 @@ examples:
   python %(prog)s -b --target-os android --target-module content_shell --keep_out
 
 ''')
-    parser.add_argument('--target-os', dest='target_os', help='target os', choices=target_os_all + ['all'], default='all')
-    parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=target_arch_all + ['all'], default='all')
-    parser.add_argument('--target-module', dest='target_module', help='target module', choices=target_module_all + ['all'], default='all')
+    parser.add_argument('--target-os', dest='target_os', help='target os', default='all')
+    parser.add_argument('--target-arch', dest='target_arch', help='target arch', default='all')
+    parser.add_argument('--target-module', dest='target_module', help='target module', default='all')
     parser.add_argument('-r', '--rev', dest='rev', help='revisions to build. E.g., 233137, 217377-225138')
     parser.add_argument('--build', dest='build', help='build', action='store_true')
     parser.add_argument('--build-every', dest='build_every', help='build every number', type=int, default=10)
@@ -612,14 +612,13 @@ def _build_one(comb_next):
 def _get_comb_next():
     comb_next = []
     for comb in combs:
-        comb_temp = comb
         while (comb[COMB_INDEX_REV] <= rev_max and _rev_is_built(comb)):
             info(str(comb) + ' has been built')
             comb[COMB_INDEX_REV] += build_every
 
         if not comb_next:
             comb_next = comb
-        elif rev_temp < comb_next[COMB_INDEX_REV]:
+        elif comb[COMB_INDEX_REV] < comb_next[COMB_INDEX_REV]:
             comb_next = comb
 
     return comb_next

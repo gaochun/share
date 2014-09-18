@@ -102,24 +102,26 @@ class browsermark(Benchmark):
                 scores_test = [x.get_attribute('innerText') for x in driver.find_elements_by_class_name('test_result_score')]
                 # overall score
                 result.append(score)
-                # CSS 2.1
+                # CSS
                 result.append(scores_group[0])
                 for i in range(0, 4):
                     result.append(scores_test[i])
-                # DOM 2.1
+                # DOM
                 result.append(scores_group[1])
                 for i in range(4, 8):
                     result.append(scores_test[i])
-                # GRAPHICS 2.1
-                result.append(scores_group[2])
-                for i in range(8, 11):
-                    result.append(scores_test[i])
-                # JAVASCRIPT 2.1
-                result.append(scores_group[3])
-                for i in range(11, 15):
-                    result.append(scores_test[i])
-                # SCALABLE SOLUTIONS 2.1
-                result.append(scores_group[4])
-                for i in range(15, 19):
-                    result.append(scores_test[i])
+
+                if self.version == '2.1':
+                    # GRAPHICS
+                    result.append(scores_group[2])
+                    for i in range(8, 11):
+                        result.append(scores_test[i])
+                    # JAVASCRIPT
+                    result.append(scores_group[3])
+                    for i in range(11, 15):
+                        result.append(scores_test[i])
+                    # SCALABLE SOLUTIONS
+                    result.append(scores_group[4])
+                    for i in range(15, 19):
+                        result.append(scores_test[i])
         self.result = result

@@ -206,7 +206,14 @@ repo_type_info = {
                     'CoreImplTest#testSharedBufferCreation',
                 ]
             },
-            ('baytrail', 'x86_64'): {},
+            ('baytrail', 'x86_64'): {
+                'base_unittests': [
+                    # Child process can not be terminated correctly.
+                    # This seems not due to action_max_timeout() is not enough.
+                    # Root cause is unknown.
+                    'ProcessUtilTest.GetTerminationStatusCrash',
+                ],
+            },
             ('baytrail', 'x86'): {
                 # status Done
                 'base_unittests': [

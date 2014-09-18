@@ -6,8 +6,8 @@ class canvasmark(Benchmark):
         'name': 'canvasmark',
         'metric': 'Score',
         'path': {
-            'external': 'http://www.kevs3d.co.uk/dev/canvasmark/index.html?auto=true',
-            'internal': 'webbench/canvasmark/index.html?auto=true'
+            'external': 'http://www.kevs3d.co.uk/dev/canvasmark/',
+            'internal': 'webbench/canvasmark/'
         },
         'version': '2013'
     }
@@ -16,12 +16,22 @@ class canvasmark(Benchmark):
         super(canvasmark, self).__init__(driver, case)
 
     def cond0(self, driver):
-        try:
-            alert = driver.switch_to_alert()
-            self.e = alert.text
+        self.e = driver.find_element_by_id('canvas')
+        if self.e:
+            time.sleep(10)
             return True
-        except:
+        else:
             return False
 
     def act0(self, driver):
-        self.result.append(self.e)
+        self.e.click()
+
+    def cond1(self, driver):
+        self.e = driver.find_element_by_id('results').text
+        if self.e:
+            return True
+        else:
+            return False
+
+    def act1(self, driver):
+        self.result.append(self.e.split()[2])

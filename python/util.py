@@ -92,6 +92,7 @@ device_product_info = {
         'scaling_driver': 'intel_pstate'
     }
 }
+device_product_info['asus_t100_64p'] = device_product_info['asus_t100']
 
 
 # <path>

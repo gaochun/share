@@ -3,8 +3,10 @@ from benchmark import *
 
 class galactic(Benchmark):
     CONFIG = {
+        'category': category_info['canvas2d'],
         'name': 'Galactic',
-        'metric': 'FPS',
+        'version': 'mobile',
+        'metric': metric_info['fps'],
         'path': {
             'desktop': {
                 'external': 'http://ie.microsoft.com/testdrive/Performance/Galactic/Default.html',
@@ -15,7 +17,6 @@ class galactic(Benchmark):
                 'internal': 'webbench/microsoft/testdrive/mobile/Performance/Galactic/'
             }
         },
-        'version': 'mobile',
     }
 
     def __init__(self, driver, case):
@@ -42,4 +43,3 @@ class galactic(Benchmark):
 
     def get_result_one(self, driver):
         return str(driver.execute_script('return gFpsData.AvgFps'))
-

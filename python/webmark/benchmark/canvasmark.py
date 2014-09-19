@@ -3,13 +3,14 @@ from benchmark import *
 
 class canvasmark(Benchmark):
     CONFIG = {
+        'category': category_info['canvas2d'],
         'name': 'canvasmark',
-        'metric': 'Score',
+        'version': '2013',
+        'metric': metric_info['score'],
         'path': {
             'external': 'http://www.kevs3d.co.uk/dev/canvasmark/',
             'internal': 'webbench/canvasmark/'
         },
-        'version': '2013'
     }
 
     def __init__(self, driver, case):

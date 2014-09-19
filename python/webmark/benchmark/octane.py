@@ -3,8 +3,10 @@
 
 class octane(Benchmark):
     CONFIG = {
+        'category': category_info['js'],
         'name': 'Octane',
-        'metric': 'score',
+        'version': '2.0',
+        'metric': metric_info['score'],
         'path': {
             '2.0': {
                 'external': 'http://octane-benchmark.googlecode.com/svn/latest/index.html',
@@ -15,7 +17,6 @@ class octane(Benchmark):
                 'internal': 'browsermark',
             }
         },
-        'version': '2.0',
     }
 
     def __init__(self, driver, case):

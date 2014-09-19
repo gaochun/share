@@ -3,8 +3,10 @@ from benchmark import *
 
 class sunspider(Benchmark):
     CONFIG = {
+        'category': category_info['js'],
         'name': 'SunSpider',
-        'metric': 'ms',
+        'version': '1.0.2',
+        'metric': metric_info['ms'],
         # Webkit all versions: http://www.webkit.org/perf/sunspider/versions.html
         'path': {
             '0.9': {
@@ -37,7 +39,6 @@ class sunspider(Benchmark):
                 'internal': ''
             }
         },
-        'version': '1.0.2',
     }
 
     def __init__(self, driver, case):

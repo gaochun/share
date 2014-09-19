@@ -3,8 +3,10 @@ from benchmark import *
 
 class fishietank(Benchmark):
     CONFIG = {
+        'category': category_info['canvas2d'],
         'name': 'FishIETank',
-        'metric': 'FPS',
+        'version': 'setinterval',
+        'metric': metric_info['fps'],
         'path': {
             'setinterval': {
                 'external': 'http://ie.microsoft.com/testdrive/Performance/FishIETank/Default.html',
@@ -17,7 +19,6 @@ class fishietank(Benchmark):
         },
         'counts_fish': [1, 10, 20, 50, 100, 250, 500, 1000],
         'count_fish': 50,
-        'version': 'setinterval'
     }
 
     def __init__(self, driver, case):

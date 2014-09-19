@@ -3,8 +3,10 @@
 
 class browsermark(Benchmark):
     CONFIG = {
+        'category': category_info['comprehensive'],
         'name': 'BrowserMark',
-        'metric': 'score',
+        'version': '2.1',
+        'metric': metric_info['score'],
         'path': {
             '2.1': {
                 'external': 'http://browsermark.rightware.com',
@@ -15,7 +17,6 @@ class browsermark(Benchmark):
                 'internal': 'browsermark',
             }
         },
-        'version': '2.1',
         'timeout': 600,
         'test_all': [
             '2D Rendering', '3D Rendering', 'Crunch', 'Resize',

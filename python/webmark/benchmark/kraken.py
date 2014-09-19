@@ -3,13 +3,14 @@ from benchmark import *
 
 class kraken(Benchmark):
     CONFIG = {
+        'category': category_info['js'],
         'name': 'Kraken',
-        'metric': 'FPS',
+        'version': '1.1',
+        'metric': metric_info['ms'],
         'path': {
             'external': 'http://krakenbenchmark.mozilla.org/',
             'internal': 'webbench/kraken/'
         },
-        'version': '1.1'
     }
 
     def __init__(self, driver, case):

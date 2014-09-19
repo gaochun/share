@@ -8,6 +8,27 @@ import sys
 sys.path.append(sys.path[0] + '/..')
 from util import *
 
+category_info = {
+    'comprehensive': 'Comprehensive',
+    'js': 'JavaScript',
+    'canvas2d': 'Canvas2D',
+    'webgl': 'WebGL',
+    'css': 'CSS',
+    'webaudio': 'WebAudio',
+    'webvideo': 'WebVideo',
+    'webtouch': 'WebTouch',
+    'fileop': 'FileOperation',
+    'localstorage': 'LocalStorage',
+    'render': 'PageRendering',
+}
+
+metric_info = {
+    'score': 'Score(+)',
+    'fps': 'FPS(+)',
+    'ms': 'ms(-)',
+    's': 's(-)'
+}
+
 
 class Benchmark(object):
     def __init__(self, driver, case):
@@ -30,9 +51,10 @@ class Benchmark(object):
         # handle general members
         config = self.CONFIG
         members = {
+            'category': '',
             'name': '',
-            'metric': 'fps',
-            'version': '1.0',
+            'version': '',
+            'metric': '',
             'path_type': 'internal',
             'timeout': 90,
             'sleep': 3,
@@ -126,7 +148,7 @@ class Benchmark(object):
             for i in range(count_result):
                 results_average.append(round(results_total[i] / count_results, 2))
 
-            return '%s,%s,%s' % (self.name, self.version, ','.join(str(x) for x in results_average))
+            return '%s,%s,%s,%s,%s' % (self.category, self.name, self.version, self.metric, ','.join(str(x) for x in results_average))
 
     def _is_finished(self, driver):
         if self.states[self.state][0](driver):

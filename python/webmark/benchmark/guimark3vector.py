@@ -3,8 +3,9 @@
 
 class guimark3vector(Benchmark):
     CONFIG = {
+        'category': category_info['canvas2d'],
         'name': 'GUIMark3 Vector',
-        'metric': 'FPS',
+        'metric': metric_info['fps'],
         'path': {
             'external': 'http://www.craftymind.com/factory/guimark3/vector/GM3_JS_Vector.html',
             'internal': 'webbench/GUIMark3/vector/GM3_JS_Vector.html'

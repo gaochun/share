@@ -3,8 +3,9 @@
 
 class guimark3compute(Benchmark):
     CONFIG = {
+        'category': category_info['canvas2d'],
         'name': 'GUIMark3 Compute',
-        'metric': 'FPS',
+        'metric': metric_info['fps'],
         'path': {
             'external': 'http://www.craftymind.com/factory/guimark3/compute/GM3_JS_Compute.html',
             'internal': 'webbench/GUIMark3/compute/GM3_JS_Compute.html'

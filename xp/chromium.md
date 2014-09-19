@@ -3,6 +3,14 @@
 
 </commit>
 
+<gpu>
+* check extension
+content/common/gpu/client/gl_helper_readback_support.cc
+
+gpu/command_buffer/service/gles2_cmd_decoder.cc
+</gpu>
+
+
 <option>
 chrome://chrome-urls
 

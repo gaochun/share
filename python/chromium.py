@@ -289,7 +289,7 @@ examples:
     group_common.add_argument('--target-os', dest='target_os', help='target os', choices=['android', 'linux'])
     group_common.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'arm', 'x86_64', 'arm64'], default='x86')
     group_common.add_argument('--target-module', dest='target_module', help='target module to build', choices=['chrome', 'webview', 'content_shell', 'chromedriver'], default='webview')
-    group_common.add_argument('--devices', dest='devices', help='device id list separated by ","', default='')
+    group_common.add_argument('--device', dest='device', help='device id list separated by ","', default='')
     group_common.add_argument('--just-out', dest='just_out', help='stick to out, instead of out-x86_64/out', action='store_true')
     group_common.add_argument('--rev', dest='rev', type=int, help='revision, will override --sync-upstream')
     group_common.add_argument('--ver', dest='ver', help='ver for chrome-android')
@@ -425,12 +425,13 @@ def setup():
             target_os = 'linux'
 
     if _need_device():
-        if args.devices:
-            devices_limit = args.devices.split(',')
+        if args.device:
+            devices_limit = args.device.split(',')
         else:
             devices_limit = []
 
-        connect_device()
+        if not devices_limit or '192.168.42.1:5555' in devices_limit:
+            connect_device()
         (devices, devices_product, devices_type, devices_target_arch, devices_mode) = setup_device(devices_limit=devices_limit)
 
         _hack_app_process()
@@ -1044,8 +1045,7 @@ def test_run(force=False):
     if not args.test_run and not force:
         return
 
-    if not os.path.exists(dir_test):
-        os.mkdir(dir_test)
+    ensure_dir(dir_test)
 
     number_device = len(devices)
     if number_device < 1:

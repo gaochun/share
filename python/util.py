@@ -519,6 +519,8 @@ def setup_device(devices_limit=[]):
             continue
         elif re.search('offline', device_line):
             continue
+        elif not re.search('device', device_line):
+            continue
 
         match = pattern_nofastboot.search(device_line)
         if match:
@@ -544,7 +546,7 @@ def setup_device(devices_limit=[]):
 
         device = items[0]
         devices.append(device)
-        if re.search('asus_t100', device_product):
+        if re.search('asus_t100', device_product) or re.search('cruise7', device_product):
             devices_type.append('baytrail')
         elif re.search('V975', device_product):
             devices_type.append('clovertrail')

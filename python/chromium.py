@@ -178,6 +178,12 @@ repo_type_info = {
                     'BaselinePolicy.SIGSYS___NR_vserver',
                     'BaselinePolicy.SocketpairWrongDomain',
                 ],
+                'content_gl_tests': [
+                    # Intel gfx bug related to glReadPixels with format BGRA
+                    'GLHelperTest.BGRASyncReadbackTest',
+                    'GLHelperTest.BGRAASyncReadbackTest',
+                    'GLHelperPixelTest.CropScaleReadbackAndCleanTextureTest',
+                ],
                 'ContentShellTest': [
                     # Status: TODO
                     'JavaBridgeCoercionTest#testPassJavaObject',

@@ -517,6 +517,8 @@ def setup_device(devices_limit=[]):
             continue
         elif re.match('^\s*$', device_line):
             continue
+        elif re.search('offline', device_line):
+            continue
 
         match = pattern_nofastboot.search(device_line)
         if match:

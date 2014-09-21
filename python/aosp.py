@@ -393,7 +393,7 @@ def flash_image():
         if re.match('http', args.file_image):
             execute('wget ' + args.file_image, dryrun=False)
         else:
-            execute('mv ' + args.file_image + ' ./')
+            execute('cp ' + args.file_image + ' ./')
 
         if args.file_image[-6:] == 'tar.gz':
             execute('tar zxf ' + args.file_image.split('/')[-1])

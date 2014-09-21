@@ -720,6 +720,7 @@ symbolic_link $DIR_SUBLIME3 SublimeLinter.sublime-settings ~/.config/sublime-tex
 
 # apache2
 symbolic_link $DIR_APACHE2 apache2.conf $DIR_ETC/apache2
+symbolic_link $DIR_APACHE2 .htaccess /workspace/server
 
 complete () {
         emulate -L zsh
@@ -749,6 +750,8 @@ CONF_APACHE2=000-default.conf
 
 if [ $hostname == "ubuntu-ygu5-01" -o $hostname == "ubuntu-ygu5-02" ] ; then
     DIR_DEFAULT=$DIR_DEFAULT
+    symbolic_link $DIR_LINUX .gitconfig ~
+    symbolic_link $DIR_LINUX/ssh config ~/.ssh
 elif [ $hostname == "ubuntu-y560d" ] ; then
     DIR_DEFAULT=$DIR_SHARE
 elif [ $hostname == "wp-01" ] ; then

@@ -1,33 +1,55 @@
 [core]
-	editor = vi
-	autocrlf = false
-	filemode = false
+    editor = vi
+    autocrlf = false
+    filemode = false
 [user]
-	name = Yang Gu
-	email = yang.gu@intel.com
-	mail = yang.gu@intel.com
+    name = Yang Gu
+    email = yang.gu@intel.com
+    mail = yang.gu@intel.com
 [sendemail]
-	smtpserver = linux.intel.com
-	chainreplyto = false
+    smtpserver = linux.intel.com
+    chainreplyto = false
 [apply]
-	#whitespace = error
+    #whitespace = error
 [color]
-	ui = auto
+    ui = auto
 [push]
-	default = simple
+    default = simple
 
 [http]
-	proxy = socks5://proxy.jf.intel.com:1080
-	postBuffer = 524288000
+    proxy = socks5://proxy.jf.intel.com:1080
+    postBuffer = 524288000
 [https]
-	proxy = socks5://proxy.jf.intel.com:1080
+    proxy = socks5://proxy.jf.intel.com:1080
 
 # x64
 [review "aia-review.intel.com"]
-	username = ygu5
+    username = ygu5
 [review "android.intel.com"]
-	username = ygu5
+    username = ygu5
+
+[url "ssh://ygu5@android-mirror-sh.devtools.intel.com:29418/"]
+    insteadOf=git://android.intel.com/
+    insteadOf=ssh://android.intel.com/
+    insteadOf=ssh://android.intel.com:29418/
+    insteadOf=git://android-mirror-or.devtools.intel.com/
+    insteadOf=ssh://android-mirror-or.devtools.intel.com/
+    insteadOf=ssh://android-mirror-or.devtools.intel.com:29418/
+    insteadOf=git://android-mirror.devtools.intel.com/
+    insteadOf=ssh://android-mirror.devtools.intel.com/
+    insteadOf=ssh://android-mirror.devtools.intel.com:29418/
+    insteadOf=git://jfumg-gcrmirror.jf.intel.com/
+    insteadOf=ssh://jfumg-gcrmirror.jf.intel.com/
+[url "ssh://android.intel.com:29418/"]
+    pushInsteadOf=ssh://android.intel.com/
+    pushInsteadOf=ssh://android.intel.com:29418/
+    pushInsteadOf=ssh://jfumg-gcrmirror.jf.intel.com/
+    pushInsteadOf=ssh://jfumg-gcrmirror.jf.intel.com:29418/
+    pushInsteadOf=ssh://android-mirror.devtools.intel.com/
+    pushInsteadOf=ssh://android-mirror.devtools.intel.com:29418/
+    pushInsteadOf=ssh://android-mirror-or.devtools.intel.com/
+    pushInsteadOf=ssh://android-mirror-or.devtools.intel.com:29418/
 
 ### archive ###
 #[url "http://"]
-#	insteadOf = "https://"
+#    insteadOf = "https://"

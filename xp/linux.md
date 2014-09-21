@@ -4,13 +4,25 @@ sudo apt-get install lamp-server^
 </lamp>
 
 <apache>
+* server name
 echo "ServerName localhost" | sudo tee /etc/apache2/conf-available/fqdn.conf && sudo a2enconf fqdn
+or
+echo "ServerName localhost" | sudo tee /etc/apache2/conf-available/fqdn.conf
+sudo ln -s /etc/apache2/conf-available/fqdn.conf /etc/apache2/conf-enabled/fqdn.conf
+
+* restart
+sudo service apache2 restart
+or
+sudo apache2ctl restart
+
+*
 sudo a2ensite browsermark
 sudo a2dissite browsermark
 sudo service apache2 reload
-
 sudo a2enmod rewrite
-sudo service apache2 restart
+
+* check port
+sudo lsof -i:80
 
 </apache>
 

@@ -663,6 +663,7 @@ DIR_SUBLIME2=$DIR_COMMON/sublime/2
 DIR_SUBLIME3=$DIR_COMMON/sublime/3
 
 DIR_ETC=/etc
+DIR_ETC_APACHE2=$DIR_ETC/apache2
 
 # ln -s $DIR_SHARE/linux/.zshrc ~/.zshrc
 
@@ -718,10 +719,6 @@ symbolic_link $DIR_SUBLIME2 SublimeLinter.sublime-settings ~/.config/sublime-tex
 symbolic_link $DIR_SUBLIME3 Preferences.sublime-settings ~/.config/sublime-text-3/Packages/User
 symbolic_link $DIR_SUBLIME3 SublimeLinter.sublime-settings ~/.config/sublime-text-3/Packages/User
 
-# apache2
-symbolic_link $DIR_APACHE2 apache2.conf $DIR_ETC/apache2
-symbolic_link $DIR_APACHE2 .htaccess /workspace/server
-
 complete () {
         emulate -L zsh
         local args void cmd print remove
@@ -745,18 +742,26 @@ complete () {
 hostname=$(hostname)
 
 # conditional configuration
-DIR_DEFAULT=/workspace/project
-CONF_APACHE2=000-default.conf
+DIR_DEFAULT=$DIR_PROJECT
 
 if [ $hostname == "ubuntu-ygu5-01" -o $hostname == "ubuntu-ygu5-02" ] ; then
-    DIR_DEFAULT=$DIR_DEFAULT
     symbolic_link $DIR_LINUX .gitconfig ~
     symbolic_link $DIR_LINUX/ssh config ~/.ssh
+
+    # apache2
+    symbolic_link $DIR_APACHE2 apache2.conf $DIR_ETC_APACHE2
+    symbolic_link $DIR_APACHE2 ports.conf $DIR_ETC_APACHE2
+    symbolic_link $DIR_APACHE2 .htaccess /workspace/server
+    symbolic_link $DIR_APACHE2/sites-available 000-default-8000.conf $DIR_ETC_APACHE2/sites-available 000-default.conf
+    symbolic_link $DIR_ETC_APACHE2/sites-available 000-default.conf $DIR_ETC_APACHE2/sites-enabled
+    symbolic_link $DIR_APACHE2/conf-available fqdn.conf $DIR_ETC_APACHE2/conf-available
+    symbolic_link $DIR_ETC_APACHE2/conf-available fqdn.conf $DIR_ETC_APACHE2/conf-enabled
+
 elif [ $hostname == "ubuntu-y560d" ] ; then
     DIR_DEFAULT=$DIR_SHARE
+
 elif [ $hostname == "wp-01" ] ; then
-    CONF_APACHE2=000-benchmark.conf
+    symbolic_link $DIR_APACHE2 000-benchmark.conf $DIR_ETC_APACHE2/sites-available
 fi
 
 cd $DIR_DEFAULT
-symbolic_link $DIR_APACHE2 $CONF_APACHE2 $DIR_ETC/apache2/sites-available

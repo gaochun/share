@@ -519,7 +519,7 @@ def setup_device(devices_limit=[]):
             continue
         elif re.search('offline', device_line):
             continue
-        elif not re.search('device', device_line):
+        elif not re.search('device', device_line) and not re.search('fastboot', device_line):
             continue
 
         match = pattern_nofastboot.search(device_line)

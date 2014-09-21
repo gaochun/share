@@ -1,0 +1,13 @@
+host android.intel.com
+port 29418
+user ygu5
+IdentityFile /home/gyagp/.ssh/id_rsa
+
+host android-mirror.devtools.intel.com
+port 29418
+user ygu5
+
+host android-mirror-sh.devtools.intel.com
+port 29418
+user ygu5
+StrictHostKeyChecking no

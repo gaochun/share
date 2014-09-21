@@ -180,14 +180,6 @@ def setup():
     else:
         patches_build = dict(patches_build_common, **patches_build_aosp_chromium)
 
-    # Set up JDK
-    backup_dir(dir_python)
-    if repo_type == 'irdakk':
-        execute('python version.py -t java -s jdk1.6.0_45')
-    else:
-        execute('python version.py -t java -s java-7-openjdk-amd64')
-    restore_dir()
-
 
 def init():
     if not args.init:
@@ -266,6 +258,14 @@ def remove_out():
 def build():
     if not args.build:
         return
+
+    # Set up JDK
+    backup_dir(dir_python)
+    if repo_type == 'irdakk':
+        execute('python version.py -t java -s jdk1.6.0_45')
+    else:
+        execute('python version.py -t java -s java-7-openjdk-amd64')
+    restore_dir()
 
     for arch, device_type, module in [(arch, device_type, module) for arch in target_archs for device_type in target_devices_type for module in target_modules]:
         name_build = get_caller_name() + '-' + arch + '-' + device_type + '-' + module

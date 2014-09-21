@@ -235,3 +235,9 @@ route add default gw 192.168.42.2 dev eth0
 /system/bin/dnsmasq -2 -x -i lo -S 10.248.2.5 --pid-file
 
 </reverse_tethering>
+
+<bkm>
+* install stock browser
+cd /system/app && mv BrowserProviderProxy.apk BrowserProviderProxy.apk.bk
+adb install Browser.apk
+</bkm>

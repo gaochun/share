@@ -1551,9 +1551,11 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
     from selenium import webdriver
     from selenium.webdriver.support.wait import WebDriverWait
 
+    has_emu = False
     target_arch_device = _get_target_arch_device()
     if target_arch not in target_arch_device:
         android_start_emu(target_arch)
+        has_emu = True
         target_arch_device = _get_target_arch_device()
     if target_arch not in target_arch_device:
         error('Failed to get device for target arch ' + target_arch)
@@ -1612,6 +1614,8 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         setenv('http_proxy', env_http_proxy)
     execute(adb('uninstall ' + chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device))
 
+    if has_emu:
+        android_kill_emu(target_arch)
     return (ver_temp, ver_type_temp, build_id_temp)
 
 

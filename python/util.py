@@ -1080,9 +1080,13 @@ def android_start_emu(target_arch):
     else:
         info('Starting emulator for ' + target_arch)
         if target_arch == 'x86':
-            time.sleep(20)
+            time.sleep(30)
         else:
-            time.sleep(60)
+            time.sleep(90)
+
+
+def android_kill_emu(target_arch):
+    execute('killall emulator64-%s' % target_arch)
 
 
 def android_get_memory(pkg):

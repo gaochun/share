@@ -723,7 +723,7 @@ def get_symbol(lines, dirs_symbol):
     count_line_max = 1000
     count_valid_max = 40
 
-    pattern = re.compile('pc (.*)  .*/lib(.*)\.so')
+    pattern = re.compile('pc (.*)  .*/libchrome(.*)\.so')
     count_line = 0
     count_valid = 0
     for line in lines:
@@ -734,11 +734,13 @@ def get_symbol(lines, dirs_symbol):
         if match:
             name = match.group(2)
             for dir_symbol in dirs_symbol:
-                path = dir_symbol + '/lib%s.so' % name
+                path = dir_symbol + '/libchrome%s.so' % name
                 if not os.path.exists(path):
                     continue
                 cmd = dir_linux + '/x86_64-linux-android-addr2line -C -e %s -f %s' % (path, match.group(1))
                 result = execute(cmd, return_output=True, show_cmd=False)
+                print line
+                print result[1]
 
                 count_valid += 1
                 if count_valid >= count_valid_max:

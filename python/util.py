@@ -1138,6 +1138,23 @@ def android_config_device(device, device_product, default, governor='', freq=0):
         su = True
     for cmd in cmds:
         execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
+
+
+def android_enter_fastboot(device):
+    execute('timeout 5s ' + adb(cmd='reboot bootloader', device=device))
+    sleep_sec = 3
+    is_connected = False
+    for i in range(0, 60):
+        if not connect_device(mode='bootloader', device=device):
+            info('Sleeping %s seconds' % str(sleep_sec))
+            time.sleep(sleep_sec)
+            continue
+        else:
+            is_connected = True
+            break
+
+    if not is_connected:
+        error('Can not connect to device in bootloader')
 # </android>
 
 

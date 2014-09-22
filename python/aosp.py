@@ -365,12 +365,6 @@ def flash_image():
     if not args.flash_image:
         return
 
-    if len(target_archs) > 1:
-        error('You need to specify the target arch')
-
-    if len(target_devices_type) > 1 or target_devices_type[0] != 'baytrail':
-        error('Only baytrail can burn the image')
-
     if len(devices) < 1:
         error('You must have device connected')
 
@@ -380,41 +374,43 @@ def flash_image():
     path_fastboot = dir_linux + '/fastboot'
 
     # extract image
-    dir_extract = '/tmp/' + timestamp
-    ensure_dir(dir_extract)
-    backup_dir(dir_extract, verbose=True)
+    if repo_type != 'upstream':
+        dir_extract = '/tmp/' + timestamp
+        ensure_dir(dir_extract)
+        backup_dir(dir_extract, verbose=True)
 
-    if args.file_image:
-        if re.match('http', args.file_image):
-            execute('wget ' + args.file_image, dryrun=False)
-        else:
-            execute('cp ' + args.file_image + ' ./')
-
-        if args.file_image[-6:] == 'tar.gz':
-            execute('tar zxf ' + args.file_image.split('/')[-1])
-            execute('mv */* ./')
-            result = execute('ls *.tgz', return_output=True)
-            file_image = dir_extract + '/' + result[1].rstrip('\n')
-        else:
-            file_image = args.file_image.split('/')[-1]
-    else:
-        if repo_type == 'stable':
-            if repo_date >= 20140624:
-                file_image = dir_root + '/out/dist/%s-om-factory.tgz' % get_product(arch, device_type, date=repo_date)
+        if args.file_image:
+            if re.match('http', args.file_image):
+                execute('wget ' + args.file_image, dryrun=False)
             else:
-                file_image = dir_root + '/out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type, date=repo_date)
-        elif repo_type == 'irdakk':
-            file_image = dir_root + '/out/target/product/irda/irda-ktu84p-factory.tgz'
-        elif repo_type == 'gminl':
-            file_image = dir_root + '/out/target/product/%s_%s/%s_%s-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)
-        elif repo_type == 'gminl64':
-            file_image = dir_root + '/out/target/product/%s_%s_64p/%s_%s_64p-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)
+                execute('cp ' + args.file_image + ' ./')
 
-    if not os.path.exists(file_image):
-        error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
-        return
+            if args.file_image[-6:] == 'tar.gz':
+                execute('tar zxf ' + args.file_image.split('/')[-1])
+                execute('mv */* ./')
+                result = execute('ls *.tgz', return_output=True)
+                file_image = dir_extract + '/' + result[1].rstrip('\n')
+            else:
+                file_image = args.file_image.split('/')[-1]
+        else:
+            if repo_type == 'stable':
+                if repo_date >= 20140624:
+                    file_image = dir_root + '/out/dist/%s-om-factory.tgz' % get_product(arch, device_type, date=repo_date)
+                else:
+                    file_image = dir_root + '/out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type, date=repo_date)
+            elif repo_type == 'irdakk':
+                file_image = dir_root + '/out/target/product/irda/irda-ktu84p-factory.tgz'
+            elif repo_type == 'gminl':
+                file_image = dir_root + '/out/target/product/%s_%s/%s_%s-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)
+            elif repo_type == 'gminl64':
+                file_image = dir_root + '/out/target/product/%s_%s_64p/%s_%s_64p-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)
 
-    execute('tar xvf ' + file_image, interactive=True, dryrun=False)
+        if not os.path.exists(file_image):
+            error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
+            return
+
+        execute('tar xvf ' + file_image, interactive=True, dryrun=False)
+        restore_dir()
 
     # hack the script
     if repo_type == 'stable':
@@ -439,26 +435,15 @@ def flash_image():
         fileinput.close()
 
     # enter fastboot mode
-    execute('timeout 5s ' + adb(cmd='reboot fastboot', device=device))
-    sleep_sec = 3
-    is_connected = False
-    for i in range(0, 60):
-        if not connect_device(mode='bootloader', device=device):
-            info('Sleeping %s seconds' % str(sleep_sec))
-            time.sleep(sleep_sec)
-            continue
-        else:
-            is_connected = True
-            break
-
-    if not is_connected:
-        error('Can not connect to device in bootloader')
+    android_enter_fastboot(device=device)
 
     # flash image
     if repo_type == 'upstream':
+        execute('fastboot format cache')
+        execute('fastboot format userdata')
         combo = _get_combo(arch, device_type)
-        cmd = bashify_cmd('. build/envsetup.sh && lunch ' + combo + ' && fastboot -t 192.168.42.1 -w flashall')
-        execute(cmd, interactive=True)
+        cmd = bashify_cmd('. build/envsetup.sh && lunch ' + combo + ' && fastboot -w flashall')
+        execute(cmd, interactive=True, dryrun=False)
     elif repo_type == 'irdakk' or repo_type == 'gminl' or repo_type == 'gminl64':
         execute('./flash-base.sh', interactive=True, dryrun=False)
         execute('./flash-all.sh', interactive=True, dryrun=False)
@@ -468,8 +453,6 @@ def flash_image():
         execute('./flash-all.sh -t ' + ip, interactive=True, dryrun=False)
         execute('timeout 10s %s -t %s reboot' % (path_fastboot, ip))
         execute('rm -rf ' + dir_extract, dryrun=False)
-
-    restore_dir()
 
     # wait until system boots up
     if repo_type == 'stable':

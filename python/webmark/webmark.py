@@ -323,6 +323,7 @@ def setup():
 
     datetime = get_datetime()
     logger = get_logger(tag='webmark', dir_log=dir_webmark_log, datetime=datetime)
+    ensure_dir(dir_webmark_result)
     file_result = dir_webmark_result + '/' + datetime
 
     if args.device_config:

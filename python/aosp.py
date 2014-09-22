@@ -5,7 +5,7 @@
 
 # Build:
 # Check tag info from http://source.android.com/source/build-numbers.html
-# Download proprietary drivers from https://developers.google.com/android/nexus/drivers, and put them into related directory under /workspace/topic/android/backup/vendor.
+# Download proprietary drivers from https://developers.google.com/android/nexus/drivers, and put them into related directory under /workspace/topic/aosp/driver.
 # jdk must be 1.6.0.45 for 4.4 build, and JAVA_HOME should be set correctly.
 
 # Build time:
@@ -45,11 +45,6 @@ repo_branch = ''
 # stable from 20140624, combo changed to asus_t100-userdebug, etc.
 repo_date = 0
 
-codename = {
-    'nexus4': 'mako',
-    'nexus5': 'hammerhead',
-}
-
 patches_build_common = {
     # Emulator
     #'build/core': ['0001-Emulator-Remove-opengl-from-blacklist-to-enable-gpu.patch'],
@@ -76,6 +71,7 @@ examples:
   python %(prog)s -b --build-skip-mk --disable-2nd-arch
   python %(prog)s -b --disable-2nd-arch  --build-skip-mk --target-module libwebviewchromium --build-no-dep
   python %(prog)s --target-device-type generic --backup --backup-skip-server --time-fixed
+  python %(prog)s --build --target-device-type flo --version KTU84P
 ''')
 
     parser.add_argument('--init', dest='init', help='init', action='store_true')
@@ -104,9 +100,10 @@ examples:
     parser.add_argument('--cts-run', dest='cts_run', help='package to run with cts, such as android.webkit, com.android.cts.browserbench')
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'all'], default='x86_64')
-    parser.add_argument('--target-device-type', dest='target_device_type', help='target device, can be t100, generic, mrd7, nexus4, nexus5, nexus7', choices=['baytrail', 'generic'], default='baytrail')
+    parser.add_argument('--target-device-type', dest='target_device_type', help='target device, can be baytrail for t100, generic, mrd7, mako for nexus4, hammerhead for nexus5, flo for nexus7', default='baytrail')
     parser.add_argument('--target-module', dest='target_module', help='target module', choices=['libwebviewchromium', 'webview', 'browser', 'cts', 'system', 'all'], default='system')
     parser.add_argument('--variant', dest='variant', help='variant', choices=['user', 'userdebug', 'eng'], default='userdebug')
+    parser.add_argument('--version', dest='version', help='version, KTU84P for 4.4.4')
 
     parser.add_argument('--product-brand', dest='product_brand', help='product brand', choices=['ecs', 'fxn'], default='ecs')
     parser.add_argument('--product-name', dest='product_name', help='product name', choices=['e7', 'anchor8'], default='e7')
@@ -273,15 +270,13 @@ def build():
 
         combo = _get_combo(arch, device_type)
         if repo_type == 'upstream':
-            dir_backup_upstream = '/workspace/topic/android/backup'
-            dir_backup_driver = dir_backup_upstream + '/vendor'
+            dir_driver_upstream = '/workspace/topic/aosp/driver'
             # Check proprietary binaries.
-            dir_backup_spec_driver = dir_backup_driver + '/' + device + '/' + version + '/vendor'
-            if not os.path.exists(dir_backup_spec_driver):
+            dir_driver_upstream_one = dir_driver_upstream + '/' + device_type + '/' + args.version + '/vendor'
+            if not os.path.exists(dir_driver_upstream_one):
                 error('Proprietary binaries do not exist')
-                quit()
             execute('rm -rf vendor')
-            execute('cp -rf ' + dir_backup_spec_driver + ' ./')
+            execute('cp -rf ' + dir_driver_upstream_one + ' ./')
 
         if not args.build_skip_mk and os.path.exists(dir_root + '/external/chromium_org/src'):
             cmd = '. build/envsetup.sh && lunch ' + combo + ' && ' + dir_root + '/external/chromium_org/src/android_webview/tools/gyp_webview linux-x86'
@@ -660,7 +655,7 @@ def _sync_repo(dir, cmd):
 
 def _get_combo(arch, device_type):
     if repo_type == 'upstream':
-        combo = 'full_' + codename[device_type] + '-' + variant
+        combo = 'aosp_' + device_type + '-' + variant
     elif repo_type == 'irdakk':
         combo = 'irda-%s' % variant
     elif repo_type == 'gminl':

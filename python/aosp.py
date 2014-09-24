@@ -103,7 +103,7 @@ examples:
     parser.add_argument('--target-device-type', dest='target_device_type', help='target device, can be baytrail for t100, generic, mrd7, mako for nexus4, hammerhead for nexus5, flo for nexus7', default='baytrail')
     parser.add_argument('--target-module', dest='target_module', help='target module', choices=['libwebviewchromium', 'webview', 'browser', 'cts', 'system', 'all'], default='system')
     parser.add_argument('--variant', dest='variant', help='variant', choices=['user', 'userdebug', 'eng'], default='userdebug')
-    parser.add_argument('--version', dest='version', help='version, KTU84P for 4.4.4')
+    parser.add_argument('--version', dest='version', help='version, KTU84P for 4.4.4, master')
 
     parser.add_argument('--product-brand', dest='product_brand', help='product brand', choices=['ecs', 'fxn'], default='ecs')
     parser.add_argument('--product-name', dest='product_name', help='product name', choices=['e7', 'anchor8'], default='e7')
@@ -439,8 +439,6 @@ def flash_image():
 
     # flash image
     if repo_type == 'upstream':
-        execute('fastboot format cache')
-        execute('fastboot format userdata')
         combo = _get_combo(arch, device_type)
         cmd = bashify_cmd('. build/envsetup.sh && lunch ' + combo + ' && fastboot -w flashall')
         execute(cmd, interactive=True, dryrun=False)

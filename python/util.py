@@ -35,6 +35,9 @@ dir_stack = []
 log_stack = []
 timer = {}
 
+# webmark
+webmark_format = ['category', 'name', 'version', 'metric', 'result']
+
 # servers that webcatch can build on
 servers_webcatch = [
     'wp-02',
@@ -1020,6 +1023,21 @@ def pause_resume(seconds=5):
             input = raw_input()
             if input == 'r':
                 break
+
+
+def get_capabilities(device, target_module, use_running_app=False, args=[]):
+    capabilities = {}
+    capabilities['chromeOptions'] = {}
+    capabilities['chromeOptions']['androidDeviceSerial'] = device
+    capabilities['chromeOptions']['androidPackage'] = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_PKG]
+    capabilities['chromeOptions']['androidUseRunningApp'] = use_running_app
+    capabilities['chromeOptions']['args'] = args
+
+    activity = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_ACT]
+    if activity:
+        capabilities['chromeOptions']['androidActivity'] = activity
+
+    return capabilities
 
 
 # <android>

@@ -148,7 +148,19 @@ class Benchmark(object):
             for i in range(count_result):
                 results_average.append(round(results_total[i] / count_results, 2))
 
-            return '%s,%s,%s,%s,%s' % (self.category, self.name, self.version, self.metric, ','.join(str(x) for x in results_average))
+            outputs = []
+            for item in webmark_format:
+                if item == 'category':
+                    outputs.append(self.category)
+                elif item == 'name':
+                    outputs.append(self.name)
+                elif item == 'version':
+                    outputs.append(self.version)
+                elif item == 'metric':
+                    outputs.append(self.metric)
+                elif item == 'result':
+                    outputs.append(','.join(str(x) for x in results_average))
+            return ','.join(outputs)
 
     def _is_finished(self, driver):
         if self.states[self.state][0](driver):

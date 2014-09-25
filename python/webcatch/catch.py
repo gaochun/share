@@ -38,6 +38,7 @@ examples:
     parser.add_argument('-r', '--rev', dest='rev', help='revision from A to B')
     parser.add_argument('--diff', dest='diff', type=int, help='percentage gap between good and bad', default=5)
     parser.add_argument('--governor', dest='governor', help='governor')
+    parser.add_argument('--skip-install', dest='skip_install', help='skip the installation of module')
 
     args = parser.parse_args()
 
@@ -116,7 +117,8 @@ def _run(rev):
     cmd = python_webmark + ' --target-os ' + target_os + ' --target-arch ' + target_arch + ' --target-module ' + target_module + ' --benchmark ' + benchmark
     if args.benchmark_config:
         cmd += ' --benchmark-config ' + '\'' + args.benchmark_config + '\''
-    cmd += ' --target-module-path %s/%s.apk' % (dir_download, str(rev))
+    if not args.skip_install:
+        cmd += ' --target-module-path %s/%s.apk' % (dir_download, str(rev))
     result_cmd = execute(cmd, return_output=True, show_progress=True)
     if result_cmd[0]:
         error('Failed to run benchmark ' + benchmark + ' with revision ' + str(rev))
@@ -151,11 +153,18 @@ def _get_diff(result, baseline):
 
 def _parse_result(output):
     results = []
-    pattern = re.compile('Result:.*,.*,(.*)')
+    pattern = re.compile('Result: (.*)')
     match = pattern.search(output, re.MULTILINE)
     if match:
-        results = [float(x) for x in match.group(1).split(',')]
-    return results[0]
+        results = match.group(1).split(',')
+        index = 0
+        for item in webmark_format:
+            if item == 'result':
+                break
+            index += 1
+        return float(results[index])
+    else:
+        error('Can not get result')
 
 
 def _bisect(index_small, index_big):

@@ -1585,15 +1585,7 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         time.sleep(1)  # Sleep a bit to make sure driver is ready
         env_http_proxy = getenv('http_proxy')
         unsetenv('http_proxy')
-        capabilities = {
-            'chromeOptions': {
-                'androidPackage': chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_PKG],
-                'androidDeviceSerial': device,
-            }
-        }
-        activity = chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_ACT]
-        if not activity == '':
-            capabilities['chromeOptions']['androidActivity'] = activity
+        capabilities = get_capabilities(device, chromium_android_type)
         driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
         driver.get('chrome://version')
         WebDriverWait(driver, 30, 1).until(_has_element_ver)

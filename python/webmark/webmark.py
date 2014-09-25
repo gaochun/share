@@ -162,20 +162,18 @@ class Suite:
             if result[0]:
                 error('Can not install ' + self.target.module_path)
 
-        capabilities = {}
-        capabilities['chromeOptions'] = {}
-        capabilities['chromeOptions']['androidPackage'] = chromium_android_info[self.target.module][CHROMIUM_ANDROID_INFO_INDEX_PKG]
-        capabilities['chromeOptions']['androidUseRunningApp'] = args.use_running_app
-        capabilities['chromeOptions']['args'] = ['--disable-web-security']
-        capabilities['chromeOptions']['androidDeviceSerial'] = device
-
-        driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
+        capabilities = get_capabilities(device, self.target.module, args.use_running_app, ['--disable-web-security'])
+        if args.dryrun:
+            driver = None
+        else:
+            driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
 
         for i in range(len(self.cases)):
             self.cases[i].run(driver)
 
         # self.extension.uninstall()
-        driver.quit()
+        if not args.dryrun:
+            driver.quit()
 
 
 class WebMark:
@@ -269,7 +267,7 @@ examples:
 ''')
     parser.add_argument('--target-os', dest='target_os', help='target os', choices=target_os_all, default='android')
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=target_arch_all, default='x86')
-    parser.add_argument('--target-module', dest='target_module', help='target module', choices=target_module_all, default='content_shell')
+    parser.add_argument('--target-module', dest='target_module', help='target module', choices=target_module_all, default='chrome_stable')
     parser.add_argument('--target-module-path', dest='target_module_path', help='target module path', default='')
     parser.add_argument('--benchmark', dest='benchmark', help='benchmark', default='sunspider')
     parser.add_argument('--benchmark-config', dest='benchmark_config', help='benchmark config')

@@ -741,27 +741,43 @@ complete () {
 # machine specific configuration
 hostname=$(hostname)
 
-# conditional configuration
-DIR_DEFAULT=$DIR_PROJECT
+# <apache2>
+if [ $hostname == "ubuntu-ygu5-01" -o $hostname == "ubuntu-ygu5-02" -o $hostname == "wp-01" -o $hostname == "wp-02" -o $hostname == "wp-03" ] ; then
+    symbolic_link $DIR_APACHE2 apache2.conf $DIR_ETC_APACHE2
+    symbolic_link $DIR_APACHE2 .htaccess /workspace/server
+    symbolic_link $DIR_APACHE2/conf-available fqdn.conf $DIR_ETC_APACHE2/conf-available
+    symbolic_link $DIR_ETC_APACHE2/conf-available fqdn.conf $DIR_ETC_APACHE2/conf-enabled
+    symbolic_link $DIR_ETC_APACHE2/sites-available 000-default.conf $DIR_ETC_APACHE2/sites-enabled
 
+    if [ $hostname == "ubuntu-ygu5-01" -o $hostname == "ubuntu-ygu5-02" -o $hostname == "wp-01" ] ; then
+        symbolic_link $DIR_APACHE2 ports-8000.conf $DIR_ETC_APACHE2 ports.conf
+    else
+        symbolic_link $DIR_APACHE2 ports-80.conf $DIR_ETC_APACHE2 ports.conf
+    fi
+
+    if [ $hostname == "wp-02" ] ; then
+        symbolic_link $DIR_APACHE2/sites-available 000-benchmark.conf $DIR_ETC_APACHE2/sites-available 000-default.conf
+        symbolic_link $DIR_APACHE2/sites-available 001-browsermark.conf $DIR_ETC_APACHE2/sites-available
+        symbolic_link $DIR_ETC_APACHE2/sites-available 001-browsermark.conf $DIR_ETC_APACHE2/sites-enabled
+    elif [ $hostname == "ubuntu-ygu5-01" -o $hostname == "ubuntu-ygu5-02" -o $hostname == "wp-01" ] ; then
+        symbolic_link $DIR_APACHE2/sites-available 000-default-8000.conf $DIR_ETC_APACHE2/sites-available 000-default.conf
+    else
+        symbolic_link $DIR_APACHE2/sites-available 000-default-80.conf $DIR_ETC_APACHE2/sites-available 000-default.conf
+    fi
+fi
+# </apache2>
+
+# <dir_default>
+DIR_DEFAULT=$DIR_PROJECT
+if [ $hostname == "ubuntu-y560d" ] ; then
+    DIR_DEFAULT=$DIR_SHARE
+fi
+cd $DIR_DEFAULT
+# </dir_default>
+
+# <other>
 if [ $hostname == "ubuntu-ygu5-01" -o $hostname == "ubuntu-ygu5-02" ] ; then
     symbolic_link $DIR_LINUX .gitconfig ~
     symbolic_link $DIR_LINUX/ssh config ~/.ssh
-
-    # apache2
-    symbolic_link $DIR_APACHE2 apache2.conf $DIR_ETC_APACHE2
-    symbolic_link $DIR_APACHE2 ports.conf $DIR_ETC_APACHE2
-    symbolic_link $DIR_APACHE2 .htaccess /workspace/server
-    symbolic_link $DIR_APACHE2/sites-available 000-default-8000.conf $DIR_ETC_APACHE2/sites-available 000-default.conf
-    symbolic_link $DIR_ETC_APACHE2/sites-available 000-default.conf $DIR_ETC_APACHE2/sites-enabled
-    symbolic_link $DIR_APACHE2/conf-available fqdn.conf $DIR_ETC_APACHE2/conf-available
-    symbolic_link $DIR_ETC_APACHE2/conf-available fqdn.conf $DIR_ETC_APACHE2/conf-enabled
-
-elif [ $hostname == "ubuntu-y560d" ] ; then
-    DIR_DEFAULT=$DIR_SHARE
-
-elif [ $hostname == "wp-01" ] ; then
-    symbolic_link $DIR_APACHE2 000-benchmark.conf $DIR_ETC_APACHE2/sites-available
 fi
-
-cd $DIR_DEFAULT
+# </other>

@@ -173,6 +173,11 @@ am start -n com.android.calculator2/.Calculator
 
 * developer options
 adb shell am start -n com.android.settings/.DevelopmentSettings
+
+* google music
+com.google.android.music/com.android.music.activitymanagement.TopLevelActivity
+start -n com.google.android.music/.MusicPicker -d content://media/external/audio/media
+
 </am>
 
 <pm>

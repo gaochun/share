@@ -73,7 +73,7 @@ class Case:
         exec 'from benchmark.' + name.lower() + ' import ' + name
         benchmark = eval(name)(driver, self)
         result = benchmark.run()
-        execute('echo ' + result + ' >>' + file_result, show_cmd=False)
+        execute('echo "' + result + '" >>' + file_result, show_cmd=False)
         logger.info('Result: ' + result)
 
 

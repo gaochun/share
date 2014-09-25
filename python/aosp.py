@@ -373,12 +373,13 @@ def flash_image():
     device = devices[0]
     path_fastboot = dir_linux + '/fastboot'
 
-    # extract image
     if repo_type != 'upstream':
         dir_extract = '/tmp/' + timestamp
         ensure_dir(dir_extract)
         backup_dir(dir_extract, verbose=True)
 
+    # extract image
+    if repo_type != 'upstream':
         if args.file_image:
             if re.match('http', args.file_image):
                 execute('wget ' + args.file_image, dryrun=False)
@@ -410,7 +411,6 @@ def flash_image():
             return
 
         execute('tar xvf ' + file_image, interactive=True, dryrun=False)
-        restore_dir()
 
     # hack the script
     if repo_type == 'stable':
@@ -451,6 +451,9 @@ def flash_image():
         execute('./flash-all.sh -t ' + ip, interactive=True, dryrun=False)
         execute('timeout 10s %s -t %s reboot' % (path_fastboot, ip))
         execute('rm -rf ' + dir_extract, dryrun=False)
+
+    if repo_type != 'upstream':
+        restore_dir()
 
     # wait until system boots up
     if repo_type == 'stable':

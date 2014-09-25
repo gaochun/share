@@ -87,7 +87,7 @@ class Benchmark(object):
             else:
                 self.__dict__[key] = config[key][self.path_type]
         if self.path_type == 'internal':
-            self.__dict__[key] = 'http://wp-01.sh.intel.com:8000/' + self.__dict__[key]
+            self.__dict__[key] = 'http://wp-02.sh.intel.com/' + self.__dict__[key]
         elif self.path_type == 'local':
             self.__dict__[key] = 'file:///data/local/tmp/' + self.__dict__[key]
 

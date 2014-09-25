@@ -38,7 +38,7 @@ mysql -u root -p
 </mysql>
 
 <browsermark>
-/etc/apache2/ports.conf, add "Listen 8001"
-sudo ln -s /workspace/server/webbench/browsermark/browsermark.conf sites-available/etc/apache2/sites-available/browsermark.conf
-sudo ln -s /workspace/server/webbench/browsermark/000-default.conf sites-available/etc/apache2/sites-available/000-default.conf
+* install lamp
+* remove webbench/browsermark/browsermark.local/configuration/production.php
+* wp-02.sh.intel.com:8001/install
 </browsermark>

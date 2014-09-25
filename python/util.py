@@ -136,7 +136,7 @@ dir_tool = dir_workspace + '/tool'
 
 path_web_chrome_android = 'http://wp-03.sh.intel.com/chromium'
 path_web_webcatch = 'http://wp-02.sh.intel.com/chromium'
-path_server_backup = '//wp-01/backup'
+path_server_backup = '//wp-01.sh.intel.com/backup'
 
 dir_home = os.getenv('HOME')
 # </path>
@@ -552,6 +552,8 @@ def setup_device(devices_limit=[]):
             devices_type.append('clovertrail')
         elif re.search('sdk', device_product):
             devices_type.append('generic')
+        else:
+            devices_type.append('baytrail')
         devices_mode.append('system')
 
     # filter out unnecessary

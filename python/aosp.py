@@ -362,7 +362,7 @@ def hack_app_process():
                 sys.stdout.write(line)
 
             if need_hack:
-                cmd = adb(cmd='root', device=device) + ' && ' + adb(cmd='remount', device=device) + ' && ' + adb('push /tmp/' + file + ' /system/bin/')
+                cmd = adb(cmd='root', device=device) + ' && ' + adb(cmd='remount', device=device) + ' && ' + adb(cmd='push /tmp/' + file + ' /system/bin/', device=device)
                 execute(cmd)
 
 
@@ -402,7 +402,7 @@ def flash_image():
                 file_image = args.file_image.split('/')[-1]
         else:
             if repo_type == 'stable':
-                if ver_cmd(repo_ver, '2.0') >= 0:
+                if ver_cmp(repo_ver, '2.0') >= 0:
                     file_image = dir_root + '/out/dist/%s-om-factory.tgz' % get_product(device_arch, device_type, ver=repo_ver)
                 else:
                     file_image = dir_root + '/out/dist/aosp_%s-om-factory.tgz' % get_product(device_arch, device_type, ver=repo_ver)
@@ -465,6 +465,7 @@ def flash_image():
     # wait until system boots up
     if repo_type == 'stable':
         is_connected = False
+        sleep_sec = 3
         for i in range(0, 60):
             if not connect_device(device=device):
                 info('Sleeping %s seconds' % str(sleep_sec))
@@ -567,13 +568,14 @@ def push():
 
     device_arch = devices_arch[0]
     device_type = devices_type[0]
+    device = devices[0]
 
     if args.target_module == 'all':
         modules = ['libwebviewchromium', 'webview']
     else:
         modules = args.target_module.split(',')
 
-    cmd = adb(cmd='root') + ' && ' + adb(cmd='remount') + ' && ' + adb(cmd='push out/target/product/%s' % get_product(device_arch, device_type, ver=repo_ver))
+    cmd = adb(cmd='root', device=device) + ' && ' + adb(cmd='remount', device=device) + ' && ' + adb(cmd='push out/target/product/%s' % get_product(device_arch, device_type, ver=repo_ver), device=device)
 
     for module in modules:
         if module == 'browser':

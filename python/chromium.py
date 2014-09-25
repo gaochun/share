@@ -1400,7 +1400,7 @@ def _hack_app_process():
                 sys.stdout.write(line)
 
             if need_hack:
-                cmd = adb(cmd='root', device=device) + ' && ' + adb(cmd='remount') + ' && ' + adb(cmd='push /tmp/' + file + ' /system/bin/')
+                cmd = adb(cmd='root', device=device) + ' && ' + adb(cmd='remount', device=device) + ' && ' + adb(cmd='push /tmp/' + file + ' /system/bin/', device=device)
                 execute(cmd)
 
 

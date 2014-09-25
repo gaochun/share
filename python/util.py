@@ -503,7 +503,7 @@ def setup_device(devices_limit=[]):
     devices_product = []
     devices_type = []
     devices_mode = []
-    devices_target_arch = []
+    devices_arch = []
     cmd = adb('devices -l')
     device_lines = commands.getoutput(cmd).split('\n')
     cmd = 'fastboot devices -l'
@@ -530,8 +530,11 @@ def setup_device(devices_limit=[]):
         if match:
             device = match.group(1)
             devices.append(device)
-            devices_product.append('')
-            devices_type.append('')
+            result = execute('fastboot -s %s getvar product' % device, return_output=True, show_cmd=False)
+            match = re.search('product: (.*)', result[1])
+            device_product = match.group(1)
+            devices_product.append(device_product)
+            devices_type.append(device_product)
             devices_mode.append('fastboot')
             continue
 
@@ -569,11 +572,11 @@ def setup_device(devices_limit=[]):
     # set up mode
     for index, device in enumerate(devices):
         if devices_mode[index] == 'fastboot':
-            devices_target_arch = ''
+            devices_arch.append('')
         else:
-            devices_target_arch.append(android_get_target_arch(device=device))
+            devices_arch.append(android_get_target_arch(device=device))
 
-    return (devices, devices_product, devices_type, devices_target_arch, devices_mode)
+    return (devices, devices_product, devices_type, devices_arch, devices_mode)
 
 
 def timer_start(tag):
@@ -630,11 +633,11 @@ def execute_adb_shell(cmd, device='', su=False, abort=False, show_cmd=False):
         return True
 
 
-def get_product(arch, device_type, date=20140101):
+def get_product(arch, device_type, ver):
     if device_type == 'generic':
         product = device_type + '_' + arch
     elif device_type == 'baytrail':
-        if date >= 20140624:
+        if ver_cmp(ver, '2.0') >= 0:
             product_prefix = 'asus_t100'
         else:
             product_prefix = device_type
@@ -685,11 +688,11 @@ def connect_device(device='', mode='system'):
         return device_connected(device, mode)
 
 
-def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android', device='', type='tombstone', date=20140101):
+def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android', device='', type='tombstone', ver='0.0'):
     if device == '' or device == '192.168.42.1:5555':
         device_type = 'baytrail'
     target_arch = android_get_target_arch(device=device)
-    product = get_product(target_arch, device_type, date)
+    product = get_product(target_arch, device_type, ver)
     if target_arch == 'x86_64':
         target_arch_str = '64'
     else:

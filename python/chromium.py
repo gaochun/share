@@ -30,7 +30,7 @@ name_file = sys._getframe().f_code.co_filename
 devices = []
 devices_product = []
 devices_type = []
-devices_target_arch = []
+devices_arch = []
 devices_mode = []
 
 # rev related
@@ -366,7 +366,7 @@ examples:
 def setup():
     global dir_src, dir_out_build_type, dir_test, dir_test_timestamp
     global target_os, target_arch, target_module
-    global devices, devices_product, devices_type, devices_target_arch
+    global devices, devices_product, devices_type, devices_arch
     global test_suite, build_type, rev, dir_patches, patches, test_filter, repo_type
     global ver, ver_type, chrome_android_soname, dir_server_chrome_android_todo_comb, chrome_android_file_readme, chrome_android_apk
     global dir_root, log, timestamp
@@ -438,7 +438,7 @@ def setup():
 
         if not devices_limit or '192.168.42.1:5555' in devices_limit:
             connect_device()
-        (devices, devices_product, devices_type, devices_target_arch, devices_mode) = setup_device(devices_limit=devices_limit)
+        (devices, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_limit=devices_limit)
 
         _hack_app_process()
 
@@ -1078,7 +1078,7 @@ def analyze():
     if not args.analyze:
         return
 
-    analyze_issue(dir_chromium=dir_root, date=20140624)
+    analyze_issue(dir_chromium=dir_root, ver='2.0')
 
 
 def teardown():
@@ -1633,10 +1633,10 @@ def _update_phase(phase):
 
 # get one device for each target_arch
 def _get_target_arch_device():
-    (devices, devices_product, devices_type, devices_target_arch, devices_mode) = setup_device()
+    (devices, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
     target_arch_device = {}
     for index, device in enumerate(devices):
-        target_arch_temp = devices_target_arch[index]
+        target_arch_temp = devices_arch[index]
         if target_arch_temp not in target_arch_device:
             target_arch_device[target_arch_temp] = devices[index]
 

@@ -21,14 +21,18 @@ dir_chromium = ''
 dir_out = ''
 dir_script = sys.path[0]
 dir_backup = ''
-target_archs = []
-target_devices_type = []
-target_modules = []
+
+# no need of concrete device
+targets_arch = []
+targets_type = []
+targets_module = []
+# concrete device
 devices = []
 devices_product = []
 devices_type = []
-devices_target_arch = []
+devices_arch = []
 devices_mode = []
+
 chromium_version = ''
 ip = '192.168.42.1'
 timestamp = ''
@@ -43,7 +47,7 @@ product_name = ''
 repo_type = ''  # upstream, stable, mcg, gminl, irdakk, gminl64
 repo_branch = ''
 # stable from 20140624, combo changed to asus_t100-userdebug, etc.
-repo_date = 0
+repo_ver = '0.0'
 
 patches_build_common = {
     # Emulator
@@ -100,8 +104,9 @@ examples:
     parser.add_argument('--cts-run', dest='cts_run', help='package to run with cts, such as android.webkit, com.android.cts.browserbench')
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'all'], default='x86_64')
-    parser.add_argument('--target-device-type', dest='target_device_type', help='target device, can be baytrail for t100, generic, mrd7, mako for nexus4, hammerhead for nexus5, flo for nexus7', default='baytrail')
+    parser.add_argument('--target-type', dest='target_type', help='target type, can be baytrail for t100, generic, mrd7, mako for nexus4, hammerhead for nexus5, flo for nexus7', default='baytrail')
     parser.add_argument('--target-module', dest='target_module', help='target module', choices=['libwebviewchromium', 'webview', 'browser', 'cts', 'system', 'all'], default='system')
+
     parser.add_argument('--variant', dest='variant', help='variant', choices=['user', 'userdebug', 'eng'], default='userdebug')
     parser.add_argument('--version', dest='version', help='version, KTU84P for 4.4.4, master')
 
@@ -117,9 +122,10 @@ examples:
 
 
 def setup():
-    global dir_chromium, dir_out, dir_backup, target_archs, target_devices_type, target_modules, chromium_version
-    global devices, devices_product, devices_type, devices_target_arch, devices_mode, use_upstream_chromium, patches_build
-    global repo_type, repo_date, variant
+    global targets_arch, targets_type, targets_module
+    global dir_chromium, dir_out, dir_backup, chromium_version
+    global use_upstream_chromium, patches_build
+    global repo_type, repo_ver, variant
     global product_brand, product_name
     global dir_root, log, timestamp
 
@@ -137,12 +143,9 @@ def setup():
             error('Please designate repo type')
         repo_type = args.repo_type
     else:
-        (repo_type, repo_date) = _get_repo_info()
+        (repo_type, repo_ver) = _get_repo_info()
     info('repo type is ' + repo_type)
-
-    if repo_type == 'stable':
-        connect_device()
-    (devices, devices_product, devices_type, devices_target_arch, devices_mode) = setup_device()
+    info('repo version is ' + repo_ver)
 
     for cmd in ['adb', 'git', 'gclient']:
         result = execute('which ' + cmd, show_cmd=False)
@@ -150,19 +153,19 @@ def setup():
             error('Could not find ' + cmd + ', and you may use --path-extra to designate it')
 
     if args.target_arch == 'all':
-        target_archs = ['x86_64', 'x86']
+        targets_arch = ['x86_64', 'x86']
     else:
-        target_archs = args.target_arch.split(',')
+        targets_arch = args.target_arch.split(',')
 
-    if args.target_device_type == 'all':
-        target_devices_type = ['baytrail', 'generic']
+    if args.target_type == 'all':
+        targets_type = ['baytrail', 'generic']
     else:
-        target_devices_type = args.target_device_type.split(',')
+        targets_type = args.target_type.split(',')
 
     if args.target_module == 'all':
-        target_modules = ['system']
+        targets_module = ['system']
     else:
-        target_modules = args.target_module.split(',')
+        targets_module = args.target_module.split(',')
 
     if os.path.exists(dir_chromium + '/src'):
         chromium_version = 'cr36'
@@ -258,21 +261,27 @@ def build():
 
     # Set up JDK
     backup_dir(dir_python)
-    if repo_type == 'irdakk':
+    if repo_type == 'irdakk' or repo_type == 'upstream' and ver_cmp(repo_ver, '5.0') < 0:
         execute('python version.py -t java -s jdk1.6.0_45')
     else:
         execute('python version.py -t java -s java-7-openjdk-amd64')
     restore_dir()
 
-    for arch, device_type, module in [(arch, device_type, module) for arch in target_archs for device_type in target_devices_type for module in target_modules]:
-        name_build = get_caller_name() + '-' + arch + '-' + device_type + '-' + module
+    # make
+    if repo_type == 'irdakk' or repo_type == 'upstream' and ver_cmp(repo_ver, '5.0') < 0:
+        make = dir_tool + '/make-3.81/make'
+    else:
+        make = 'make'
+
+    for target_arch, target_type, target_module in [(target_arch, target_type, target_module) for target_arch in targets_arch for target_type in targets_type for target_module in targets_module]:
+        name_build = get_caller_name() + '-' + target_arch + '-' + target_type + '-' + target_module
         timer_start(name_build)
 
-        combo = _get_combo(arch, device_type)
+        combo = _get_combo(target_arch, target_type)
         if repo_type == 'upstream':
             dir_driver_upstream = '/workspace/topic/aosp/driver'
             # Check proprietary binaries.
-            dir_driver_upstream_one = dir_driver_upstream + '/' + device_type + '/' + args.version + '/vendor'
+            dir_driver_upstream_one = dir_driver_upstream + '/' + target_type + '/' + args.version + '/vendor'
             if not os.path.exists(dir_driver_upstream_one):
                 error('Proprietary binaries do not exist')
             execute('rm -rf vendor')
@@ -280,33 +289,29 @@ def build():
 
         if not args.build_skip_mk and os.path.exists(dir_root + '/external/chromium_org/src'):
             cmd = '. build/envsetup.sh && lunch ' + combo + ' && ' + dir_root + '/external/chromium_org/src/android_webview/tools/gyp_webview linux-x86'
-            if arch == 'x86_64':
+            if target_arch == 'x86_64':
                 cmd += ' && ' + dir_root + '/external/chromium_org/src/android_webview/tools/gyp_webview linux-x86_64'
             cmd = bashify_cmd(cmd)
             execute(cmd, interactive=True)
 
-        if repo_type == 'irdakk':
-            make = dir_tool + '/make-3.81/make'
-        else:
-            make = 'make'
-        if module == 'system' or module == 'cts':
+        if target_module == 'system' or target_module == 'cts':
             cmd = '. build/envsetup.sh && lunch %s && %s ' % (combo, make)
-            if module == 'system':
+            if target_module == 'system':
                 cmd += 'dist'
             else:
-                cmd += module
-        elif module == 'browser' or module == 'webview' or module == 'libwebviewchromium':
+                cmd += target_module
+        elif target_module == 'browser' or target_module == 'webview' or target_module == 'libwebviewchromium':
             cmd = '. build/envsetup.sh && lunch ' + combo + ' && '
             if args.build_no_dep:
                 cmd += 'mmm '
             else:
                 cmd += 'mmma '
 
-            if module == 'browser':
+            if target_module == 'browser':
                 cmd += 'packages/apps/Browser'
-            elif module == 'webview':
+            elif target_module == 'webview':
                 cmd += 'frameworks/webview'
-            elif module == 'libwebviewchromium':
+            elif target_module == 'libwebviewchromium':
                 cmd += 'external/chromium_org'
 
         if args.build_showcommands:
@@ -315,13 +320,13 @@ def build():
         cmd = bashify_cmd(cmd)
         result = execute(cmd, interactive=True, dryrun=False)
         if result[0]:
-            error('Failed to build %s %s %s' % (arch, device_type, module))
+            error('Failed to build %s %s %s' % (target_arch, target_type, target_module))
 
-        if module == 'system' and device_type == 'generic':
+        if target_module == 'system' and target_type == 'generic':
             cmd = bashify_cmd('. build/envsetup.sh && lunch ' + combo + ' && external/qemu/android-rebuild.sh')
             result = execute(cmd, interactive=True)
             if result[0]:
-                error('Failed to build %s emulator' % arch)
+                error('Failed to build %s emulator' % target_arch)
 
         timer_stop(name_build)
         info('Time for ' + name_build + ': ' + timer_diff(name_build))
@@ -331,45 +336,47 @@ def backup():
     if not args.backup:
         return
 
-    for arch, device_type, module in [(arch, device_type, module) for arch in target_archs for device_type in target_devices_type for module in target_modules]:
-        _backup_one(arch, device_type, module)
+    for target_arch, target_type, target_module in [(target_arch, target_type, target_module) for target_arch in targets_arch for target_type in targets_type for target_module in targets_module]:
+        _backup_one(target_arch, target_type, target_module)
 
 
-def burn_image():
-    if not args.burn_image:
+def hack_app_process():
+    if not args.hack_app_process:
         return
 
-    if len(target_archs) > 1:
-        error('You need to specify the target arch')
+    _setup_device()
 
-    if len(target_devices_type) > 1 or target_devices_type[0] != 'baytrail':
-        error('Only baytrail can burn the image')
+    for device in devices:
+        connect_device(device=device)
+        if not execute_adb_shell("test -d /system/lib64", device=device):
+            continue
 
-    connect_device()
+        for file in ['am', 'pm']:
+            cmd = adb('pull /system/bin/' + file + ' /tmp/' + file)
+            execute(cmd)
+            need_hack = False
+            for line in fileinput.input('/tmp/' + file, inplace=1):
+                if re.search('app_process ', line):
+                    line = line.replace('app_process', 'app_process64')
+                    need_hack = True
+                sys.stdout.write(line)
 
-    arch = target_archs[0]
-    device_type = target_devices_type[0]
-    img = dir_out + '/target/product/' + get_product(arch, device_type, date=repo_date) + '/live.img'
-    if not os.path.exists(img):
-        error('Could not find the live image to burn')
-
-    sys.stdout.write('Are you sure to burn live image to ' + args.burn_image + '? [yes/no]: ')
-    choice = raw_input().lower()
-    if choice not in ['yes', 'y']:
-        return
-
-    execute('sudo dd if=' + img + ' of=' + args.burn_image + ' && sync', interactive=True)
+            if need_hack:
+                cmd = adb(cmd='root', device=device) + ' && ' + adb(cmd='remount', device=device) + ' && ' + adb('push /tmp/' + file + ' /system/bin/')
+                execute(cmd)
 
 
 def flash_image():
     if not args.flash_image:
         return
 
+    _setup_device()
+
     if len(devices) < 1:
         error('You must have device connected')
 
-    arch = target_archs[0]
-    device_type = target_devices_type[0]
+    device_arch = devices_arch[0]
+    device_type = devices_type[0]
     device = devices[0]
     path_fastboot = dir_linux + '/fastboot'
 
@@ -395,10 +402,10 @@ def flash_image():
                 file_image = args.file_image.split('/')[-1]
         else:
             if repo_type == 'stable':
-                if repo_date >= 20140624:
-                    file_image = dir_root + '/out/dist/%s-om-factory.tgz' % get_product(arch, device_type, date=repo_date)
+                if ver_cmd(repo_ver, '2.0') >= 0:
+                    file_image = dir_root + '/out/dist/%s-om-factory.tgz' % get_product(device_arch, device_type, ver=repo_ver)
                 else:
-                    file_image = dir_root + '/out/dist/aosp_%s-om-factory.tgz' % get_product(arch, device_type, date=repo_date)
+                    file_image = dir_root + '/out/dist/aosp_%s-om-factory.tgz' % get_product(device_arch, device_type, ver=repo_ver)
             elif repo_type == 'irdakk':
                 file_image = dir_root + '/out/target/product/irda/irda-ktu84p-factory.tgz'
             elif repo_type == 'gminl':
@@ -439,7 +446,7 @@ def flash_image():
 
     # flash image
     if repo_type == 'upstream':
-        combo = _get_combo(arch, device_type)
+        combo = _get_combo(device_arch, device_type)
         cmd = bashify_cmd('. build/envsetup.sh && lunch ' + combo + ' && fastboot -w flashall')
         execute(cmd, interactive=True, dryrun=False)
     elif repo_type == 'irdakk' or repo_type == 'gminl' or repo_type == 'gminl64':
@@ -487,8 +494,10 @@ def start_emu():
     if not args.start_emu:
         return
 
-    for arch in target_archs:
-        product = get_product(arch, 'generic', date=repo_date)
+    _setup_device()
+
+    for device_arch in devices_arch:
+        product = get_product(device_arch, 'generic', ver=repo_ver)
         if args.dir_emu:
             dir_backup_emu = args.dir_emu
         else:
@@ -496,13 +505,13 @@ def start_emu():
             dir_backup_emu = dir_root + '/' + result[1].split('\n')[0]
         backup_dir(dir_backup_emu)
 
-        if not os.path.exists(dir_root + '/sdcard-%s.img' % arch):
+        if not os.path.exists(dir_root + '/sdcard-%s.img' % device_arch):
             error('Please put sdcard.img into ' + dir_root)
 
-        if not os.path.exists('system-images/aosp_%(arch)s/userdata-qemu.img' % {'arch': arch}):
-            execute('cp system-images/aosp_%(arch)s/userdata.img system-images/aosp_%(arch)s/userdata-qemu.img' % {'arch': arch})
+        if not os.path.exists('system-images/aosp_%(device_arch)s/userdata-qemu.img' % {'device_arch': device_arch}):
+            execute('cp system-images/aosp_%(device_arch)s/userdata.img system-images/aosp_%(device_arch)s/userdata-qemu.img' % {'device_arch': device_arch})
 
-        if arch == 'x86_64':
+        if device_arch == 'x86_64':
             gpu_type = 'on'
             file_emu = 'emulator64-x86'
         else:
@@ -514,16 +523,16 @@ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:%(dir_backup_emu)s/emulator-linux/lib \
 %(dir_backup_emu)s/emulator-linux/%(file_emu)s -verbose -show-kernel -no-snapshot -gpu %(gpu_type)s -memory 512 \
 -skin HVGA \
 -skindir %(dir_backup_emu)s/platforms/skins \
--kernel %(dir_backup_emu)s/system-images/aosp_%(arch)s/kernel-qemu \
--ramdisk %(dir_backup_emu)s/system-images/aosp_%(arch)s/ramdisk.img \
--sysdir %(dir_backup_emu)s/system-images/aosp_%(arch)s \
--system %(dir_backup_emu)s/system-images/aosp_%(arch)s/system.img \
--datadir %(dir_backup_emu)s/system-images/aosp_%(arch)s \
--data %(dir_backup_emu)s/system-images/aosp_%(arch)s/userdata-qemu.img \
--cache %(dir_backup_emu)s/system-images/aosp_%(arch)s/cache.img \
--initdata %(dir_backup_emu)s/system-images/aosp_%(arch)s/userdata.img \
--sdcard %(dir_root)s/sdcard-%(arch)s.img \
-''' % {'dir_root': dir_root, 'dir_backup_emu': dir_backup_emu, 'product': product, 'arch': arch, 'gpu_type': gpu_type, 'file_emu': file_emu}
+-kernel %(dir_backup_emu)s/system-images/aosp_%(device_arch)s/kernel-qemu \
+-ramdisk %(dir_backup_emu)s/system-images/aosp_%(device_arch)s/ramdisk.img \
+-sysdir %(dir_backup_emu)s/system-images/aosp_%(device_arch)s \
+-system %(dir_backup_emu)s/system-images/aosp_%(device_arch)s/system.img \
+-datadir %(dir_backup_emu)s/system-images/aosp_%(device_arch)s \
+-data %(dir_backup_emu)s/system-images/aosp_%(device_arch)s/userdata-qemu.img \
+-cache %(dir_backup_emu)s/system-images/aosp_%(device_arch)s/cache.img \
+-initdata %(dir_backup_emu)s/system-images/aosp_%(device_arch)s/userdata.img \
+-sdcard %(dir_root)s/sdcard-%(device_arch)s.img \
+''' % {'dir_root': dir_root, 'dir_backup_emu': dir_backup_emu, 'product': product, 'device_arch': device_arch, 'gpu_type': gpu_type, 'file_emu': file_emu}
 
         execute(cmd, interactive=True)
         restore_dir()
@@ -533,38 +542,38 @@ def analyze():
     if not args.analyze:
         return
 
-    if len(target_archs) > 1:
-        error('You need to specify the target arch')
+    _setup_device()
 
-    if len(target_devices_type) > 1 or target_devices_type[0] != 'baytrail':
+    if len(devices_arch) > 1:
+        error('You need to specify the device arch')
+
+    if len(devices_type) > 1 or devices_type[0] != 'baytrail':
         error('Only baytrail is supported to analyze')
 
-    arch = target_archs[0]
-    connect_device()
-    analyze_issue(dir_aosp=dir_root, type=args.analyze, date=repo_date)
+    analyze_issue(dir_aosp=dir_root, type=args.analyze, ver=repo_ver)
 
 
 def push():
     if not args.push:
         return
 
-    if len(target_archs) > 1:
+    _setup_device()
+
+    if len(devices_arch) > 1:
         error('You need to specify the target arch')
 
-    if len(target_devices_type) > 1 or target_devices_type[0] != 'baytrail':
+    if len(devices_type) > 1 or devices_type[0] != 'baytrail':
         error('Only baytrail is supported to analyze')
 
-    arch = target_archs[0]
-    device_type = target_devices_type[0]
-
-    connect_device()
+    device_arch = devices_arch[0]
+    device_type = devices_type[0]
 
     if args.target_module == 'all':
         modules = ['libwebviewchromium', 'webview']
     else:
         modules = args.target_module.split(',')
 
-    cmd = adb(cmd='root') + ' && ' + adb(cmd='remount') + ' && ' + adb(cmd='push out/target/product/%s' % get_product(arch, device_type, date=repo_date))
+    cmd = adb(cmd='root') + ' && ' + adb(cmd='remount') + ' && ' + adb(cmd='push out/target/product/%s' % get_product(device_arch, device_type, ver=repo_ver))
 
     for module in modules:
         if module == 'browser':
@@ -585,46 +594,22 @@ def push():
         execute(cmd)
 
 
-def hack_app_process():
-    if not args.hack_app_process:
-        return
-
-    for device in devices:
-        connect_device(device=device)
-        if not execute_adb_shell("test -d /system/lib64", device=device):
-            continue
-
-        for file in ['am', 'pm']:
-            cmd = adb('pull /system/bin/' + file + ' /tmp/' + file)
-            execute(cmd)
-            need_hack = False
-            for line in fileinput.input('/tmp/' + file, inplace=1):
-                if re.search('app_process ', line):
-                    line = line.replace('app_process', 'app_process64')
-                    need_hack = True
-                sys.stdout.write(line)
-
-            if need_hack:
-                cmd = adb(cmd='root', device=device) + ' && ' + adb(cmd='remount', device=device) + ' && ' + adb('push /tmp/' + file + ' /system/bin/')
-                execute(cmd)
-
-
 def cts_run():
     if not args.cts_run:
         return
 
-    connect_device()
+    _setup_device()
 
-    if len(target_archs) > 1:
-        error('You need to specify the target arch')
+    if len(devices_arch) > 1:
+        error('You need to specify the device arch')
 
-    if len(target_devices_type) > 1 or target_devices_type[0] != 'baytrail':
+    if len(devices_type) > 1 or devices_type[0] != 'baytrail':
         error('Only baytrail can run cts')
 
-    arch = target_archs[0]
-    device_type = target_devices_type[0]
+    device_arch = devices_arch[0]
+    device_type = devices_type[0]
 
-    combo = _get_combo(arch, device_type)
+    combo = _get_combo(device_arch, device_type)
     cmd = bashify_cmd('. build/envsetup.sh && lunch ' + combo + ' && cts-tradefed run cts -p ' + args.cts_run)
     execute(cmd, interactive=True)
 
@@ -637,7 +622,7 @@ def _sync_repo(dir, cmd):
     restore_dir()
 
 
-def _get_combo(arch, device_type):
+def _get_combo(device_arch, device_type):
     if repo_type == 'upstream':
         combo = 'aosp_' + device_type + '-' + variant
     elif repo_type == 'irdakk':
@@ -652,22 +637,22 @@ def _get_combo(arch, device_type):
         if device_type == 'generic':
             combo_prefix = 'aosp_'
             combo_suffix = '-' + variant
-            combo = combo_prefix + arch + combo_suffix
+            combo = combo_prefix + device_arch + combo_suffix
         elif device_type == 'baytrail':
-            if repo_type == 'stable' and repo_date >= 20140624:
+            if repo_type == 'stable' and ver_cmp(repo_ver, '2.0') >= 0:
                 combo_prefix = 'asus_t100'
                 combo_suffix = '-' + variant
 
-                if arch == 'x86_64':
+                if device_arch == 'x86_64':
                     combo = combo_prefix + '_64p' + combo_suffix
-                elif arch == 'x86':
+                elif device_arch == 'x86':
                     combo = combo_prefix + combo_suffix
             else:
                 combo_prefix = 'aosp_'
                 combo_suffix = '-' + variant
-                if arch == 'x86_64':
+                if device_arch == 'x86_64':
                     combo = combo_prefix + device_type + '_64p' + combo_suffix
-                elif arch == 'x86':
+                elif device_arch == 'x86':
                     combo = combo_prefix + device_type + combo_suffix
 
     return combo
@@ -696,7 +681,7 @@ def _backup_one(arch, device_type, module):
     elif repo_type == 'gminl64':
         backup_files = {'.': 'out/target/product/%s_%s_64p/%s_%s_64p-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
     elif repo_type == 'stable':
-        product = get_product(arch, device_type, date=repo_date)
+        product = get_product(arch, device_type, ver=repo_ver)
 
         if module == 'webview':
             if arch == 'x86_64':
@@ -717,13 +702,13 @@ def _backup_one(arch, device_type, module):
 
         else:  # module == 'system'
             if device_type == 'baytrail':
-                if repo_date >= 20140624:
+                if ver_cmp(repo_ver, '2.0') >= 0:
                     prefix = ''
                 else:
                     prefix = 'aosp_'
                 backup_files = {
                     '.': [
-                        'out/dist/%s%s-om-factory.tgz' % (prefix, get_product(arch, device_type, date=repo_date)),
+                        'out/dist/%s%s-om-factory.tgz' % (prefix, get_product(arch, device_type, ver=repo_ver)),
                     ],
                 }
             elif device_type == 'generic':
@@ -803,15 +788,12 @@ def _patch_remove(patches):
     restore_dir()
 
 
-# Now support:
-# google, upstream
-# intel, stable
-# intel, mcg
 def _get_repo_info():
     f = open('.repo/manifests.git/config')
     lines = f.readlines()
     f.close()
 
+    repo_ver = '0.0'
     pattern = re.compile('merge = (.*)')
     for line in lines:
         match = pattern.search(line)
@@ -819,8 +801,16 @@ def _get_repo_info():
             merge = match.group(1)
             if merge == 'master':
                 repo_type = 'upstream'
+                repo_ver = '99.0.0.0'
+            elif merge == 'android-4.4.4_r1':
+                repo_type = 'upstream'
+                repo_ver = '4.4.4.1'
             elif merge == 'abt/private/topic/aosp_stable/master':
                 repo_type = 'stable'
+                if os.path.exists('device/intel/baytrail/asus_t100'):
+                    repo_ver = '2.0'
+                else:
+                    repo_ver = '1.0'
             elif merge == 'platform/android/r44c-stable':
                 repo_type = 'mcg'
             elif merge == 'abt/topic/gmin/l-dev/master':
@@ -832,20 +822,22 @@ def _get_repo_info():
             else:
                 error('Could not find repo branch')
 
-    if repo_type == 'stable':
-        if os.path.exists('device/intel/baytrail/asus_t100'):
-            repo_date = 20140624
-        else:
-            repo_date = 20140101
-    else:
-        repo_date = 0
-
-    return (repo_type, repo_date)
+    return (repo_type, repo_ver)
 
 
 def _teardown():
     pass
 
+
+def _setup_device():
+    global devices, devices_product, devices_type, devices_arch, devices_mode
+
+    if devices:
+        return
+
+    if repo_type == 'stable':
+        connect_device()
+    (devices, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
 
 if __name__ == "__main__":
     parse_arg()
@@ -857,10 +849,10 @@ if __name__ == "__main__":
     remove_out()
     build()
     backup()
-    burn_image()
+
+    hack_app_process()
     flash_image()
     start_emu()
     analyze()
     push()
-    hack_app_process()
     cts_run()

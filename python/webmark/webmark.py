@@ -305,7 +305,7 @@ def setup():
     time.sleep(1)
 
     unsetenv('http_proxy')
-    (devices, devices_product, devices_type, devices_target_arch, devices_mode) = setup_device()
+    (devices, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
 
     if len(devices) == 0:
         warning('No device is connected')

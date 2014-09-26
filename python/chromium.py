@@ -1117,7 +1117,7 @@ def _test_run_device(index_device, results):
 
         # Fake /storage/emulated/0
         android_ensure_root(device)
-        cmd = adb(cmd='shell "mount -o rw,remount rootfs / && chmod 777 /mnt/sdcard && cd /storage/emulated && ln -s legacy 0"', device=device)
+        cmd = adb(cmd='shell "mount -o rw,remount rootfs / && cd /storage/emulated && rm -f 0 && ln -s legacy 0"', device=device)
         result = execute(cmd)
         if result[0]:
             error('Failed to fake /storage/emulated/0, which is critical for test')

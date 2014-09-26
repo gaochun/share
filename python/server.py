@@ -92,6 +92,7 @@ def start():
 
     elif host_name == 'wp-02':
         _run_one('update_share')
+        _run_one('update_webbench')
 
     elif host_name == 'wp-03':
         _run_one('update_share')
@@ -106,10 +107,11 @@ def start():
 
 
 def update_share():
-    backup_dir(dir_share)
-    #execute('git reset --hard')
-    execute('git pull')
-    restore_dir()
+    _update_repo(dir_share)
+
+
+def update_webbench():
+    _update_repo(dir_server_webbench)
 
 
 def test_x64_all():
@@ -139,6 +141,13 @@ def _run_one(cb):
             cmd = 'python ' + dir_python + '/' + cmd
             cmd = suffix_cmd(cmd, args, log)
             execute(cmd, interactive=True)
+
+
+def _update_repo(dir_repo):
+    backup_dir(dir_repo)
+    #execute('git reset --hard')
+    execute('git pull')
+    restore_dir()
 
 
 def _teardown():

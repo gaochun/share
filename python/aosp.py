@@ -362,7 +362,8 @@ def hack_app_process():
                 sys.stdout.write(line)
 
             if need_hack:
-                cmd = adb(cmd='root', device=device) + ' && ' + adb(cmd='remount', device=device) + ' && ' + adb(cmd='push /tmp/' + file + ' /system/bin/', device=device)
+                android_ensure_root(device)
+                cmd = adb(cmd='push /tmp/' + file + ' /system/bin/', device=device)
                 execute(cmd)
 
 
@@ -575,7 +576,8 @@ def push():
     else:
         modules = args.target_module.split(',')
 
-    cmd = adb(cmd='root', device=device) + ' && ' + adb(cmd='remount', device=device) + ' && ' + adb(cmd='push out/target/product/%s' % get_product(device_arch, device_type, ver=repo_ver), device=device)
+    android_ensure_root(device)
+    cmd = adb(cmd='push out/target/product/%s' % get_product(device_arch, device_type, ver=repo_ver), device=device)
 
     for module in modules:
         if module == 'browser':

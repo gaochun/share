@@ -1179,6 +1179,14 @@ def android_enter_fastboot(device):
 
     if not is_connected:
         error('Can not connect to device in bootloader')
+
+def android_ensure_root(device):
+    execute(adb(cmd='root', device=device))
+    if connect_device(device=device, mode='system'):
+        execute(adb(cmd='remount', device=device))
+    else:
+        error('Can not connect to device')
+
 # </android>
 
 

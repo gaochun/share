@@ -499,6 +499,8 @@ def buildid(force=False):
         error('Arch is not supported for ' + todo)
     execute('rm -rf temp', show_cmd=False)
 
+    # emulator would behave abnormally after several services. So we just start a new one for each round.
+    android_kill_emu(target_arch_temp)
     (ver_temp, ver_type_temp, build_id_temp) = _chrome_android_get_info(target_arch_temp, chrome_android_apk)
     info('build id is ' + build_id_temp)
     dir_todo = '%s/%s/%s-%s' % (dir_server_chrome_android_todo, target_arch_temp, ver_temp, ver_type_temp)
@@ -1553,11 +1555,9 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
     from selenium import webdriver
     from selenium.webdriver.support.wait import WebDriverWait
 
-    has_emu = False
     target_arch_device = _get_target_arch_device()
     if target_arch not in target_arch_device:
         android_start_emu(target_arch)
-        has_emu = True
         target_arch_device = _get_target_arch_device()
     if target_arch not in target_arch_device:
         error('Failed to get device for target arch ' + target_arch)
@@ -1608,8 +1608,6 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         setenv('http_proxy', env_http_proxy)
     execute(adb('uninstall ' + chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device))
 
-    if has_emu:
-        android_kill_emu(target_arch)
     return (ver_temp, ver_type_temp, build_id_temp)
 
 

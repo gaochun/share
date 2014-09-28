@@ -1108,11 +1108,13 @@ def android_start_emu(target_arch):
         if target_arch == 'x86':
             time.sleep(30)
         else:
-            time.sleep(90)
+            time.sleep(70)
 
 
 def android_kill_emu(target_arch):
-    execute('killall emulator64-%s' % target_arch)
+    emu = 'emulator64-%s' % target_arch
+    if has_process(emu):
+        execute('killall %s' % emu)
 
 
 def android_get_memory(pkg):
@@ -1179,6 +1181,7 @@ def android_enter_fastboot(device):
 
     if not is_connected:
         error('Can not connect to device in bootloader')
+
 
 def android_ensure_root(device):
     execute(adb(cmd='root', device=device))

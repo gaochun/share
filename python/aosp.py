@@ -735,7 +735,7 @@ def _backup_one(arch, device_type, module):
     elif repo_type == 'gminl':
         name += '-' + product_brand + '-' + product_name
     dir_backup_one = dir_backup + '/' + name
-    backup_files(files_back=files_back, dir_backup=dir_backup_one, dir_src=dir_root)
+    backup_files(files_backup=files_backup, dir_backup=dir_backup_one, dir_src=dir_root)
 
     if not args.backup_skip_server:
         backup_dir(dir_backup)

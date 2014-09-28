@@ -1106,7 +1106,7 @@ def backup_test():
         'out/Release/%s_apk' % test: dir_out_build_type + '/%s_apk/%s-debug.apk' % (test, test),
     }
 
-    dir_backup = dir_share_ignore_backup + '/' + timestamp + '-' + args.backup_test
+    dir_backup = timestamp + '-' + args.backup_test
     backup_files(files_backup=files_backup, dir_backup=dir_backup, dir_src=dir_src)
 
 

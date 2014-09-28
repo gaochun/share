@@ -1043,9 +1043,10 @@ def get_capabilities(device, target_module, use_running_app=False, args=[]):
 
 
 def backup_files(files_backup, dir_backup, dir_src):
-    ensure_dir(dir_backup)
-    backup_dir(dir_backup)
-    info('Begin to backup to ' + dir_backup)
+    path_backup = dir_share_ignore_backup + '/' + dir_backup
+    ensure_dir(path_backup)
+    backup_dir(path_backup)
+    info('Begin to backup to ' + path_backup)
     for dir_dest in files_backup:
         ensure_dir(dir_dest)
 
@@ -1067,8 +1068,7 @@ def backup_files(files_backup, dir_backup, dir_src):
     restore_dir()
 
     backup_dir(dir_share_ignore_backup)
-    name = dir_backup.split('/')[-1]
-    execute('tar zcf %s.tar.gz %s' % (name, name))
+    execute('tar zcf %s.tar.gz %s' % (dir_backup, dir_backup))
     restore_dir()
 
 

@@ -20,7 +20,6 @@ dir_root = ''
 dir_chromium = ''
 dir_out = ''
 dir_script = sys.path[0]
-dir_backup = ''
 
 # no need of concrete device
 targets_arch = []
@@ -123,7 +122,7 @@ examples:
 
 def setup():
     global targets_arch, targets_type, targets_module
-    global dir_chromium, dir_out, dir_backup, chromium_version
+    global dir_chromium, dir_out, chromium_version
     global use_upstream_chromium, patches_build
     global repo_type, repo_ver, variant
     global product_brand, product_name
@@ -133,7 +132,6 @@ def setup():
 
     dir_chromium = dir_root + '/external/chromium_org'
     dir_out = dir_root + '/out'
-    dir_backup = dir_root + '/backup'
     variant = args.variant
     product_brand = args.product_brand
     product_name = args.product_name
@@ -729,19 +727,17 @@ def _backup_one(arch, device_type, module):
                     ],
                 }
 
-    name = timestamp + '-' + repo_type
+    dir_backup = timestamp + '-' + repo_type
     if repo_type == 'stable':
-        name += '-' + arch + '-' + device_type + '-' + module + '-' + chromium_version
+        dir_backup += '-' + arch + '-' + device_type + '-' + module + '-' + chromium_version
     elif repo_type == 'gminl':
-        name += '-' + product_brand + '-' + product_name
-    dir_backup_one = dir_backup + '/' + name
-    backup_files(files_backup=files_backup, dir_backup=dir_backup_one, dir_src=dir_root)
+        dir_backup += '-' + product_brand + '-' + product_name
+    dir_backup += '-' + host_name
+    backup_files(files_backup=files_backup, dir_backup=dir_backup, dir_src=dir_root)
 
     if not args.backup_skip_server:
-        backup_dir(dir_backup)
-        name_tar = name + '-' + host_name + '.tar.gz'
-        execute('tar zcf ' + name_tar + ' ' + name)
-        backup_smb('//wp-03.sh.intel.com/aosp', '%s/temp' % repo_type, name_tar, dryrun=False)
+        backup_dir(dir_share_ignore_backup)
+        backup_smb('//wp-03.sh.intel.com/aosp', '%s/temp' % repo_type, dir_backup + '.tar.gz', dryrun=False)
         restore_dir()
 
 

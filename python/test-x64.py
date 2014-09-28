@@ -3,7 +3,7 @@
 from util import *
 
 target_archs = ''
-target_devices_type = ''
+targets_type = ''
 dryrun = False
 
 phases_all = ['aosp-prebuild', 'aosp-build', 'aosp-flash', 'chromium-x64']
@@ -29,7 +29,7 @@ examples:
 ''')
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch, such as x86, x86_64', default='x86_64')
-    parser.add_argument('--target-device-type', dest='target_device_type', help='target device type, such as baytrail, generic', default='baytrail')
+    parser.add_argument('--target-type', dest='target_type', help='target type, such as baytrail, generic', default='baytrail')
     parser.add_argument('--dir-aosp', dest='dir_aosp', help='dir for aosp', default='aosp-stable')
     parser.add_argument('--dir-chromium', dest='dir_chromium', help='dir for chromium', default='chromium-android-x64')
     parser.add_argument('--phase', dest='phase', help='phase, including ' + ','.join(phases_all), default='all')
@@ -44,7 +44,7 @@ examples:
 
 
 def setup():
-    global target_archs, target_devices_type, phases
+    global target_archs, targets_type, phases
     global dir_aosp, dir_chromium
     global dir_root, log, timestamp
 
@@ -70,10 +70,10 @@ def setup():
     else:
         target_archs = args.target_arch.split(',')
 
-    if args.target_device_type == 'all':
-        target_devices_type = ['baytrail', 'generic']
+    if args.target_type == 'all':
+        targets_type = ['baytrail', 'generic']
     else:
-        target_devices_type = args.target_device_type.split(',')
+        targets_type = args.target_type.split(',')
 
     if args.phase == 'all':
         phases = phases_all
@@ -96,7 +96,7 @@ def test():
             error(dir_aosp + ' does not exist')
         for arch in target_archs:
             backup_dir(dir_aosp)
-            cmd = python_aosp + ' --target-arch %s --target-device-type %s --build --backup' % (arch, args.target_device_type)
+            cmd = python_aosp + ' --target-arch %s --target-type %s --build --backup' % (arch, args.target_type)
             cmd = suffix_cmd(cmd, args, log)
             execute(cmd, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
@@ -106,7 +106,7 @@ def test():
             if not os.path.exists(dir_aosp):
                 error(dir_aosp + ' does not exist')
             backup_dir(dir_aosp)
-            cmd = python_aosp + ' --target-arch %s --target-device-type %s --flash-image ' % (arch, args.target_device_type)
+            cmd = python_aosp + ' --target-arch %s --target-type %s --flash-image ' % (arch, args.target_type)
             cmd = suffix_cmd(cmd, args, log)
             execute(cmd, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()

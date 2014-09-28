@@ -74,8 +74,8 @@ examples:
   python %(prog)s -s all -b --disable-2nd-arch --patch
   python %(prog)s -b --build-skip-mk --disable-2nd-arch
   python %(prog)s -b --disable-2nd-arch  --build-skip-mk --target-module libwebviewchromium --build-no-dep
-  python %(prog)s --target-device-type generic --backup --backup-skip-server --time-fixed
-  python %(prog)s --build --target-device-type flo --version KTU84P
+  python %(prog)s --target-type generic --backup --backup-skip-server --time-fixed
+  python %(prog)s --build --target-type flo --version KTU84P
 ''')
 
     parser.add_argument('--init', dest='init', help='init', action='store_true')

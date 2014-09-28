@@ -108,6 +108,7 @@ dir_share = dir_temp
 dir_share_ignore = dir_share + '/ignore'
 dir_share_ignore_log = dir_share_ignore + '/log'
 dir_share_ignore_timestamp = dir_share_ignore + '/timestamp'
+dir_share_ignore_backup = dir_share_ignore + '/backup'
 
 dir_python = dir_share + '/python'
 dir_webcatch = dir_python + '/webcatch'
@@ -1039,6 +1040,36 @@ def get_capabilities(device, target_module, use_running_app=False, args=[]):
         capabilities['chromeOptions']['androidActivity'] = activity
 
     return capabilities
+
+
+def backup_files(files_backup, dir_backup, dir_src):
+    ensure_dir(dir_backup)
+    backup_dir(dir_backup)
+    info('Begin to backup to ' + dir_backup)
+    for dir_dest in files_backup:
+        ensure_dir(dir_dest)
+
+        if isinstance(files_backup[dir_dest], str):
+            files_src = [files_backup[dir_dest]]
+        else:
+            files_src = files_backup[dir_dest]
+
+        for file_src in files_src:
+            if file_src[0] == '/':
+                path_src = file_src
+            else:
+                path_src = dir_src + '/' + file_src
+
+            if not os.path.exists(path_src):
+                warning(path_src + ' could not be found')
+            else:
+                execute('cp -rf ' + path_src + ' ' + dir_dest)
+    restore_dir()
+
+    backup_dir(dir_share_ignore_backup)
+    name = dir_backup.split('/')[-1]
+    execute('tar zcf %s.tar.gz %s' % (name, name))
+    restore_dir()
 
 
 # <android>

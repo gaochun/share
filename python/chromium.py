@@ -282,6 +282,7 @@ examples:
 
   misc:
   python %(prog)s --owner
+  python %(prog)s --backup-test content_gl_tests --time-fixed
 
   chrome-android:
   python %(prog)s --repo-type chrome-android --target-os android --target-module chrome --dir-root /workspace/project/chrome-android/37.0.2062.94 --target-arch x86 --ver 37.0.2062.94 --ver-type beta --phase-continue
@@ -352,6 +353,7 @@ examples:
     group_misc.add_argument('--analyze', dest='analyze', help='analyze test tombstone', action='store_true')
     group_misc.add_argument('--owner', dest='owner', help='find owner for latest commit', action='store_true')
     group_misc.add_argument('--layout', dest='layout', help='layout test')
+    group_misc.add_argument('--backup-test', dest='backup_test', help='backup test, so that bug can be easily reproduced by others')
 
     add_argument_common(parser)
 
@@ -1083,8 +1085,29 @@ def analyze():
     analyze_issue(dir_chromium=dir_root, ver='2.0')
 
 
-def teardown():
-    restore_log()
+def backup_test():
+    if not args.backup_test:
+        return
+
+    test = args.backup_test
+    files_backup = {
+        'build/android': [
+            'build/android/test_runner.py',
+            'build/android/lighttpd_server.py',
+            'build/android/pylib',
+        ],
+        'build': 'build/util',
+        'third_party': 'third_party/android_testrunner',
+        'third_party/android_tools/sdk/build-tools/20.0.0': 'third_party/android_tools/sdk/build-tools/20.0.0/aapt',
+        'out/Release': [
+            dir_out_build_type + '/md5sum_bin_host',
+            dir_out_build_type + '/md5sum_dist',
+        ],
+        'out/Release/%s_apk' % test: dir_out_build_type + '/%s_apk/%s-debug.apk' % (test, test),
+    }
+
+    dir_backup = dir_share_ignore_backup + '/' + timestamp + '-' + args.backup_test
+    backup_files(files_backup=files_backup, dir_backup=dir_backup, dir_src=dir_src)
 
 
 ########## Internal function begin ##########
@@ -1676,3 +1699,4 @@ if __name__ == '__main__':
     analyze()
     owner()
     layout()
+    backup_test()

@@ -679,11 +679,11 @@ def _backup_one(arch, device_type, module):
         #os.mkdir(dest_dir)
         #execute('cp ' + root_dir + 'out/target/product/' + device_code_name + '/*.img ' + dest_dir)
     elif repo_type == 'irdakk':
-        backup_files = {'.': 'out/target/product/irda/irda-ktu84p-factory.tgz'}
+        files_backup = {'.': 'out/target/product/irda/irda-ktu84p-factory.tgz'}
     elif repo_type == 'gminl':
-        backup_files = {'.': 'out/target/product/%s_%s/%s_%s-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
+        files_backup = {'.': 'out/target/product/%s_%s/%s_%s-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
     elif repo_type == 'gminl64':
-        backup_files = {'.': 'out/target/product/%s_%s_64p/%s_%s_64p-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
+        files_backup = {'.': 'out/target/product/%s_%s_64p/%s_%s_64p-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
     elif repo_type == 'stable':
         product = get_product(arch, device_type, ver=repo_ver)
 
@@ -693,13 +693,13 @@ def _backup_one(arch, device_type, module):
             elif arch == 'x86':
                 libs = ['lib']
 
-            backup_files = {
+            files_backup = {
                 'out/target/product/' + product + '/system/framework': 'out/target/product/' + product + '/system/framework/webviewchromium.jar',
                 'out/target/product/' + product + '/system/framework/webview': 'out/target/product/' + product + '/system/framework/webview/paks',
             }
 
             for lib in libs:
-                backup_files['out/target/product/' + product + '/system/' + lib] = [
+                files_backup['out/target/product/' + product + '/system/' + lib] = [
                     'out/target/product/' + product + '/system/' + lib + '/libwebviewchromium_plat_support.so',
                     'out/target/product/' + product + '/system/' + lib + '/libwebviewchromium.so'
                 ]
@@ -710,13 +710,13 @@ def _backup_one(arch, device_type, module):
                     prefix = ''
                 else:
                     prefix = 'aosp_'
-                backup_files = {
+                files_backup = {
                     '.': [
                         'out/dist/%s%s-om-factory.tgz' % (prefix, get_product(arch, device_type, ver=repo_ver)),
                     ],
                 }
             elif device_type == 'generic':
-                backup_files = {
+                files_backup = {
                     'platforms': 'development/tools/emulator/skins',
                     'emulator-linux': 'external/qemu/objs/*',
                     'system-images/aosp_%s/system' % arch: 'out/target/product/generic_%s/system/*' % arch,
@@ -735,22 +735,7 @@ def _backup_one(arch, device_type, module):
     elif repo_type == 'gminl':
         name += '-' + product_brand + '-' + product_name
     dir_backup_one = dir_backup + '/' + name
-    ensure_dir(dir_backup_one)
-    backup_dir(dir_backup_one)
-    info('Begin to backup to ' + dir_backup_one)
-    for dir_dest in backup_files:
-        ensure_dir(dir_dest)
-
-        if isinstance(backup_files[dir_dest], str):
-            files = [backup_files[dir_dest]]
-        else:
-            files = backup_files[dir_dest]
-
-        for file in files:
-            if not os.path.exists(dir_root + '/' + file):
-                warning(dir_root + '/' + file + ' could not be found')
-            execute('cp -rf ' + dir_root + '/' + file + ' ' + dir_dest)
-    restore_dir()
+    backup_files(files_back=files_back, dir_backup=dir_backup_one, dir_src=dir_root)
 
     if not args.backup_skip_server:
         backup_dir(dir_backup)

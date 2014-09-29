@@ -374,8 +374,8 @@ def flash_image():
     if len(devices) < 1:
         error('You must have device connected')
 
-    device_arch = devices_arch[0]
-    device_type = devices_type[0]
+    device_arch = targets_arch[0]
+    device_type = targets_type[0]
     device = devices[0]
     path_fastboot = dir_linux + '/fastboot'
 

@@ -374,9 +374,9 @@ alias -s txt='gedit'
 alias -s pdf='acroread'
 
 if [ $profile == "PROXY" ] ; then
-    #export GIT_PROXY_COMMAND=/usr/bin/socks-gw
-    export http_proxy=http://proxy-shz.intel.com:911
-    export https_proxy=https://proxy-shz.intel.com:911
+    sudo privoxy /etc/privoxy/config
+    export http_proxy=127.0.0.1:8118
+    export https_proxy=127.0.0.1:8118
     export ftp_proxy=ftp://proxy-shz.intel.com:21
     export socks_proxy=proxy.jf.intel.com:1080
     export no_proxy=intel.com,.intel.com,10.0.0.0/8,192.168.0.0/16,localhost,127.0.0.0/8,134.134.0.0/16,172.16.0.0/20,192.168.42.0/16

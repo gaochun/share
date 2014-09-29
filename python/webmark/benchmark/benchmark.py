@@ -53,7 +53,7 @@ class Benchmark(object):
         members = {
             'category': '',
             'name': '',
-            'version': '',
+            'version': 'NA',
             'metric': '',
             'path_type': 'internal',
             'timeout': 90,
@@ -87,7 +87,7 @@ class Benchmark(object):
             else:
                 self.__dict__[key] = config[key][self.path_type]
         if self.path_type == 'internal':
-            self.__dict__[key] = 'http://wp-02.sh.intel.com/' + self.__dict__[key]
+            self.__dict__[key] = path_web_benchmark + '/' + self.__dict__[key]
         elif self.path_type == 'local':
             self.__dict__[key] = 'file:///data/local/tmp/' + self.__dict__[key]
 
@@ -161,6 +161,48 @@ class Benchmark(object):
                 elif item == 'result':
                     outputs.append(','.join(str(x) for x in results_average))
             return ','.join(outputs)
+
+    def inject_jperf(self, driver):
+        if self.path_type == 'internal':
+            js = path_web_webbench + '/jperf/jperf.js'
+        else:
+            js = 'https://raw.githubusercontent.com/gyagp/webbench/master/jperf/jperf.js'
+        self.inject_js(driver, js)
+
+    def inject_js(self, driver, js):
+        script = '''
+    var script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = '%s';
+    document.head.appendChild(script);
+        ''' % js
+        driver.execute_script('{' + script + '}')
+
+    def inject_css_fps(self, driver):
+        self.inject_jperf(driver)
+        script = '''
+    var cssFpsElement = document.createElement('div');
+    var style = 'float:left; width:800px; height:30px: color:red;';
+    cssFpsElement.setAttribute('style', style);
+    cssFpsElement.setAttribute('id', 'css-fps');
+    cssFpsElement.innerHTML = 'Recent FPS: 0, Average FPS: 0';
+    document.body.appendChild(cssFpsElement);
+
+    var cssFpsMeter = new window.jPerf.CSSFPSMeter();
+    cssFpsMeter.start();
+    document.addEventListener('CSSFPSReport',
+      function(event) {
+        cssFpsElement.innerHTML = 'Recent FPS: ' + event.recentFPS + ', Average FPS: ' + event.averageFPS;
+      },
+      false
+    );
+        '''
+        driver.execute_script(script)
+        time.sleep(5)
+
+    def get_css_fps(self, driver):
+        match = re.search('Average FPS: (.*)', driver.find_element_by_id('css-fps').get_attribute('innerText'))
+        return match.group(1)
 
     def _is_finished(self, driver):
         if self.states[self.state][0](driver):

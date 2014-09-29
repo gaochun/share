@@ -163,6 +163,7 @@ class Suite:
                 error('Can not install ' + self.target.module_path)
 
         capabilities = get_capabilities(device, self.target.module, args.use_running_app, ['--disable-web-security'])
+
         if args.dryrun:
             driver = None
         else:
@@ -279,6 +280,7 @@ examples:
     parser.add_argument('--device-config', dest='device_config', help='need device config or not', action='store_true')
     parser.add_argument('--governor', dest='governor', help='governor')
     parser.add_argument('--freq', dest='freq', type=int, help='freq')
+    parser.add_argument('--ver-driver', dest='ver_driver', help='version of chromedriver', default='')
 
     args = parser.parse_args()
 
@@ -296,9 +298,14 @@ def setup():
     if not os.path.exists(dir_test):
         os.mkdir(dir_test)
 
-    if has_process('chromedriver'):
-        execute('sudo killall chromedriver', show_cmd=False)
-    subprocess.Popen(dir_webmark + '/driver/chromedriver', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if args.ver_driver:
+        chrome_driver = 'chromedriver-' + args.ver_driver
+    else:
+        chrome_driver = 'chromedriver'
+
+    if has_process(chrome_driver):
+        execute('sudo killall %s' % chrome_driver, show_cmd=False)
+    subprocess.Popen(dir_webmark + '/driver/' + chrome_driver, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # Sleep a bit to make sure driver is ready
     time.sleep(1)
 

@@ -1,7 +1,7 @@
 from benchmark import *
 
 
-class fallleaves(Benchmark):
+class fallleaves(CssBenchmark):
     CONFIG = {
         'category': category_info['css'],
         'name': 'Fall Leaves',
@@ -20,6 +20,7 @@ class fallleaves(Benchmark):
         return True
 
     def act0(self, driver):
+        time.sleep(5)
         self.result = self.get_result_periodic(driver)
 
     def get_result_one(self, driver):

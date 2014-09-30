@@ -177,7 +177,21 @@ class Benchmark(object):
     document.head.appendChild(script);
         ''' % js
         driver.execute_script('{' + script + '}')
+        time.sleep(3)
 
+    def _is_finished(self, driver):
+        if self.states[self.state][0](driver):
+            act = self.states[self.state][1]
+            if act:
+                act(driver)
+            self.state += 1
+            if self.state == len(self.states):
+                return True
+
+        return False
+
+
+class CssBenchmark(Benchmark):
     def inject_css_fps(self, driver):
         self.inject_jperf(driver)
         script = '''
@@ -198,19 +212,7 @@ class Benchmark(object):
     );
         '''
         driver.execute_script(script)
-        time.sleep(5)
 
     def get_css_fps(self, driver):
         match = re.search('Average FPS: (.*)', driver.find_element_by_id('css-fps').get_attribute('innerText'))
         return match.group(1)
-
-    def _is_finished(self, driver):
-        if self.states[self.state][0](driver):
-            act = self.states[self.state][1]
-            if act:
-                act(driver)
-            self.state += 1
-            if self.state == len(self.states):
-                return True
-
-        return False

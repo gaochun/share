@@ -7,8 +7,11 @@ from util import *
 import json
 from selenium import webdriver
 
-logger = ''
 dir_root = ''
+log = ''
+timestamp = ''
+
+logger = ''
 dir_test = ''
 device = ''
 device_config = False
@@ -280,7 +283,11 @@ examples:
     parser.add_argument('--device-config', dest='device_config', help='need device config or not', action='store_true')
     parser.add_argument('--governor', dest='governor', help='governor')
     parser.add_argument('--freq', dest='freq', type=int, help='freq')
-    parser.add_argument('--ver-driver', dest='ver_driver', help='version of chromedriver', default='')
+    parser.add_argument('--driver-ver', dest='driver_ver', help='version of chromedriver')
+    parser.add_argument('--driver-log', dest='driver_log', help='log of chromedriver', action='store_true')
+    parser.add_argument('--driver-verbose', dest='driver_verbose', help='verbose log of chromedriver', action='store_true')
+
+    add_argument_common(parser)
 
     args = parser.parse_args()
 
@@ -290,22 +297,31 @@ examples:
 
 
 def setup():
-    global dir_root, dir_test, device, device_product, logger
+    global dir_root, log, timestamp
+    global dir_test, device, device_product, logger
     global device_config, file_result
+
+    (timestamp, dir_root, log) = setup_common(args, _teardown)
 
     dir_root = get_symbolic_link_dir()
     dir_test = dir_root + '/test'
     if not os.path.exists(dir_test):
         os.mkdir(dir_test)
 
-    if args.ver_driver:
-        chrome_driver = 'chromedriver-' + args.ver_driver
+    if args.driver_ver:
+        chrome_driver = 'chromedriver-' + args.driver_ver
     else:
         chrome_driver = 'chromedriver'
 
     if has_process(chrome_driver):
         execute('sudo killall %s' % chrome_driver, show_cmd=False)
-    subprocess.Popen(dir_webmark + '/driver/' + chrome_driver, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    cmd = dir_webmark + '/driver/' + chrome_driver
+    if args.driver_log:
+        cmd += ' --log-path ' + dir_share_ignore_log + '/chromedriver-' + timestamp + '.log'
+    if args.driver_verbose:
+        cmd += ' --verbose'
+    subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # Sleep a bit to make sure driver is ready
     time.sleep(1)
 
@@ -340,7 +356,7 @@ def setup():
         android_config_device(device=device, device_product=device_product, default=False, governor=governor, freq=freq)
 
 
-def teardown():
+def _teardown():
     if device_config:
         android_config_device(device=device, device_product=device_product, default=True)
 
@@ -348,4 +364,3 @@ if __name__ == '__main__':
     parse_arg()
     setup()
     WebMark()
-    teardown()

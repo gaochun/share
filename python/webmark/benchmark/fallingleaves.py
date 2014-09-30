@@ -4,11 +4,11 @@ from benchmark import *
 class fallleaves(CssBenchmark):
     CONFIG = {
         'category': category_info['css'],
-        'name': 'Fall Leaves',
+        'name': 'Falling Leaves',
         'metric': metric_info['fps'],
         'path': {
             'external': 'http://www.webkit.org/blog-files/leaves/index.html',
-            'internal': 'webbench/fall-leaves'
+            'internal': 'webbench/css/falling-leaves'
         },
     }
 

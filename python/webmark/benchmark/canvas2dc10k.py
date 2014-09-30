@@ -8,7 +8,7 @@ class canvas2dc10k(Benchmark):
         'metric': metric_info['fps'],
         'path': {
             'external': '',
-            'internal': 'webbench/canvas2d-c10k/'
+            'internal': 'webbench/canvas2d/c10k/'
         },
     }
 

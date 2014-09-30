@@ -9,7 +9,7 @@ class kraken(Benchmark):
         'metric': metric_info['ms'],
         'path': {
             'external': 'http://krakenbenchmark.mozilla.org/',
-            'internal': 'webbench/kraken/'
+            'internal': 'webbench/js/kraken/'
         },
     }
 

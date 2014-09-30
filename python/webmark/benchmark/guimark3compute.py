@@ -8,7 +8,7 @@ class guimark3compute(Benchmark):
         'metric': metric_info['fps'],
         'path': {
             'external': 'http://www.craftymind.com/factory/guimark3/compute/GM3_JS_Compute.html',
-            'internal': 'webbench/GUIMark3/compute/GM3_JS_Compute.html'
+            'internal': 'webbench/canvas2d/GUIMark3/compute/GM3_JS_Compute.html'
         },
         'times_run': 6,
         'times_skip': 1,

@@ -10,11 +10,11 @@ class fishietank(Benchmark):
         'path': {
             'setinterval': {
                 'external': 'http://ie.microsoft.com/testdrive/Performance/FishIETank/Default.html',
-                'internal': 'webbench/microsoft/testdrive/Performance/FishIETank/Default.html'
+                'internal': 'webbench/canvas2d/microsoft/testdrive/Performance/FishIETank/Default.html'
             },
             'raf': {
                 'external': '',
-                'internal': 'webbench/fishtank-raf/'
+                'internal': 'webbench/canvas2d/fishtank-raf/'
             }
         },
         'counts_fish': [1, 10, 20, 50, 100, 250, 500, 1000],

@@ -8,7 +8,7 @@ class guimark3vector(Benchmark):
         'metric': metric_info['fps'],
         'path': {
             'external': 'http://www.craftymind.com/factory/guimark3/vector/GM3_JS_Vector.html',
-            'internal': 'webbench/GUIMark3/vector/GM3_JS_Vector.html'
+            'internal': 'webbench/canvas2d/GUIMark3/vector/GM3_JS_Vector.html'
         },
         'times_run': 6,
         'times_skip': 1,

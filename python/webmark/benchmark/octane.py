@@ -10,11 +10,11 @@ class octane(Benchmark):
         'path': {
             '2.0': {
                 'external': 'http://octane-benchmark.googlecode.com/svn/latest/index.html',
-                'internal': 'webbench/octane/2.0/index.html',
+                'internal': 'webbench/js/octane/2.0/index.html',
             },
             '1.0': {
                 'external': 'http://octane-benchmark.googlecode.com/svn/tags/v1/index.html',
-                'internal': 'browsermark',
+                'internal': 'webbench/js/octane/1.0/index.html',
             }
         },
     }

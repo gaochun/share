@@ -9,7 +9,7 @@ class canvasmark(Benchmark):
         'metric': metric_info['score'],
         'path': {
             'external': 'http://www.kevs3d.co.uk/dev/canvasmark/',
-            'internal': 'webbench/canvasmark/'
+            'internal': 'webbench/canvas2d/canvasmark/'
         },
     }
 

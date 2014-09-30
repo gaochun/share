@@ -10,11 +10,11 @@ class galactic(Benchmark):
         'path': {
             'desktop': {
                 'external': 'http://ie.microsoft.com/testdrive/Performance/Galactic/Default.html',
-                'internal': 'webbench/microsoft/testdrive/Performance/Galactic/Default.html'
+                'internal': 'webbench/canvas2d/microsoft/testdrive/Performance/Galactic/Default.html'
             },
             'mobile': {
                 'external': 'http://ie.microsoft.com/testdrive/Performance/Galactic/Default.html',
-                'internal': 'webbench/microsoft/testdrive/mobile/Performance/Galactic/'
+                'internal': 'webbench/canvas2d/microsoft/testdrive/mobile/Performance/Galactic/'
             }
         },
     }

@@ -11,23 +11,23 @@ class sunspider(Benchmark):
         'path': {
             '0.9': {
                 'external': 'http://www.webkit.org/perf/sunspider-0.9/sunspider-driver.html',
-                'internal': 'webbench/sunspider/0.9/sunspider-0.9/driver.html'
+                'internal': 'webbench/js/sunspider/0.9/sunspider-0.9/driver.html'
             },
             '0.9.1': {
                 'external': 'http://www.webkit.org/perf/sunspider-0.9.1/sunspider-0.9.1/driver.html',
-                'internal': 'webbench/sunspider/0.9.1/sunspider-0.9.1/driver.html'
+                'internal': 'webbench/js/sunspider/0.9.1/sunspider-0.9.1/driver.html'
             },
             '1.0': {
                 'external': 'http://www.webkit.org/perf/sunspider-1.0/sunspider-1.0/driver.html',
-                'internal': 'webbench/sunspider/1.0/sunspider-1.0/driver.html'
+                'internal': 'webbench/js/sunspider/1.0/sunspider-1.0/driver.html'
             },
             '1.0.1': {
                 'external': 'http://www.webkit.org/perf/sunspider-1.0.1/sunspider-1.0.1/driver.html',
-                'internal': 'webbench/sunspider/1.0.1/sunspider-1.0.1/driver.html'
+                'internal': 'webbench/js/sunspider/1.0.1/sunspider-1.0.1/driver.html'
             },
             '1.0.2': {
                 'external': 'http://www.webkit.org/perf/sunspider-1.0.2/sunspider-1.0.2/driver.html',
-                'internal': 'webbench/sunspider/1.0.2/sunspider-1.0.2/driver.html'
+                'internal': 'webbench/js/sunspider/1.0.2/sunspider-1.0.2/driver.html'
             },
             # Google all versions: http://sunspider-mod.googlecode.com/svn/data/hosted/versions.html
             '0.9.1-google-new': {

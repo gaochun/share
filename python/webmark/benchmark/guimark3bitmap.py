@@ -10,11 +10,11 @@ class guimark3bitmap(Benchmark):
         'path': {
             'nocache': {
                 'external': 'http://www.craftymind.com/factory/guimark3/bitmap/GM3_JS_Bitmap.html',
-                'internal': 'webbench/GUIMark3/bitmap/GM3_JS_Bitmap.html'
+                'internal': 'webbench/canvas2d/GUIMark3/bitmap/GM3_JS_Bitmap.html'
             },
             'cache': {
                 'external': 'http://www.craftymind.com/factory/guimark3/bitmap/GM3_JS_Bitmap_cache.html',
-                'internal': 'webbench/GUIMark3/bitmap/GM3_JS_Bitmap_cache.html'
+                'internal': 'webbench/canvas2d/GUIMark3/bitmap/GM3_JS_Bitmap_cache.html'
             }
         },
     }

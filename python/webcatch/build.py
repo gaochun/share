@@ -54,7 +54,7 @@ expectfail = [
     [264517, 264545],  # accidental dartium code push
     [275269, 275271],  # pdfium build
     [284080, 284249],  # warning: shared library text segment is not shareable for ld.gold, and warning is treated as error. We may fix this if needed using linker option.
-    297460,  # Key 'includes' repeated at level 1
+    [297456, 297466],  # Key 'includes' repeated at level 1
 ]
 
 rev_expectfail = []

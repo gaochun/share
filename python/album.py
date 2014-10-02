@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from util import *
+import shutil
 
-dirs_check = [u'025']
+dirs_check = [u'026']
 dir_root = u'e:/storage/顾诗云'
 ffmpeg = 'D:/software/active/ffmpeg/bin/ffmpeg.exe'
 
@@ -37,7 +38,7 @@ def process():
             if file_src_suffix == '.JPG':
                 file_dest_path = dir_photo_all + '/' + file_dest
                 if not os.path.exists(file_dest_path):
-                    execute('mv %s %s' % (file_src_path, file_dest_path))
+                    shutil.move(file_src_path, file_dest_path)
                 else:
                     warning(file_dest_path + ' already exists')
             elif file_src_suffix == '.MP4' or file_src_suffix == '.MOV':
@@ -45,7 +46,7 @@ def process():
                 file_dest_path = dir_video_1080 + '/' + file_dest
                 if not os.path.exists(file_dest_path):
                     if file_src_suffix == '.MP4':
-                        execute('mv %s %s' % (file_src_path, file_dest_path))
+                        shutil.move(file_src_path, file_dest_path)
                     elif file_src_suffix == '.MOV':
                         info('Convert file ' + file_src_path + ' to ' + file_dest_path)
                         cmd = (ffmpeg + ' -i ' + file_src_path + ' -qscale 0 -s hd1080 -f mp4 ' + file_dest + ' 2>>NUL').encode(sys.getfilesystemencoding())

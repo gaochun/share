@@ -1,6 +1,8 @@
 ﻿#! N:\Python27\python.exe
 # -*- coding: utf-8 -*-
 
+# Need to install pywin32: http://sourceforge.net/projects/pywin32
+
 import urllib2
 import re
 import os
@@ -10,6 +12,7 @@ from httplib import BadStatusLine
 import time
 import datetime
 import sys
+import socket
 
 import multiprocessing
 from multiprocessing import Pool
@@ -32,6 +35,17 @@ debug_mode = 0
 
 # Enable multiprocess mode or not
 mp_mode = 1
+
+host_name = socket.gethostname()
+file_history = ''
+
+def setup():
+	global file_history
+
+	if host_name == 'gyagp_parent':
+		file_history = 'history-parent.txt'
+	else:
+		file_history = 'history.txt'
 
 def get_time():
     return time.strftime('%Y-%m-%d %X', time.localtime(time.time()))
@@ -119,7 +133,7 @@ def update_history():
     if debug_mode:
         lines = ['Spar,人人影视.mp4,11176,S03E01', 'Homeland,rmvb,11088,S02E05']
     else:
-        file = open('history.txt')
+        file = open(file_history)
         lines = file.readlines()
         file.close()
 
@@ -202,9 +216,9 @@ def update_history():
         if os.path.exists('history_old.txt'):
             os.remove('history_old.txt')
 
-        os.rename('history.txt', 'history_old.txt')
+        os.rename(file_history, 'history_old.txt')
 
-        f = open('history.txt', 'w')
+        f = open(file_history, 'w')
         for line in lines:
             f.write(line)
         f.close()
@@ -213,4 +227,5 @@ def update_history():
         copy_text_to_clipboard(all_links)
 
 if __name__ == '__main__':
+    setup()
     update_history()

@@ -502,7 +502,6 @@ def buildid(force=False):
     execute('rm -rf temp', show_cmd=False)
 
     # emulator would behave abnormally after several services. So we just start a new one for each round.
-    android_kill_emu(target_arch_temp)
     (ver_temp, ver_type_temp, build_id_temp) = _chrome_android_get_info(target_arch_temp, chrome_android_apk)
     info('build id is ' + build_id_temp)
     dir_todo = '%s/%s/%s-%s' % (dir_server_chrome_android_todo, target_arch_temp, ver_temp, ver_type_temp)

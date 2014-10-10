@@ -44,6 +44,7 @@ examples:
     parser.add_argument('--download', dest='download', help='download apk from google play', action='store_true')
     parser.add_argument('--download_type', dest='download_type', help='version type to download', default='all')
     parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
+    parser.add_argument('--backup-ver', dest='backup_ver', help='backup versions less than the designated')
     parser.add_argument('--ver', dest='ver', help='version', default='all')
     parser.add_argument('--ver-type', dest='ver_type', help='ver type', default='all')
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', default='all')
@@ -229,6 +230,17 @@ def backup():
             restore_dir()
 
 
+def backup_ver():
+    if not args.backup_ver:
+        return
+
+    dirs = os.listdir('.')
+    for dir_ver in dirs:
+        if re.match('\d+\.\d+\.\d+\.\d+', dir_ver) and ver_cmp(dir_ver, args.backup_ver) <= 0:
+            execute('tar zcf %s.tar.gz %s' % (dir_ver, dir_ver))
+            backup_smb(path_server_backup, 'chromium', '%s.tar.gz' % dir_ver)
+
+
 def analyze():
     if not args.analyze:
         return
@@ -318,4 +330,5 @@ if __name__ == "__main__":
     check()
     download()
     backup()
+    backup_ver()
     analyze()

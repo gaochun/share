@@ -1,7 +1,7 @@
 from benchmark import *
 
 
-class fallleaves(CssBenchmark):
+class fallingleaves(CssBenchmark):
     CONFIG = {
         'category': category_info['css'],
         'name': 'Falling Leaves',
@@ -13,7 +13,7 @@ class fallleaves(CssBenchmark):
     }
 
     def __init__(self, driver, case):
-        super(fallleaves, self).__init__(driver, case)
+        super(fallingleaves, self).__init__(driver, case)
 
     def cond0(self, driver):
         self.inject_css_fps(driver)

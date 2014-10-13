@@ -145,6 +145,10 @@ repo_type_info = {
                     'YUVConvertTest.YUVAtoARGB_MMX_MatchReference',
                     'MediaDrmBridgeTest.IsKeySystemSupported_Widevine',
                     'MediaDrmBridgeTest.IsSecurityLevelSupported_Widevine',
+                    # regression
+                    # This case will pass if run alone. But it causes timeout in the whole tests.
+                    # irdakk also has the problem, while gminl is ok.
+                    'MediaSourcePlayerTest.A_FirstAccessUnitAfterSeekIsEOS',
                 ],
                 'sandbox_linux_unittests': [
                     # Status: Verified with stable image
@@ -188,6 +192,15 @@ repo_type_info = {
                     # Status: TODO
                     'JavaBridgeCoercionTest#testPassJavaObject',
                     'ContentViewScrollingTest#testFling',
+                    # regression
+                    'ScreenOrientationListenerTest#testFlipLandscape',
+                    'ScreenOrientationListenerTest#testFlipPortrait',
+                    'ScreenOrientationListenerTest#testVariousOrientationChanges',
+                    'ScreenOrientationProviderTest#testBasicValues',
+                    'ScreenOrientationProviderTest#testLandscape',
+                    'ScreenOrientationProviderTest#testPortrait',
+                    'CleanupReferenceTest#testCreateMany',
+                    'CleanupReferenceTest#testCreateSingle',
                 ],
                 'AndroidWebViewTest': [
                     # Status: TODO
@@ -230,6 +243,23 @@ repo_type_info = {
                     # Status: TODO
                     'TextureStorageTest.CorrectPixels',
                 ],
+            },
+            ('generic', 'all'): {},
+            ('generic', 'x86_64'): {},
+            ('generic', 'x86'): {},
+        }
+    },
+    'irdakk': {
+        'rev': 296898,
+        'test_filter': {
+            ('all', 'all'): {},
+            ('all', 'x86_64'): {},
+            ('all', 'x86'): {},
+            ('baytrail', 'all'): {
+            },
+            ('baytrail', 'x86_64'): {
+            },
+            ('baytrail', 'x86'): {
             },
             ('generic', 'all'): {},
             ('generic', 'x86_64'): {},
@@ -1210,7 +1240,6 @@ def _test_run_device(index_device, results):
                     cmd += ''
 
                 cmd += ' --num_retries 1'
-
                 if args.test_filter:
                     test_filter_str = args.test_filter
                 else:

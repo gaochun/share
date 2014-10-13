@@ -23,7 +23,7 @@ class fishietank(Benchmark):
 
     def __init__(self, driver, case):
         if not hasattr(case, 'count_fish'):
-            self.count_fish = 100
+            self.count_fish = 50
         else:
             self.count_fish = case.count_fish
 

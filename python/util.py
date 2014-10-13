@@ -800,6 +800,9 @@ def copy_file(file_src, dir_dest, is_sylk=False):
 
 
 def apply_patch(patches, dir_patches):
+    if not os.path.exists(dir_patches):
+        return
+
     for dir_repo in patches:
         if not os.path.exists(dir_repo):
             error(dir_repo + ' does not exist')

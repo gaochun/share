@@ -9,7 +9,22 @@
         "module": "chrome_stable"
       },
       "cases": [
+        {"name": "kraken", "timeout": 1200},
         {"name": "octane", "version": "2.0", "timeout": 1200},
+        {"name": "sunspider", "version": "1.0.2"},
+
+        {"name": "canvasmark"},
+        {"name": "fishietank", "version": "raf", "count_fish": 250},
+        {"name": "fishietank", "version": "setinterval", "count_fish": 250},
+        {"name": "galactic", "version": "mobile"},
+
+        {"name": "aquarium"},
+        {"name": "cubemap"},
+        {"name": "toonshading"},
+
+        {"name": "fallingleaves"},
+        {"name": "postercircle"},
+
         {"name": "browsermark", "version": "2.0", "timeout": 1200},
         {"name": "browsermark", "version": "2.1", "timeout": 1200}
       ]

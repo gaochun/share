@@ -5,18 +5,19 @@ class guimark3bitmap(Benchmark):
     CONFIG = {
         'category': category_info['canvas2d'],
         'name': 'GUIMark3 bitmap',
-        'version': 'nocache'
+        'version': 'nocache',
         'metric': metric_info['fps'],
         'path': {
             'nocache': {
                 'external': 'http://www.craftymind.com/factory/guimark3/bitmap/GM3_JS_Bitmap.html',
-                'internal': 'webbench/canvas2d/GUIMark3/bitmap/GM3_JS_Bitmap.html'
+                'internal': 'webbench/canvas2d/guimark3/bitmap/GM3_JS_Bitmap.html'
             },
             'cache': {
                 'external': 'http://www.craftymind.com/factory/guimark3/bitmap/GM3_JS_Bitmap_cache.html',
-                'internal': 'webbench/canvas2d/GUIMark3/bitmap/GM3_JS_Bitmap_cache.html'
+                'internal': 'webbench/canvas2d/guimark3/bitmap/GM3_JS_Bitmap_cache.html'
             }
         },
+        'times_run': 5,
     }
 
     def __init__(self, driver, case):

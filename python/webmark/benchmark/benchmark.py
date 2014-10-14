@@ -62,6 +62,7 @@ class Benchmark(object):
             'times_run': 1,
             'times_skip': 0,
             'dryrun': False,
+            'stat': 'average',
         }
         for key in members:
             if key == 'name':
@@ -143,15 +144,22 @@ class Benchmark(object):
             if count_results == 0:
                 error('There is no result for ' + self.name)
 
-            results_total = results[0]
-            count_result = len(results[0])
-            for i in range(1, count_results):
-                for j in range(count_result):
-                    results_total[j] += results[i][j]
+            results_final = []
+            if self.stat == 'average':
+                results_total = results[0]
+                count_result = len(results[0])
+                for i in range(1, count_results):
+                    for j in range(count_result):
+                        results_total[j] += results[i][j]
 
-            results_average = []
-            for i in range(count_result):
-                results_average.append(round(results_total[i] / count_results, 2))
+                for i in range(count_result):
+                    results_final.append(round(results_total[i] / count_results, 2))
+            elif self.stat == 'min' or self.stat == 'max':
+                results = sorted(results, key=lambda i: i[0])
+                if self.stat == 'min':
+                    results_final = results[0]
+                else:
+                    results_final = results[-1]
 
             outputs = []
             for item in webmark_format:
@@ -164,7 +172,7 @@ class Benchmark(object):
                 elif item == 'metric':
                     outputs.append(self.metric)
                 elif item == 'result':
-                    outputs.append(','.join(str(x) for x in results_average))
+                    outputs.append(','.join(str(x) for x in results_final))
             return ','.join(outputs)
 
     def inject_jperf(self, driver):

@@ -37,6 +37,7 @@ class Benchmark(object):
         # handle states
         funcs = [func for func in dir(self) if callable(getattr(self, func))]
         self.states = []
+        self.run_fail = False
         count = 0
         pattern_cond = re.compile('cond(\d+)')
         for func in funcs:
@@ -93,7 +94,9 @@ class Benchmark(object):
 
     def get_result(self, driver):
         if self.dryrun:
-            return ['60']
+            return ['60.0']
+        elif self.run_fail:
+            return ['-1.0']
         else:
             return self.result
 
@@ -123,16 +126,18 @@ class Benchmark(object):
                 self.state = 0
                 if not self.dryrun:
                     driver.get(self.path)
-                    WebDriverWait(driver, self.timeout, self.sleep).until(self._is_finished)
+                    try:
+                        WebDriverWait(driver, self.timeout, self.sleep).until(self._is_finished)
+                    except:
+                        self.run_fail = True
                 if times_skip > 0:
                     times_skip = times_skip - 1
                     continue
-                if self.dryrun:
-                    result = ['60']
-                else:
-                    result = self.get_result(driver)
+                result = self.get_result(driver)
                 info('Round result: ' + ','.join(result))
                 results.append([float(x) for x in result])
+                if self.run_fail:
+                    break
 
             count_results = len(results)
             if count_results == 0:
@@ -187,7 +192,6 @@ class Benchmark(object):
             self.state += 1
             if self.state == len(self.states):
                 return True
-
         return False
 
 

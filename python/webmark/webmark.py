@@ -16,6 +16,7 @@ dir_test = ''
 device = ''
 device_config = False
 file_result = ''
+dryrun = False
 
 
 class Format:
@@ -42,7 +43,7 @@ class Format:
             # Check all members in instance are recognized
             format = Format.format_has_member(instance.FORMAT, member)
             if not format:
-                logger.warning('Can not recognize ' + ' in ' + instance.__class__.__name__)
+                logger.warning('Can not recognize ' + member + ' in ' + instance.__class__.__name__)
                 continue
 
             if format[Format.NAME] == '*':
@@ -68,7 +69,7 @@ class Case:
 
     def __init__(self, data):
         self.data = data
-        self.dryrun = args.dryrun
+        self.dryrun = dryrun
         Format.format(self)
 
     def run(self, driver):
@@ -167,17 +168,14 @@ class Suite:
 
         capabilities = get_capabilities(device, self.target.module, args.use_running_app, ['--disable-web-security'])
 
-        if args.dryrun:
-            driver = None
-        else:
-            driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
-
         for i in range(len(self.cases)):
+            if dryrun:
+                driver = None
+            else:
+                driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
             self.cases[i].run(driver)
-
-        # self.extension.uninstall()
-        if not args.dryrun:
-            driver.quit()
+            if not dryrun:
+                driver.quit()
 
 
 class WebMark:
@@ -354,6 +352,8 @@ def setup():
         governor = args.governor
         freq = args.freq
         android_config_device(device=device, device_product=device_product, default=False, governor=governor, freq=freq)
+
+    dryrun = args.dryrun
 
 
 def _teardown():

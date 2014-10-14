@@ -10,11 +10,11 @@ class browsermark(Benchmark):
         'path': {
             '2.1': {
                 'external': 'http://browsermark.rightware.com',
-                'internal': 'browsermark',
+                'internal': 'webbench/comprehensive/browsermark',
             },
             '2.0': {
                 'external': 'http://username:password@browsermark-corporate.rightware.com',
-                'internal': 'browsermark',
+                'internal': 'webbench/comprehensive/browsermark',
             }
         },
         'timeout': 600,

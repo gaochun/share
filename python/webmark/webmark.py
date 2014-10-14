@@ -14,6 +14,7 @@ timestamp = ''
 logger = ''
 dir_test = ''
 device = ''
+device_arch = ''
 device_config = False
 file_result = ''
 dryrun = False
@@ -104,6 +105,7 @@ class Target:
         ['arch', 'M', 'P'],
         ['module', 'M', 'P'],
         ['module_path', 'O', 'P'],
+        ['module_ver', 'O', 'P'],
         ['module_mode', 'O', 'P'],
         ['module_proxy', 'O', 'O'],
         ['module_switches', 'O', 'P'],
@@ -138,13 +140,17 @@ class Suite:
         ['target', 'M', 'O'],
         ['cases', 'M', 'A'],
         ['name', 'O', 'P'],
+        ['device_arch', 'O', 'P'],
         ['description', 'O', 'P']
     ]
 
     def __init__(self, data):
+        global file_result
         self.cases = []
         self.data = data
         Format.format(self)
+
+        file_result = dir_share_ignore_webmark_result + '/' + '%s-%s-%s-%s-%s-%s.txt' %(timestamp, self.target.os, self.target.arch, self.target.module, self.target.module_ver, self.device_arch)
 
     def run(self):
         # driver_name = self.target.name.capitalize() + 'Driver'
@@ -162,7 +168,20 @@ class Suite:
 
         # Install target if needed
         if hasattr(self.target, 'module_path') and self.target.module_path:
-            result = execute('adb install -r ' + self.target.module_path, interactive=True)
+            module_path = self.target.module_path
+            if re.match('http', module_path):
+                if self.target.os == 'android':
+                    backup_dir(dir_share_ignore_webmark_download)
+                    module_file = '%s-%s-%s-%s.apk' %(self.target.os, self.target.module, self.target.arch, self.target.module_ver)
+                    if not os.path.exists(module_file):
+                        result = execute('wget %s -O %s' %(module_path, module_file), show_cmd=False, dryrun=False)
+                        if result[0]:
+                            error('Failed to download ' + module_path)
+                    module_path = dir_share_ignore_webmark_download + '/' + module_file
+                    restore_dir()
+
+            chrome_android_cleanup(device)
+            result = execute('adb install -r ' + module_path, interactive=True)
             if result[0]:
                 error('Can not install ' + self.target.module_path)
 
@@ -199,6 +218,7 @@ class WebMark:
             target_arch = args.target_arch
             target_module = args.target_module
             target_module_path = args.target_module_path
+            target_module_ver = args.target_module_ver
 
             # TODO: Handle other comb here
             if target_os == 'linux' and target_module == 'chrome':
@@ -229,15 +249,17 @@ class WebMark:
         "os": "%s",
         "arch": "%s",
         "module": "%s",
-        "module_path": "%s"
+        "module_path": "%s",
+        "module_ver": "%s"
       },
+      "device_arch": "%s",
       "cases": [
         {"name": "%s"%s}
       ]
     }
   ]
 }
-            ''' % (target_os, target_arch, target_module, target_module_path, benchmark, benchmark_config))
+            ''' % (target_os, target_arch, target_module, target_module_path, target_module_ver, device_arch, benchmark, benchmark_config))
 
         self.suites = []
         Format.format(self)
@@ -271,6 +293,7 @@ examples:
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=target_arch_all, default='x86')
     parser.add_argument('--target-module', dest='target_module', help='target module', choices=target_module_all, default='chrome_stable')
     parser.add_argument('--target-module-path', dest='target_module_path', help='target module path', default='')
+    parser.add_argument('--target-module-ver', dest='target_module_ver', help='target module ver', default='')
     parser.add_argument('--benchmark', dest='benchmark', help='benchmark', default='sunspider')
     parser.add_argument('--benchmark-config', dest='benchmark_config', help='benchmark config')
     parser.add_argument('--use-running-app', dest='use_running_app', help='use running app', action='store_true', default=False)
@@ -297,7 +320,7 @@ examples:
 def setup():
     global dir_root, log, timestamp
     global dir_test, device, device_product, logger
-    global device_config, file_result
+    global device_config, device_arch
 
     (timestamp, dir_root, log) = setup_common(args, _teardown)
 
@@ -338,12 +361,11 @@ def setup():
     else:
         device = devices[0]
 
+    device_arch = android_get_target_arch(device)
     device_product = devices_product[0]
 
     datetime = get_datetime()
     logger = get_logger(tag='webmark', dir_log=dir_webmark_log, datetime=datetime)
-    ensure_dir(dir_webmark_result)
-    file_result = dir_webmark_result + '/' + datetime
 
     if args.device_config:
         device_config = True
@@ -354,6 +376,9 @@ def setup():
         android_config_device(device=device, device_product=device_product, default=False, governor=governor, freq=freq)
 
     dryrun = args.dryrun
+
+    ensure_dir(dir_share_ignore_webmark_download)
+    ensure_dir(dir_share_ignore_webmark_result)
 
 
 def _teardown():

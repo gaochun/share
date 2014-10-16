@@ -498,8 +498,8 @@ def stop_prixoxy():
         execute('sudo killall privoxy')
 
 
-# [device, device_product, device_type, device_mode, device_target_arch]
-# device: used to connect to it
+# [device_id, device_product, device_type, device_mode, device_target_arch]
+# device_id: used to connect to it
 # device_product: from product:xxx
 # device_type: baytrail, generic
 # device_mode: system, fastboot
@@ -544,7 +544,7 @@ def setup_device(devices_id_limit=[]):
         if match:
             device_id = match.group(1)
             devices_id.append(device_id)
-            result = execute('fastboot -s %s getvar product' % device, return_output=True, show_cmd=False)
+            result = execute('fastboot -s %s getvar product' % device_id, return_output=True, show_cmd=False)
             match = re.search('product: (.*)', result[1])
             device_product = match.group(1)
             devices_product.append(device_product)
@@ -588,7 +588,7 @@ def setup_device(devices_id_limit=[]):
         if devices_mode[index] == 'fastboot':
             devices_arch.append('')
         else:
-            devices_arch.append(android_get_target_arch(device=device_id))
+            devices_arch.append(android_get_target_arch(device_id=device_id))
 
     return (devices_id, devices_product, devices_type, devices_arch, devices_mode)
 
@@ -614,30 +614,30 @@ def get_caller_name():
     return inspect.stack()[1][3]
 
 
-def adb(cmd, device=''):
+def adb(cmd, device_id=''):
     # some commands do not need -s option
     cmds_none = ['devices', 'connect', 'disconnect']
-    if device == '':
+    if device_id == '':
         for cmd_none in cmds_none:
             if re.search(cmd_none, cmd):
-                device = None
+                device_id = None
                 break
-    if device == '':
-        device = '192.168.42.1:5555'
+    if device_id == '':
+        device_id = '192.168.42.1:5555'
 
-    if device is None:
+    if device_id is None:
         return 'adb ' + cmd
-    return 'adb -s ' + device + ' ' + cmd
+    return 'adb -s ' + device_id + ' ' + cmd
 
 
 # Execute a adb shell command and know the return value
 # adb shell would always return 0, so a trick has to be used here to get return value
-def execute_adb_shell(cmd, device='', su=False, abort=False, show_cmd=False):
+def execute_adb_shell(cmd, device_id='', su=False, abort=False, show_cmd=False):
     cmd_adb = 'shell'
     if su:
         cmd_adb += ' su -c'
     cmd_adb += ' "' + cmd + ' || echo FAIL"'
-    cmd_adb = adb(cmd=cmd_adb, device=device)
+    cmd_adb = adb(cmd=cmd_adb, device_id=device_id)
     result = execute(cmd_adb, return_output=True, show_cmd=show_cmd)
     if re.search('FAIL', result[1].rstrip('\n')):
         if abort:
@@ -664,20 +664,20 @@ def get_product(arch, device_type, ver):
     return product
 
 
-# device: specific device. Do not use :5555 as -t option does not accept this.
+# device_id: specific device. Do not use :5555 as -t option does not accept this.
 # mode: system for normal mode, bootloader for bootloader mode
-def device_connected(device='', mode='system'):
+def device_connected(device_id='', mode='system'):
     if mode == 'system':
-        result = execute('timeout 1s ' + adb(cmd='shell \ls', device=device))
+        result = execute('timeout 1s ' + adb(cmd='shell \ls', device_id=device_id))
     elif mode == 'bootloader':
-        if device == '192.168.42.1:5555':
-            device = '192.168.42.1'
-        if device == '192.168.42.1':
+        if device_id == '192.168.42.1:5555':
+            device_id = '192.168.42.1'
+        if device_id == '192.168.42.1':
             option = '-t'
         else:
             option = '-s'
         path_fastboot = dir_linux + '/fastboot'
-        result = execute('timeout 1s %s %s %s getvar all' % (path_fastboot, option, device))
+        result = execute('timeout 1s %s %s %s getvar all' % (path_fastboot, option, device_id))
 
     if result[0]:
         return False
@@ -686,26 +686,26 @@ def device_connected(device='', mode='system'):
 
 
 # Try to connect to device in case it's not online
-def connect_device(device='', mode='system'):
+def connect_device(device_id='', mode='system'):
     if mode == 'system':
-        if device_connected(device, mode):
+        if device_connected(device_id, mode):
             return True
-        if device == '':
-            device = '192.168.42.1:5555'
-        if device == '192.168.42.1:5555':
-            cmd = 'timeout 1s ' + adb(cmd='disconnect %s' % device) + ' && timeout 1s ' + adb(cmd='connect %s' % device)
+        if device_id == '':
+            device_id = '192.168.42.1:5555'
+        if device_id == '192.168.42.1:5555':
+            cmd = 'timeout 1s ' + adb(cmd='disconnect %s' % device_id) + ' && timeout 1s ' + adb(cmd='connect %s' % device_id)
             execute(cmd, interactive=True)
-        return device_connected(device, mode)
+        return device_connected(device_id, mode)
     elif mode == 'bootloader':
-        if device == '192.168.42.1:5555':
-            device = '192.168.42.1'
-        return device_connected(device, mode)
+        if device_id == '192.168.42.1:5555':
+            device_id = '192.168.42.1'
+        return device_connected(device_id, mode)
 
 
-def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android', device='', type='tombstone', ver='0.0'):
-    if device == '' or device == '192.168.42.1:5555':
+def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android', device_id='', type='tombstone', ver='0.0'):
+    if device_id == '' or device_id == '192.168.42.1:5555':
         device_type = 'baytrail'
-    target_arch = android_get_target_arch(device=device)
+    target_arch = android_get_target_arch(device_id=device_id)
     product = get_product(target_arch, device_type, ver)
     if target_arch == 'x86_64':
         target_arch_str = '64'
@@ -717,7 +717,7 @@ def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/work
         dir_chromium + '/src/out-%s/out/Release/lib' % target_arch,
     ]
 
-    connect_device(device=device)
+    connect_device(device_id=device_id)
 
     if type == 'tombstone':
         result = execute(adb(cmd='shell \ls /data/tombstones'), return_output=True)
@@ -886,21 +886,21 @@ def singleton(lock):
         exit(0)
 
 
-def chrome_android_cleanup(device='', module_name=''):
+def chrome_android_cleanup(device_id='', module_name=''):
     for key in chromium_android_info:
         if not module_name or module_name == key:
-            execute(adb('uninstall ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device))
+            execute(adb('uninstall ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device_id=device_id))
 
-    #execute(adb('shell rm -rf /data/data/com.example.chromium', device=device))
-    #execute(adb('shell rm -rf /data/dalvik-cache/*', device=device))
+    #execute(adb('shell rm -rf /data/data/com.example.chromium', device_id=device_id))
+    #execute(adb('shell rm -rf /data/dalvik-cache/*', device_id=device_id))
 
 
-def chrome_android_get_ver_type(device=''):
+def chrome_android_get_ver_type(device_id=''):
     ver_type = ''
     for key in chromium_android_info:
         if not re.match('^chrom', key):
             continue
-        if execute_adb_shell(cmd='pm -l |grep ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device):
+        if execute_adb_shell(cmd='pm -l |grep ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device_id=device_id):
             ver_type = key
             break
 
@@ -1040,10 +1040,10 @@ def pause_resume(seconds=5):
                 break
 
 
-def get_capabilities(device, target_module, use_running_app=False, args=[]):
+def get_capabilities(device_id, target_module, use_running_app=False, args=[]):
     capabilities = {}
     capabilities['chromeOptions'] = {}
-    capabilities['chromeOptions']['androidDeviceSerial'] = device
+    capabilities['chromeOptions']['androidDeviceSerial'] = device_id
     capabilities['chromeOptions']['androidPackage'] = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_PKG]
     capabilities['chromeOptions']['androidUseRunningApp'] = use_running_app
     capabilities['chromeOptions']['args'] = args
@@ -1086,20 +1086,20 @@ def backup_files(files_backup, dir_backup, dir_src):
 
 
 # <android>
-def android_unlock_screen(device=''):
-    execute(adb(cmd='shell input keyevent 82', device=device))
+def android_unlock_screen(device_id=''):
+    execute(adb(cmd='shell input keyevent 82', device_id=device_id))
 
 
-def android_set_screen_lock_none(device=''):
-    execute_adb_shell(cmd='am start -n com.android.settings/.SecuritySettings && sleep 5 && input tap 200 150 && sleep 5 && input tap 200 100 && am force-stop com.android.settings', device=device)
+def android_set_screen_lock_none(device_id=''):
+    execute_adb_shell(cmd='am start -n com.android.settings/.SecuritySettings && sleep 5 && input tap 200 150 && sleep 5 && input tap 200 100 && am force-stop com.android.settings', device_id=device_id)
 
 
-def android_set_display_sleep_30mins(device=''):
-    execute_adb_shell(cmd='am start -n com.android.settings/.DisplaySettings && sleep 5 && input tap 200 250 && sleep 5 && input tap 500 550 && am force-stop com.android.settings', device=device)
+def android_set_display_sleep_30mins(device_id=''):
+    execute_adb_shell(cmd='am start -n com.android.settings/.DisplaySettings && sleep 5 && input tap 200 250 && sleep 5 && input tap 500 550 && am force-stop com.android.settings', device_id=device_id)
 
 
-def android_is_screen_on(device=''):
-    result = execute(adb(cmd='shell dumpsys power', device=device) + ' |grep mScreenOn=true')
+def android_is_screen_on(device_id=''):
+    result = execute(adb(cmd='shell dumpsys power', device_id=device_id) + ' |grep mScreenOn=true')
     if result[0]:
         return False
     else:
@@ -1107,29 +1107,29 @@ def android_is_screen_on(device=''):
 
 
 # Just trigger once
-def android_trigger_screen_on(device=''):
-    if not android_is_screen_on(device):
+def android_trigger_screen_on(device_id=''):
+    if not android_is_screen_on(device_id):
         # Bring up screen by pressing power
-        execute(adb('shell input keyevent 26'), device=device)
+        execute(adb('shell input keyevent 26'), device_id=device_id)
 
 
 # Keep screen on when charging
-def android_keep_screen_on(device=''):
-    execute(adb(cmd='shell svc power stayon usb', device=device))
+def android_keep_screen_on(device_id=''):
+    execute(adb(cmd='shell svc power stayon usb', device_id=device_id))
 
 
-def android_tap(x=1300, y=700, device=''):
-    execute(adb(cmd='shell input tap %s %s' % (str(x), str(y)), device=device))
+def android_tap(x=1300, y=700, device_id=''):
+    execute(adb(cmd='shell input tap %s %s' % (str(x), str(y)), device_id=device_id))
 
 
-def android_get_info(key, device=''):
-    cmd = adb(cmd='shell grep %s= system/build.prop' % key, device=device)
+def android_get_info(key, device_id=''):
+    cmd = adb(cmd='shell grep %s= system/build.prop' % key, device_id=device_id)
     result = execute(cmd, return_output=True, show_cmd=False)
     return result[1].replace(key + '=', '').rstrip('\r\n')
 
 
-def android_get_target_arch(device=''):
-    abi = android_get_info(key='ro.product.cpu.abi', device=device)
+def android_get_target_arch(device_id=''):
+    abi = android_get_info(key='ro.product.cpu.abi', device_id=device_id)
     target_arch = ''
     for key in target_arch_info:
         if abi == target_arch_info[key][TARGET_ARCH_INFO_INDEX_ABI]:
@@ -1137,7 +1137,7 @@ def android_get_target_arch(device=''):
             break
 
     if target_arch == '':
-        error('Could not get correct target arch for device ' + device)
+        error('Could not get correct target arch for device ' + device_id)
 
     return target_arch
 
@@ -1166,7 +1166,7 @@ def android_get_memory(pkg):
     #dumpsys meminfo |grep org.chromium.content_shell_apk:sandbo
 
 
-def android_config_device(device, device_product, default, governor='', freq=0):
+def android_config_device(device_id, device_product, default, governor='', freq=0):
     count_cpu = device_product_info[device_product]['count_cpu']
     freq_min = device_product_info[device_product]['freq_min']
     freq_max = device_product_info[device_product]['freq_max']
@@ -1196,7 +1196,7 @@ def android_config_device(device, device_product, default, governor='', freq=0):
             # special handle to avoid error during setting if freq < freq_min_old or freq > freq_max_old
             cmd_min = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_min_freq' % (freq, str(i))
             cmd_max = 'echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_max_freq' % (freq, str(i))
-            result = execute(adb(cmd='shell cat /sys/devices/system/cpu/cpu%s/cpufreq/scaling_min_freq' % str(i), device=device), return_output=True, show_cmd=False)
+            result = execute(adb(cmd='shell cat /sys/devices/system/cpu/cpu%s/cpufreq/scaling_min_freq' % str(i), device_id=device_id), return_output=True, show_cmd=False)
             freq_min_old = int(result[1])
             if freq < freq_min_old:
                 cmds.append(cmd_min)
@@ -1213,15 +1213,15 @@ def android_config_device(device, device_product, default, governor='', freq=0):
     if device_product == 'V975':
         su = True
     for cmd in cmds:
-        execute_adb_shell(cmd=cmd, su=su, device=device, abort=True)
+        execute_adb_shell(cmd=cmd, su=su, device_id=device_id, abort=True)
 
 
-def android_enter_fastboot(device):
-    execute('timeout 5s ' + adb(cmd='reboot bootloader', device=device))
+def android_enter_fastboot(device_id):
+    execute('timeout 5s ' + adb(cmd='reboot bootloader', device_id=device_id))
     sleep_sec = 3
     is_connected = False
     for i in range(0, 60):
-        if not connect_device(mode='bootloader', device=device):
+        if not connect_device(mode='bootloader', device_id=device_id):
             info('Sleeping %s seconds' % str(sleep_sec))
             time.sleep(sleep_sec)
             continue
@@ -1233,10 +1233,10 @@ def android_enter_fastboot(device):
         error('Can not connect to device in bootloader')
 
 
-def android_ensure_root(device):
-    execute(adb(cmd='root', device=device))
-    if connect_device(device=device, mode='system'):
-        execute(adb(cmd='remount', device=device))
+def android_ensure_root(device_id):
+    execute(adb(cmd='root', device_id=device_id))
+    if connect_device(device_id=device_id, mode='system'):
+        execute(adb(cmd='remount', device_id=device_id))
     else:
         error('Can not connect to device')
 

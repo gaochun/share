@@ -8,7 +8,6 @@ import json
 from selenium import webdriver
 
 logger = ''
-device = ''
 device_arch = ''
 
 
@@ -322,7 +321,7 @@ class Suite:
 
         # change freq
         if hasvalue(device, 'governor') and hasvalue(device, 'freq'):
-            android_config_device(device=device.id, device_product=device.product, default=False, governor=device.governor, freq=device.freq)
+            android_config_device(device_id=device.id, device_product=device.product, default=False, governor=device.governor, freq=device.freq)
 
         # run
         if module.os:
@@ -366,7 +365,7 @@ class Suite:
 
         # restore freq
         if hasvalue(device, 'governor') and hasvalue(device, 'freq'):
-            android_config_device(device=device.id, device_product=device.product, default=True)
+            android_config_device(device_id=device.id, device_product=device.product, default=True)
 
         # uninstall module
         if hasvalue(module, 'path'):

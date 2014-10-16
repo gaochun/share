@@ -27,7 +27,7 @@ dir_test_timestamp = ''  # /workspace/project/chromium-android/test
 
 name_file = sys._getframe().f_code.co_filename
 
-devices = []
+devices_id = []
 devices_product = []
 devices_type = []
 devices_arch = []
@@ -326,7 +326,7 @@ examples:
     group_common.add_argument('--target-os', dest='target_os', help='target os', choices=['android', 'linux'])
     group_common.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'arm', 'x86_64', 'arm64'], default='x86')
     group_common.add_argument('--target-module', dest='target_module', help='target module to build', choices=['chrome', 'webview', 'content_shell', 'chromedriver'], default='webview')
-    group_common.add_argument('--device', dest='device', help='device id list separated by ","', default='')
+    group_common.add_argument('--device-id', dest='device_id', help='device id list separated by ","', default='')
     group_common.add_argument('--just-out', dest='just_out', help='stick to out, instead of out-x86_64/out', action='store_true')
     group_common.add_argument('--rev', dest='rev', type=int, help='revision, will override --sync-upstream')
     group_common.add_argument('--ver', dest='ver', help='ver for chrome-android')
@@ -398,7 +398,7 @@ examples:
 def setup():
     global dir_src, dir_out_build_type, dir_test, dir_test_timestamp
     global target_os, target_arch, target_module
-    global devices, devices_product, devices_type, devices_arch
+    global devices_id, devices_product, devices_type, devices_arch
     global test_suite, build_type, rev, dir_patches, patches, test_filter, repo_type
     global ver, ver_type, chrome_android_soname, dir_server_chrome_android_todo_comb, chrome_android_file_readme, chrome_android_apk
     global dir_root, log, timestamp
@@ -463,14 +463,14 @@ def setup():
             target_os = 'linux'
 
     if _need_device():
-        if args.device:
-            devices_limit = args.device.split(',')
+        if args.device_id:
+            devices_limit = args.device_id.split(',')
         else:
             devices_limit = []
 
         if not devices_limit or '192.168.42.1:5555' in devices_limit:
             connect_device()
-        (devices, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_limit=devices_limit)
+        (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_limit=devices_limit)
 
         _hack_app_process()
 
@@ -1086,7 +1086,7 @@ def test_run(force=False):
 
     ensure_dir(dir_test)
 
-    number_device = len(devices)
+    number_device = len(devices_id)
     if number_device < 1:
         error('Please ensure test device is connected')
 
@@ -1101,7 +1101,7 @@ def test_run(force=False):
         results = test_build(force=True)
 
     pool = Pool(processes=number_device)
-    for index, device in enumerate(devices):
+    for index, device_id in enumerate(devices_id):
         pool.apply_async(_test_run_device, (index, results))
     pool.close()
     pool.join()
@@ -1152,26 +1152,26 @@ def _test_build_name(command, name):
 def _test_run_device(index_device, results):
     timer_start('test_run_' + str(index_device))
 
-    device = devices[index_device]
+    device_id = devices_id[index_device]
     device_product = devices_product[index_device]
     device_type = devices_type[index_device]
     dir_test_device_product = dir_test_timestamp + '-' + device_product
 
-    connect_device(device=device)
+    connect_device(device_id=device_id)
 
     if not os.path.exists(dir_test_device_product):
         os.mkdir(dir_test_device_product)
 
     if not args.test_dryrun:
         # Ensure screen stays on
-        execute(adb(cmd='shell svc power stayon usb', device=device))
+        execute(adb(cmd='shell svc power stayon usb', device_id=device_id))
 
         # Try to unlock the screen if needed
-        execute(adb(cmd='shell input keyevent 82', device=device))
+        execute(adb(cmd='shell input keyevent 82', device_id=device_id))
 
         # Fake /storage/emulated/0
-        android_ensure_root(device)
-        cmd = adb(cmd='shell "mount -o rw,remount rootfs / && cd /storage/emulated && rm -f 0 && ln -s legacy 0"', device=device)
+        android_ensure_root(device_id)
+        cmd = adb(cmd='shell "mount -o rw,remount rootfs / && cd /storage/emulated && rm -f 0 && ln -s legacy 0"', device_id=device_id)
         result = execute(cmd)
         if result[0]:
             error('Failed to fake /storage/emulated/0, which is critical for test')
@@ -1192,10 +1192,10 @@ def _test_run_device(index_device, results):
                         apks = []
 
                     if apks:
-                        _install_apk(device=device, apks=apks, force=True)
+                        _install_apk(device_id=device_id, apks=apks, force=True)
 
                     # push test data
-                    #cmd = adb(cmd='push ', device=device)
+                    #cmd = adb(cmd='push ', device_id=device_id)
 
                     #if suite == 'ContentShellTest':
                     #    cmd += 'src/content/test/data/android/device_files /storage/emulated/0/content/test/data'
@@ -1249,7 +1249,7 @@ def _test_run_device(index_device, results):
                 # Below is needed to make sure our filter can work together with Google filter
                 if command == 'instrumentation':
                     cmd += ' -A Smoke,SmallTest,MediumTest,LargeTest,EnormousTest'
-                cmd += ' -d ' + device + ' --' + build_type
+                cmd += ' -d ' + device_id + ' --' + build_type
                 if args.test_verbose:
                     cmd += ' -v'
                 cmd += ' 2>&1 | tee ' + dir_test_device_product + '/' + suite + '.log'
@@ -1289,7 +1289,7 @@ def _test_sendmail(index_device, html):
 
 
 def _test_gen_report(index_device, results):
-    device = devices[index_device]
+    device_id = devices_id[index_device]
     device_product = devices_product[index_device]
     device_type = devices_type[index_device]
     dir_test_device_product = dir_test_timestamp + '-' + device_product
@@ -1319,7 +1319,7 @@ def _test_gen_report(index_device, results):
           <ul>
             <li>Chromium Revision: ''' + str(rev) + '''</li>
             <li>Target Device: ''' + device_product + '''</li>
-            <li>Target Image: ''' + android_get_info(key='ro.build.display.id', device=device) + '''</li>
+            <li>Target Image: ''' + android_get_info(key='ro.build.display.id', device_id=device_id) + '''</li>
             <li>Build Duration: ''' + timer_diff('build') + '''</li>
             <li>Test Build Duration: ''' + timer_diff('test_build') + '''</li>
             <li>Test Run Duration: ''' + timer_diff('test_run_' + str(index_device)) + '''</li>
@@ -1440,8 +1440,8 @@ def _test_gen_report(index_device, results):
 
 
 def _hack_app_process():
-    for device in devices:
-        if not execute_adb_shell("test -d /system/lib64", device=device):
+    for device_id in devices_id:
+        if not execute_adb_shell("test -d /system/lib64", device_id=device_id):
             continue
 
         for file in ['am', 'pm']:
@@ -1454,8 +1454,8 @@ def _hack_app_process():
                 sys.stdout.write(line)
 
             if need_hack:
-                android_ensure_root(device)
-                cmd = adb(cmd='push /tmp/' + file + ' /system/bin/', device=device)
+                android_ensure_root(device_id)
+                cmd = adb(cmd='push /tmp/' + file + ' /system/bin/', device_id=device_id)
                 execute(cmd)
 
 
@@ -1544,7 +1544,7 @@ def _calc_test_filter(device_type, target_arch, suite):
     return (test_filter_str, count_test_filter)
 
 
-def _install_apk(device, apks, force=False):
+def _install_apk(device_id, apks, force=False):
     if not args.install and not force:
         return
 
@@ -1554,8 +1554,8 @@ def _install_apk(device, apks, force=False):
     cmd = 'python %s/build/android/adb_install_apk.py --apk_package %s --%s' % (dir_src, ' '.join(apks), build_type)
     if not args.just_out:
         cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + '/out ' + cmd
-    if device != '':
-        cmd += ' -d ' + device
+    if device_id != '':
+        cmd += ' -d ' + device_id
     result = execute(cmd, interactive=True)
 
     if result[0]:
@@ -1606,20 +1606,20 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
     from selenium import webdriver
     from selenium.webdriver.support.wait import WebDriverWait
 
-    target_arch_device = _get_target_arch_device()
-    if target_arch not in target_arch_device:
+    target_arch_device_id = _get_target_arch_device_id()
+    if target_arch not in target_arch_device_id:
         android_start_emu(target_arch)
-        target_arch_device = _get_target_arch_device()
-    if target_arch not in target_arch_device:
+        target_arch_device_id = _get_target_arch_device_id()
+    if target_arch not in target_arch_device_id:
         error('Failed to get device for target arch ' + target_arch)
 
-    device = target_arch_device[target_arch]
-    info('Use device %s with target_arch %s' % (device, target_arch))
-    android_unlock_screen(device)
-    chrome_android_cleanup(device)
+    device_id = target_arch_device_id[target_arch]
+    info('Use device %s with target_arch %s' % (device_id, target_arch))
+    android_unlock_screen(device_id)
+    chrome_android_cleanup(device_id)
 
-    execute(adb(cmd='install -r "%s"' % file_apk, device=device), interactive=True, dryrun=False)
-    chromium_android_type = chrome_android_get_ver_type(device)
+    execute(adb(cmd='install -r "%s"' % file_apk, device_id=device_id), interactive=True, dryrun=False)
+    chromium_android_type = chrome_android_get_ver_type(device_id)
     if chromium_android_type == '':
         error('Failed to install package')
 
@@ -1627,7 +1627,7 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         ver_temp = ''
         ver_type_temp = ''
         build_id_temp = ''
-        execute_adb_shell(cmd='am start -n %s/%s -d "chrome://version"' % (chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_PKG], chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_ACT]), device=device)
+        execute_adb_shell(cmd='am start -n %s/%s -d "chrome://version"' % (chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_PKG], chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_ACT]), device_id=device_id)
     else:
         #The following code does not work for com.example.chromium as webdriver.Remote() would hang.
         #adb shell input tap 400 1040
@@ -1638,7 +1638,7 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         time.sleep(1)  # Sleep a bit to make sure driver is ready
         env_http_proxy = getenv('http_proxy')
         unsetenv('http_proxy')
-        capabilities = get_capabilities(device, chromium_android_type)
+        capabilities = get_capabilities(device_id, chromium_android_type)
         driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
         driver.get('chrome://version')
         WebDriverWait(driver, 30, 1).until(_has_element_ver)
@@ -1657,7 +1657,7 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         build_id_temp = match.group(1)
         driver.quit()
         setenv('http_proxy', env_http_proxy)
-    execute(adb('uninstall ' + chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device))
+    execute(adb('uninstall ' + chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_PKG], device_id=device_id))
 
     return (ver_temp, ver_type_temp, build_id_temp)
 
@@ -1675,15 +1675,15 @@ def _update_phase(phase):
 
 
 # get one device for each target_arch
-def _get_target_arch_device():
-    (devices, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
-    target_arch_device = {}
-    for index, device in enumerate(devices):
+def _get_target_arch_device_id():
+    (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
+    target_arch_device_id = {}
+    for index, device_id in enumerate(devices_id):
         target_arch_temp = devices_arch[index]
-        if target_arch_temp not in target_arch_device:
-            target_arch_device[target_arch_temp] = devices[index]
+        if target_arch_temp not in target_arch_device_id:
+            target_arch_device_id[target_arch_temp] = devices_id[index]
 
-    return target_arch_device
+    return target_arch_device_id
 
 
 def _has_element_ver(driver):

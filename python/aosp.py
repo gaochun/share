@@ -26,7 +26,7 @@ targets_arch = []
 targets_type = []
 targets_module = []
 # concrete device
-devices = []
+devices_id = []
 devices_product = []
 devices_type = []
 devices_arch = []
@@ -344,9 +344,9 @@ def hack_app_process():
 
     _setup_device()
 
-    for device in devices:
-        connect_device(device=device)
-        if not execute_adb_shell("test -d /system/lib64", device=device):
+    for device_id in devices_id:
+        connect_device(device_id=device_id)
+        if not execute_adb_shell("test -d /system/lib64", device_id=device_id):
             continue
 
         for file in ['am', 'pm']:
@@ -360,8 +360,8 @@ def hack_app_process():
                 sys.stdout.write(line)
 
             if need_hack:
-                android_ensure_root(device)
-                cmd = adb(cmd='push /tmp/' + file + ' /system/bin/', device=device)
+                android_ensure_root(device_id)
+                cmd = adb(cmd='push /tmp/' + file + ' /system/bin/', device_id=device_id)
                 execute(cmd)
 
 
@@ -371,12 +371,12 @@ def flash_image():
 
     _setup_device()
 
-    if len(devices) < 1:
+    if len(devices_id) < 1:
         error('You must have device connected')
 
     device_arch = targets_arch[0]
     device_type = targets_type[0]
-    device = devices[0]
+    device_id = devices_id[0]
     path_fastboot = dir_linux + '/fastboot'
 
     if repo_type != 'upstream':
@@ -441,7 +441,7 @@ def flash_image():
         fileinput.close()
 
     # enter fastboot mode
-    android_enter_fastboot(device=device)
+    android_enter_fastboot(device_id=device_id)
 
     # flash image
     if repo_type == 'upstream':
@@ -451,7 +451,7 @@ def flash_image():
     elif repo_type == 'irdakk' or repo_type == 'gminl' or repo_type == 'gminl64':
         execute('./flash-base.sh', interactive=True, dryrun=False)
         execute('./flash-all.sh', interactive=True, dryrun=False)
-        execute('timeout 10s %s -s %s reboot' % (path_fastboot, device))
+        execute('timeout 10s %s -s %s reboot' % (path_fastboot, device_id))
         execute('rm -rf ' + dir_extract, dryrun=False)
     elif repo_type == 'stable':
         execute('./flash-all.sh -t ' + ip, interactive=True, dryrun=False)
@@ -466,7 +466,7 @@ def flash_image():
         is_connected = False
         sleep_sec = 3
         for i in range(0, 60):
-            if not connect_device(device=device):
+            if not connect_device(device_id=device_id):
                 info('Sleeping %s seconds' % str(sleep_sec))
                 time.sleep(sleep_sec)
                 continue
@@ -567,15 +567,15 @@ def push():
 
     device_arch = devices_arch[0]
     device_type = devices_type[0]
-    device = devices[0]
+    device_id = devices_id[0]
 
     if args.target_module == 'all':
         modules = ['libwebviewchromium', 'webview']
     else:
         modules = args.target_module.split(',')
 
-    android_ensure_root(device)
-    cmd = adb(cmd='push out/target/product/%s' % get_product(device_arch, device_type, ver=repo_ver), device=device)
+    android_ensure_root(device_id)
+    cmd = adb(cmd='push out/target/product/%s' % get_product(device_arch, device_type, ver=repo_ver), device_id=device_id)
 
     for module in modules:
         if module == 'browser':
@@ -673,7 +673,7 @@ def _get_combo(device_arch, device_type):
 def _backup_one(arch, device_type, module):
     if repo_type == 'upstream':
         pass
-        #dest_dir = dir_backup_img + get_datetime() + '-' + device + '-' + variant + '/'
+        #dest_dir = dir_backup_img + get_datetime() + '-' + device_id + '-' + variant + '/'
         #os.mkdir(dest_dir)
         #execute('cp ' + root_dir + 'out/target/product/' + device_code_name + '/*.img ' + dest_dir)
     elif repo_type == 'irdakk':
@@ -815,14 +815,14 @@ def _teardown():
 
 
 def _setup_device():
-    global devices, devices_product, devices_type, devices_arch, devices_mode
+    global devices_id, devices_product, devices_type, devices_arch, devices_mode
 
-    if devices:
+    if devices_id:
         return
 
     if repo_type == 'stable':
         connect_device()
-    (devices, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
+    (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
 
 if __name__ == "__main__":
     parse_arg()

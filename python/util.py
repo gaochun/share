@@ -96,6 +96,7 @@ device_product_info = {
     }
 }
 device_product_info['asus_t100_64p'] = device_product_info['asus_t100']
+device_product_info['ecs_e7'] = device_product_info['cruise7']
 
 
 # <path>
@@ -111,13 +112,17 @@ dir_share_ignore_timestamp = dir_share_ignore + '/timestamp'
 dir_share_ignore_backup = dir_share_ignore + '/backup'
 dir_share_ignore_webmark = dir_share_ignore + '/webmark'
 dir_share_ignore_webmark_download = dir_share_ignore_webmark + '/download'
+dir_share_ignore_webmark_log = dir_share_ignore_webmark + '/log'
 dir_share_ignore_webmark_result = dir_share_ignore_webmark + '/result'
+dir_share_ignore_webcatch = dir_share_ignore + '/webcatch'
+dir_share_ignore_webcatch_download = dir_share_ignore_webcatch + '/download'
+dir_share_ignore_webcatch_log = dir_share_ignore_webcatch + '/log'
+dir_share_ignore_webcatch_pause = dir_share_ignore_webcatch + '/pause'
 
 dir_python = dir_share + '/python'
 dir_webcatch = dir_python + '/webcatch'
 dir_webcatch_log = dir_webcatch + '/log'
 dir_webmark = dir_python + '/webmark'
-dir_webmark_log = dir_webmark + '/log'
 dir_linux = dir_share + '/linux'
 dir_common = dir_share + '/common'
 file_chromium = dir_python + '/chromium.py'
@@ -507,8 +512,8 @@ def stop_prixoxy():
 
 # device_model: AOSP_on_Intel_Platform, ZTE_V975. This is unused.
 # device_product: get from device:xxx, asus_t100, redhookbay. This is unused.
-def setup_device(devices_limit=[]):
-    devices = []
+def setup_device(devices_id_limit=[]):
+    devices_id = []
     devices_product = []
     devices_type = []
     devices_mode = []
@@ -537,8 +542,8 @@ def setup_device(devices_limit=[]):
 
         match = pattern_fastboot.search(device_line)
         if match:
-            device = match.group(1)
-            devices.append(device)
+            device_id = match.group(1)
+            devices_id.append(device_id)
             result = execute('fastboot -s %s getvar product' % device, return_output=True, show_cmd=False)
             match = re.search('product: (.*)', result[1])
             device_product = match.group(1)
@@ -556,8 +561,8 @@ def setup_device(devices_limit=[]):
                 devices_product.append(device_product)
                 break
 
-        device = items[0]
-        devices.append(device)
+        device_id = items[0]
+        devices_id.append(device_id)
         if re.search('asus_t100', device_product) or re.search('cruise7', device_product):
             devices_type.append('baytrail')
         elif re.search('V975', device_product):
@@ -569,23 +574,23 @@ def setup_device(devices_limit=[]):
         devices_mode.append('system')
 
     # filter out unnecessary
-    if devices_limit:
+    if devices_id_limit:
         # This has to be reversed and deleted from end
-        for index, device in reversed(list(enumerate(devices))):
-            if device not in devices_limit:
-                del devices[index]
+        for index, device_id in reversed(list(enumerate(devices_id))):
+            if device_id not in devices_id_limit:
+                del devices_id[index]
                 del devices_product[index]
                 del devices_type[index]
                 del devices_mode[index]
 
     # set up mode
-    for index, device in enumerate(devices):
+    for index, device_id in enumerate(devices_id):
         if devices_mode[index] == 'fastboot':
             devices_arch.append('')
         else:
-            devices_arch.append(android_get_target_arch(device=device))
+            devices_arch.append(android_get_target_arch(device=device_id))
 
-    return (devices, devices_product, devices_type, devices_arch, devices_mode)
+    return (devices_id, devices_product, devices_type, devices_arch, devices_mode)
 
 
 def timer_start(tag):
@@ -881,11 +886,12 @@ def singleton(lock):
         exit(0)
 
 
-def chrome_android_cleanup(device=''):
+def chrome_android_cleanup(device='', module_name=''):
     for key in chromium_android_info:
-        execute(adb('uninstall ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device))
+        if not module_name or module_name == key:
+            execute(adb('uninstall ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device=device))
 
-    execute(adb('shell rm -rf /data/data/com.example.chromium', device=device))
+    #execute(adb('shell rm -rf /data/data/com.example.chromium', device=device))
     #execute(adb('shell rm -rf /data/dalvik-cache/*', device=device))
 
 
@@ -1168,6 +1174,11 @@ def android_config_device(device, device_product, default, governor='', freq=0):
     if not default and (freq < freq_min or freq > freq_max):
         error('The frequency is not in range')
 
+    if device_product in ['ecs_e7']:
+        cstate_max = 6
+    else:
+        cstate_max = 7
+
     cmds = []
     for i in range(count_cpu):
         if default:
@@ -1175,7 +1186,7 @@ def android_config_device(device, device_product, default, governor='', freq=0):
             #cmds.append('echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_setspeed' % ('<unsupported>', str(i)))
             cmds.append('echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_min_freq' % (freq_min, str(i)))
             cmds.append('echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_max_freq' % (freq_max, str(i)))
-            for j in range(1, 7):
+            for j in range(1, cstate_max):
                 cmds.append('echo "0" > /sys/devices/system/cpu/cpu%s/cpuidle/state%s/disable' % (str(i), str(j)))
         else:
             #peeknpoke s w 0 670 0
@@ -1193,8 +1204,9 @@ def android_config_device(device, device_product, default, governor='', freq=0):
             else:
                 cmds.append(cmd_max)
                 cmds.append(cmd_min)
+
             # fix to C0
-            for j in range(1, 7):
+            for j in range(1, cstate_max):
                 cmds.append('echo "1" > /sys/devices/system/cpu/cpu%s/cpuidle/state%s/disable' % (str(i), str(j)))
 
     su = False
@@ -1274,9 +1286,13 @@ def setup_common(args, teardown):
     if args.log:
         log = args.log
     else:
-        name_script = sys.argv[0].split('/')[-1].replace('.py', '')
-        log = dir_share_ignore_log + '/' + name_script + '-' + timestamp + '.log'
-        info('Log file: ' + log)
+        category = sys.path[0].split('/')[-1]
+        if category in ['webmark', 'webcatch', 'chrome-android']:
+            log = eval('dir_share_ignore_%s_log' % category) + '/' + timestamp + '.log'
+        else:
+            name_script = sys.argv[0].split('/')[-1].replace('.py', '')
+            log = dir_share_ignore_log + '/' + name_script + '-' + timestamp + '.log'
+    info('Log file: ' + log)
     backup_log(log, verbose=False)
 
     set_path(args.path_extra)
@@ -1306,6 +1322,16 @@ def trace_func(frame, event, arg, indent=[0]):
             trace('<' + '-' * indent[0] + ' exit %s:%s' % (name_file, name_func))
             indent[0] -= 2
     return trace_func
+
+
+def hasvalue(obj, member):
+    if not hasattr(obj, member):
+        return False
+
+    if getattr(obj, member) == '':
+        return False
+
+    return True
 
 
 # <internal>

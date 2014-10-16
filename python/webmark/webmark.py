@@ -7,23 +7,475 @@ from util import *
 import json
 from selenium import webdriver
 
-dir_root = ''
-log = ''
-timestamp = ''
-
 logger = ''
-dir_test = ''
 device = ''
 device_arch = ''
-device_config = False
-file_result = ''
-dryrun = False
+
+
+def parse_arg():
+    global args, args_dict
+    parser = argparse.ArgumentParser(description='Automation tool to measure the performance of browser and web runtime with benchmarks',
+                                     formatter_class=argparse.RawTextHelpFormatter,
+                                     epilog='''
+examples:
+  python %(prog)s --config config.json
+  python %(prog)s --module-os android --module-arch x86 --module-name content_shell --case fishietank --case-config '"count_fish": 10, "path": "internal"'
+''')
+
+    parser.add_argument('--config', dest='config', help='config file to put in all the configurations')
+
+    group_device = parser.add_argument_group('device')
+    group_device.add_argument('--device-id', dest='device_id', help='device id separated by comma')
+    group_device.add_argument('--device-freq', dest='device_freq', type=int, help='device freq')
+    group_device.add_argument('--device-governor', dest='device_governor', help='device governor')
+    group_module = parser.add_argument_group('module')
+    group_module.add_argument('--module-arch', dest='module_arch', help='module arch')
+    group_module.add_argument('--module-driver', dest='module_driver', help='module driver')
+    group_module.add_argument('--module-mode', dest='module_mode', help='module mode')
+    group_module.add_argument('--module-name', dest='module_name', help='module name', default='chrome_stable')
+    group_module.add_argument('--module-os', dest='module_os', help='module os')
+    group_module.add_argument('--module-path', dest='module_path', help='module path')
+    group_module.add_argument('--module-proxy', dest='module_proxy', help='module proxy')
+    group_module.add_argument('--module-switch', dest='module_switch', help='module switch')
+    group_module.add_argument('--module-version', dest='module_version', help='module version')
+
+    group_case = parser.add_argument_group('case')
+    group_case.add_argument('--case-name', dest='case_name', help='case name')
+    group_case.add_argument('--case-config', dest='case_config', help='case config')
+
+    # cmdline only
+    parser.add_argument('--driver-log', dest='driver_log', help='log of chromedriver', action='store_true')
+    parser.add_argument('--driver-verbose', dest='driver_verbose', help='verbose log of chromedriver', action='store_true')
+    parser.add_argument('--use-running-app', dest='use_running_app', help='use running app', action='store_true', default=False)
+    parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true', default=False)
+    parser.add_argument('--analyze', dest='analyze', help='file to analyze')
+
+    add_argument_common(parser)
+
+    args = parser.parse_args()
+    args_dict = vars(args)
+
+    if len(sys.argv) <= 1:
+        parser.print_help()
+        exit(0)
+
+
+def setup():
+    global dir_root, log, timestamp, logger, dryrun, baseline
+    global devices_id, devices_product, devices_arch
+
+    (timestamp, dir_root, log) = setup_common(args, _teardown)
+    unsetenv('http_proxy')
+    logger = get_logger(tag='webmark', dir_log=dir_share_ignore_webmark_log, datetime=timestamp)
+    dryrun = args.dryrun
+    baseline = Baseline()
+    ensure_dir(dir_share_ignore_webmark_download)
+    ensure_dir(dir_share_ignore_webmark_result)
+
+    # driver
+    if args.module_driver:
+        chrome_driver = args.module_driver
+    else:
+        chrome_driver = 'chromedriver'
+
+    if has_process(chrome_driver):
+        execute('sudo killall %s' % chrome_driver, show_cmd=False)
+
+    cmd = dir_webmark + '/driver/' + chrome_driver
+    if args.driver_log:
+        cmd += ' --log-path ' + dir_share_ignore_webmark_log + '/chromedriver-' + timestamp + '.log'
+    if args.driver_verbose:
+        cmd += ' --verbose'
+    subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # Sleep a bit to make sure driver is ready
+    time.sleep(1)
+
+    # device
+    if args.device_id:
+        devices_id_limit = args.device_id.split(',')
+    else:
+        devices_id_limit = []
+    (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_id_limit=devices_id_limit)
+    if len(devices_id) == 0:
+        error('No device is connected')
+
+
+def run():
+    if not args.config and not args.case_name:
+        return
+
+    Webmark()
+
+
+def analyze(files_result):
+    if not files_result:
+        return
+
+    for file_result in files_result.split(','):
+        if file_result[0] != '/':
+            file_result = dir_share_ignore_webmark_result + '/' + file_result
+
+        # get baseline_suite
+        baseline_suite = ''
+        for line in open(file_result).readlines():
+            if re.search('"device":', line):
+                device = json.loads(line.replace('"device":', ''))
+            elif re.search('"module"', line):
+                module = json.loads(line.replace('"module":', ''))
+        for index in range(len(baseline.suites)):
+            if baseline.suites[index].device.product != device['product']:
+                continue
+            break
+        if index >= len(baseline.suites):
+            warning('There is no baseline found for %s' % file_result)
+            continue
+        baseline_suite = baseline.suites[index]
+
+        # analyze
+        for line in fileinput.input(file_result, inplace=1):
+            if not re.search('"device"', line) and not re.search('"module"', line):
+                # get case info
+                case = {}
+                results = line.split(',')
+                for index, item in enumerate(webmark_format):
+                    if item == 'metric':
+                        case['metric'] = results[index]
+                    elif item == 'name':
+                        case['name'] = results[index]
+                    elif item == 'result':
+                        case['result'] = float(results[index])
+                    elif item == 'version':
+                        case['version'] = results[index]
+
+                baseline_result = 0
+                for baseline_case in baseline_suite.cases:
+                    if baseline_case.name == case['name']:
+                        baseline_result = float(baseline_case.result)
+                        break
+                if baseline_result < 0.01:
+                    analysis = '?'
+                else:
+                    diff = round(abs(case['result'] - baseline_result) / baseline_result, 2) * 100
+                    if diff > 5:
+                        if re.search('\+', case['metric']):
+                            if case['result'] < baseline_result:
+                                change = '-'
+                            else:
+                                change = '+'
+                        else:
+                            if case['result'] > baseline_result:
+                                change = '-'
+                            else:
+                                change = '+'
+
+                        analysis = '%s%s%%' % (change, diff)
+                    else:
+                        analysis = '='
+
+                if results[-1][0] in ['+', '-', '=', '?']:  # has analyzed
+                    line = line.replace(results[-1], analysis) + '\n'
+                else:
+                    line = line.rstrip('\n') + ',' + analysis + '\n'
+
+            sys.stdout.write(line)
+
+
+def _teardown():
+    pass
+
+
+class Webmark:
+    FORMAT = [
+        ['suites', 'M', 'A'],
+    ]
+
+    def __init__(self):
+        timer_start(self.__class__.__name__)
+
+        # Parse
+        if args.config:
+            file_config = args.config
+            if not os.path.isfile(file_config):
+                error(file_config + ' is not a valid file.')
+            f = file(file_config)
+            self.data = json.load(f)
+            f.close()
+        else:
+            data = {
+                'device': {},
+                'module': {}
+            }
+
+            for c in [Device, Module]:
+                for m in [x[0] for x in c.FORMAT]:
+                    name_arg = '%s_%s' % (c.__name__.lower(), m)
+                    if name_arg in args_dict and args_dict[name_arg]:
+                        data[c.__name__.lower()][m] = args_dict[name_arg]
+
+            if args.case_config:
+                case_config = ', ' + args.case_config
+            else:
+                case_config = ''
+
+            json_string = '''
+{
+  "suites": [
+    {
+      "device": %s,
+      "module": %s,
+      "cases": [
+        {"name": "%s"%s}
+      ]
+    }
+  ]
+}
+            ''' % (json.dumps(data['device']), json.dumps(data['module']), args.case_name, case_config)
+            self.data = json.loads(json_string)
+
+        self.suites = []
+        Format.format(self)
+
+        # Start patrol
+        if host_os == 'windows':
+            exec 'from common.patrol import Patrol'
+            self.patrol = Patrol()
+
+        # Run
+        for i in range(len(self.suites)):
+            self.suites[i].run()
+
+    def __del__(self):
+        timer_stop(self.__class__.__name__)
+        logger.info('Total elapsed time for execution: ' + timer_diff(self.__class__.__name__))
+
+
+class Baseline:
+    FORMAT = [
+        ['suites', 'M', 'A'],
+    ]
+
+    def __init__(self):
+        file_baseline = 'baseline.json'
+        if not os.path.isfile(file_baseline):
+            error(file_baseline + ' is not a valid file.')
+        f = file(file_baseline)
+        self.data = json.load(f)
+        f.close()
+        self.suites = []
+        Format.format(self)
+
+
+class Suite:
+    FORMAT = [
+        ['cases', 'M', 'A'],
+        ['description', 'O', 'P'],
+        ['device', 'M', 'O'],
+        ['name', 'O', 'P'],
+        ['module', 'M', 'O'],
+
+    ]
+
+    def __init__(self, data):
+        self.data = data
+        self.cases = []
+        Format.format(self)
+
+    def run(self):
+        device = self.device
+        module = self.module
+
+        # Handle app mode
+        if module.mode == 'app':
+            app_path = dir_root + '/hosted_app'
+            self.extension = self.driver.install_extension(app_path)
+            self.driver.get('chrome://newtab')
+            handles = self.driver.window_handles
+            self.driver.find_element_by_xpath("//div[@title='Hosted App Benchmark']").click()
+            self.driver.switch_to_new_window(handles)
+
+        # install module
+        if hasvalue(module, 'path'):
+            if module.path == 'auto':
+                if module.name == 'chrome_stable' or module.name == 'chrome_beta':
+                    module_path = path_web_chrome_android + '/%s-%s-chrome/%s-%s/Chrome.apk' % (module.os, module.arch, module.version, module.name.replace('chrome_', ''))
+                elif module.name == 'content_shell':
+                    module_path = path_web_webcatch + '%s-%s-%s/%s.apk' % (module.os, module.arch, module.name, module.version)
+                else:
+                    error('module path is not correct')
+            else:
+                module_path = module.path
+            if re.match('http', module_path):
+                backup_dir(dir_share_ignore_webmark_download)
+                if module.os == 'android':
+                    module_file = '%s-%s-%s-%s.apk' % (module.os, module.arch, module.name, module.version)
+                    if not os.path.exists(module_file):
+                        result = execute('wget %s -O %s' % (module_path, module_file), dryrun=False)
+                        if result[0]:
+                            error('Failed to download ' + module_path)
+                    module_path = dir_share_ignore_webmark_download + '/' + module_file
+                restore_dir()
+
+            chrome_android_cleanup(device.id)
+            result = execute('adb install -r ' + module_path, interactive=True)
+            if result[0]:
+                error('Can not install ' + module_path)
+
+        # change freq
+        if hasvalue(device, 'governor') and hasvalue(device, 'freq'):
+            android_config_device(device=device.id, device_product=device.product, default=False, governor=device.governor, freq=device.freq)
+
+        # run
+        if module.os:
+            module_os_temp = module.os
+        else:
+            module_os_temp = 'android'
+        if module.arch:
+            module_arch_temp = module.arch
+        else:
+            module_arch_temp = device.arch
+
+        name = '%s-%s-%s-%s-%s-%s-%s' % (timestamp, module_os_temp, module_arch_temp, module.name, module.version, device.id, device.freq)
+        file_result = dir_share_ignore_webmark_result + '/' + timestamp
+
+        # write config to result file
+        data = {
+            'device': {},
+            'module': {}
+        }
+        for i in [device, module]:
+            for m in [x[0] for x in i.FORMAT]:
+                data[i.__class__.__name__.lower()][m] = getattr(i, m)
+        config = '"device": %s\n"module": %s\n' % (json.dumps(data['device']), json.dumps(data['module']))
+        fw = open(file_result, 'w')
+        fw.write(config)
+
+        capabilities = get_capabilities(device.id, module.name, args.use_running_app, ['--disable-web-security'])
+        for i in range(len(self.cases)):
+            if dryrun:
+                driver = None
+            else:
+                driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
+            result = self.cases[i].run(driver)
+            fw.write(result + '\n')
+            logger.info('Result: ' + result)
+
+            if not dryrun:
+                driver.quit()
+        fw.close
+        #analyze(file_result)
+
+        # restore freq
+        if hasvalue(device, 'governor') and hasvalue(device, 'freq'):
+            android_config_device(device=device.id, device_product=device.product, default=True)
+
+        # uninstall module
+        if hasvalue(module, 'path'):
+            chrome_android_cleanup(device.id, module_name=module.name)
+
+
+class Device:
+    FORMAT = [
+        ['arch', 'O', 'P'],
+        ['id', 'O', 'P'],
+        ['freq', 'O', 'P', 0],
+        ['governor', 'O', 'P'],
+        ['product', 'O', 'P'],
+    ]
+
+    def __init__(self, data):
+        self.data = data
+        Format.format(self)
+
+        if self.id:
+            for index, device_id in enumerate(devices_id):
+                if device_id != self.id:
+                    continue
+                self.arch = devices_arch[index]
+                self.product = devices_product[index]
+            if not hasvalue(self, 'arch'):
+                error('The designated device %s is not found' % self.id)
+        elif not self.arch and not self.product:
+            self.id = devices_id[0]
+            self.arch = devices_arch[0]
+            self.product = devices_product[0]
+
+
+class Module:
+    FORMAT = [
+        ['arch', 'O', 'P'],
+        ['driver', 'O', 'P'],
+        ['mode', 'O', 'P'],
+        ['name', 'M', 'P'],
+        ['os', 'O', 'P'],
+        ['path', 'O', 'P'],
+        ['proxy', 'O', 'O'],
+        ['switch', 'O', 'P'],
+        ['version', 'O', 'P', '0'],
+    ]
+
+    def __init__(self, data):
+        self.data = data
+        Format.format(self)
+
+        if not hasvalue(self, 'mode'):
+            self.mode = 'browser'
+
+        if not hasvalue(self, 'proxy'):
+            self.proxy = Proxy()
+
+        if not hasvalue(self, 'switch'):
+            if self.os == 'linux' and self.name == 'chrome':
+                self.switch = '--flag-switches-begin --enable-experimental-web-platform-features --flag-switches-end --disable-setuid-sandbox --disable-hang-monitor --allow-file-access-from-files --user-data-dir=./'
+            elif self.os == 'android' and self.name == 'content_shell':
+                self.switch = '--flag-switches-begin --enable-experimental-web-platform-features --flag-switches-end --disable-setuid-sandbox --disable-hang-monitor --allow-file-access-from-files --user-data-dir=./'
+
+        if not hasvalue(self, 'driver'):
+            if self.os == 'linux' and self.name == 'chrome':
+                self.driver = 'driver/chromedriver'
+            elif self.os == 'android' and self.name == 'content_shell':
+                self.driver = 'driver/chromedriver'
+
+
+class Proxy:
+    FORMAT = [
+        ['http', 'O', 'P'],
+        ['noproxy', 'O', 'P'],
+        ['type', 'O', 'P'],
+    ]
+
+    def __init__(self, data=json.loads('{}')):
+        self.data = data
+        Format.format(self)
+
+        if not hasvalue(self, 'type'):
+            self.type = 'manual'
+            self.http = 'http://proxy.pd.intel.com:911'
+            self.noproxy = 'localhost,127.0.0.1,*.intel.com'
+
+
+class Case:
+    FORMAT = [
+        ['name', 'M', 'P'],
+        ['*', 'O', 'P'],
+    ]
+
+    def __init__(self, data):
+        self.data = data
+        Format.format(self)
+        self.dryrun = dryrun
+
+    def run(self, driver):
+        name = self.name
+        exec 'from benchmark.' + name.lower() + ' import ' + name
+        benchmark = eval(name)(driver, self)
+        return benchmark.run()
 
 
 class Format:
     NAME = 0
     REQUIRED = 1  # (O)ptional or (M)andatory
     TYPE = 2  # A for Array, O for Object, P for Property
+    DEFAULT = 3
 
     @staticmethod
     def format_has_member(format, member):
@@ -61,331 +513,24 @@ class Format:
                 for element in instance_data:
                     instance.__dict__[format_name].append(eval(format_name.capitalize()[:-1])(element))
 
+        # set default
+        for format in instance.FORMAT:
+            format_name = format[Format.NAME]
+            if not hasattr(instance, format_name):
+                if len(format) > Format.DEFAULT:
+                    instance.__dict__[format_name] = format_type = format[Format.DEFAULT]
+                else:
+                    format_type = format[Format.TYPE]
+                    if format_type == 'P':
+                        instance.__dict__[format_name] = ''
+                    elif format_type == 'O':
+                        instance.__dict__[format_name] = None
+                    elif format_type == 'A':
+                        instance.__dict__[format_name] = []
 
-class Case:
-    FORMAT = [
-        ['name', 'M', 'P'],
-        ['*', 'O', 'P']
-    ]
-
-    def __init__(self, data):
-        self.data = data
-        self.dryrun = dryrun
-        Format.format(self)
-
-    def run(self, driver):
-        name = self.name
-        exec 'from benchmark.' + name.lower() + ' import ' + name
-        benchmark = eval(name)(driver, self)
-        result = benchmark.run()
-        execute('echo "' + result + '" >>' + file_result, show_cmd=False)
-        logger.info('Result: ' + result)
-
-
-class Proxy:
-    FORMAT = [
-        ['type', 'O', 'P'],
-        ['http', 'O', 'P'],
-        ['noproxy', 'O', 'P']
-    ]
-
-    def __init__(self, data=json.loads('{}')):
-        self.data = data
-        Format.format(self)
-
-        if not hasattr(self, 'type'):
-            self.type = 'manual'
-            self.http = 'http://proxy.pd.intel.com:911'
-            self.noproxy = 'localhost,127.0.0.1,*.intel.com'
-
-
-class Target:
-    FORMAT = [
-        ['os', 'M', 'P'],
-        ['arch', 'M', 'P'],
-        ['module', 'M', 'P'],
-        ['module_path', 'O', 'P'],
-        ['module_ver', 'O', 'P'],
-        ['module_mode', 'O', 'P'],
-        ['module_proxy', 'O', 'O'],
-        ['module_switches', 'O', 'P'],
-        ['module_driver', 'O', 'P']
-    ]
-
-    def __init__(self, data):
-        self.data = data
-        Format.format(self)
-
-        if not hasattr(self, 'module_mode'):
-            self.module_mode = 'browser'
-
-        if not hasattr(self, 'module_proxy'):
-            self.module_proxy = Proxy()
-
-        if not hasattr(self, 'module_switches'):
-            if self.os == 'linux' and self.module == 'chrome':
-                self.module_switches = '--flag-switches-begin --enable-experimental-web-platform-features --flag-switches-end --disable-setuid-sandbox --disable-hang-monitor --allow-file-access-from-files --user-data-dir=./'
-            elif self.os == 'android' and self.module == 'content_shell':
-                self.module_switches = '--flag-switches-begin --enable-experimental-web-platform-features --flag-switches-end --disable-setuid-sandbox --disable-hang-monitor --allow-file-access-from-files --user-data-dir=./'
-
-        if not hasattr(self, 'module_driver'):
-            if self.os == 'linux' and self.module == 'chrome':
-                self.module_driver = 'driver/chromedriver'
-            elif self.os == 'android' and self.module == 'content_shell':
-                self.module_driver = 'driver/chromedriver'
-
-
-class Suite:
-    FORMAT = [
-        ['target', 'M', 'O'],
-        ['cases', 'M', 'A'],
-        ['name', 'O', 'P'],
-        ['device_arch', 'O', 'P'],
-        ['description', 'O', 'P']
-    ]
-
-    def __init__(self, data):
-        global file_result
-        self.cases = []
-        self.data = data
-        Format.format(self)
-
-        file_result = dir_share_ignore_webmark_result + '/' + '%s-%s-%s-%s-%s-%s.txt' %(timestamp, self.target.os, self.target.arch, self.target.module, self.target.module_ver, self.device_arch)
-
-    def run(self):
-        # driver_name = self.target.name.capitalize() + 'Driver'
-        # exec 'from driver.' + driver_name.lower() + ' import ' + driver_name
-        # self.driver = eval(driver_name)(self.target)
-
-        # Handle app mode
-        if self.target.module_mode == 'app':
-            app_path = dir_root + '/hosted_app'
-            self.extension = self.driver.install_extension(app_path)
-            self.driver.get('chrome://newtab')
-            handles = self.driver.window_handles
-            self.driver.find_element_by_xpath("//div[@title='Hosted App Benchmark']").click()
-            self.driver.switch_to_new_window(handles)
-
-        # Install target if needed
-        if hasattr(self.target, 'module_path') and self.target.module_path:
-            module_path = self.target.module_path
-            if re.match('http', module_path):
-                if self.target.os == 'android':
-                    backup_dir(dir_share_ignore_webmark_download)
-                    module_file = '%s-%s-%s-%s.apk' %(self.target.os, self.target.module, self.target.arch, self.target.module_ver)
-                    if not os.path.exists(module_file):
-                        result = execute('wget %s -O %s' %(module_path, module_file), show_cmd=False, dryrun=False)
-                        if result[0]:
-                            error('Failed to download ' + module_path)
-                    module_path = dir_share_ignore_webmark_download + '/' + module_file
-                    restore_dir()
-
-            chrome_android_cleanup(device)
-            result = execute('adb install -r ' + module_path, interactive=True)
-            if result[0]:
-                error('Can not install ' + self.target.module_path)
-
-        capabilities = get_capabilities(device, self.target.module, args.use_running_app, ['--disable-web-security'])
-
-        for i in range(len(self.cases)):
-            if dryrun:
-                driver = None
-            else:
-                driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
-            self.cases[i].run(driver)
-            if not dryrun:
-                driver.quit()
-
-
-class WebMark:
-    FORMAT = [
-        ['suites', 'M', 'A']
-    ]
-
-    def __init__(self):
-        timer_start(self.__class__.__name__)
-
-        # Parse
-        if args.config:
-            file_config = args.config
-            if not os.path.isfile(file_config):
-                error(file_config + ' is not a valid file.')
-            f = file(file_config)
-            self.data = json.load(f)
-            f.close()
-        else:
-            target_os = args.target_os
-            target_arch = args.target_arch
-            target_module = args.target_module
-            target_module_path = args.target_module_path
-            target_module_ver = args.target_module_ver
-
-            # TODO: Handle other comb here
-            if target_os == 'linux' and target_module == 'chrome':
-                path = args.target_module_path
-                module_file = os.path.basename(path)
-                rev = module_file.replace('.tar.gz', '')
-                execute('cp ' + path + ' ' + dir_test)
-                backup_dir(dir_test)
-                execute('tar zxf ' + module_file)
-                execute('rm -f ' + module_file)
-                target_module_path = dir_test + '/' + rev + '/chrome'
-                restore_dir()
-            elif target_os == 'android':
-                target_module_path = args.target_module_path
-                # module_file = os.path.basename(target_module_path)
-                # execute('adb install -r ' + target_module_path)
-
-            benchmark = args.benchmark
-            if args.benchmark_config:
-                benchmark_config = ', ' + args.benchmark_config
-            else:
-                benchmark_config = ''
-            self.data = json.loads('''
-{
-  "suites": [
-    {
-      "target": {
-        "os": "%s",
-        "arch": "%s",
-        "module": "%s",
-        "module_path": "%s",
-        "module_ver": "%s"
-      },
-      "device_arch": "%s",
-      "cases": [
-        {"name": "%s"%s}
-      ]
-    }
-  ]
-}
-            ''' % (target_os, target_arch, target_module, target_module_path, target_module_ver, device_arch, benchmark, benchmark_config))
-
-        self.suites = []
-        Format.format(self)
-
-        # Start patrol
-        if host_os == 'windows':
-            exec 'from common.patrol import Patrol'
-            self.patrol = Patrol()
-
-        # Run
-        for i in range(len(self.suites)):
-            self.suites[i].run()
-
-    def __del__(self):
-        timer_stop(self.__class__.__name__)
-        logger.info('Total elapsed time for execution: ' + timer_diff(self.__class__.__name__))
-
-
-def parse_arg():
-    global args
-    parser = argparse.ArgumentParser(description='Automation tool to measure the performance of browser and web runtime with benchmarks',
-                                     formatter_class=argparse.RawTextHelpFormatter,
-                                     epilog='''
-examples:
-  python %(prog)s --target-os android --target-arch x86 --target-module content_shell --benchmark fishietank --benchmark-config '"fish_count": 10, "path": "internal"'
-  python %(prog)s --target-os android --target-arch x86 --target-module content_shell --benchmark browsermark --benchmark-config '"username": "xxx", "password": "xxx"'
-  python %(prog)s --config config.json
-
-''')
-    parser.add_argument('--target-os', dest='target_os', help='target os', choices=target_os_all, default='android')
-    parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=target_arch_all, default='x86')
-    parser.add_argument('--target-module', dest='target_module', help='target module', choices=target_module_all, default='chrome_stable')
-    parser.add_argument('--target-module-path', dest='target_module_path', help='target module path', default='')
-    parser.add_argument('--target-module-ver', dest='target_module_ver', help='target module ver', default='')
-    parser.add_argument('--benchmark', dest='benchmark', help='benchmark', default='sunspider')
-    parser.add_argument('--benchmark-config', dest='benchmark_config', help='benchmark config')
-    parser.add_argument('--use-running-app', dest='use_running_app', help='use running app', action='store_true', default=False)
-    parser.add_argument('--config', dest='config', help='config file to put in all the configurations')
-    parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true', default=False)
-
-    parser.add_argument('--device', dest='device', help='device')
-    parser.add_argument('--device-config', dest='device_config', help='need device config or not', action='store_true')
-    parser.add_argument('--governor', dest='governor', help='governor')
-    parser.add_argument('--freq', dest='freq', type=int, help='freq')
-    parser.add_argument('--driver-ver', dest='driver_ver', help='version of chromedriver')
-    parser.add_argument('--driver-log', dest='driver_log', help='log of chromedriver', action='store_true')
-    parser.add_argument('--driver-verbose', dest='driver_verbose', help='verbose log of chromedriver', action='store_true')
-
-    add_argument_common(parser)
-
-    args = parser.parse_args()
-
-    if len(sys.argv) <= 1:
-        parser.print_help()
-        exit(0)
-
-
-def setup():
-    global dir_root, log, timestamp
-    global dir_test, device, device_product, logger
-    global device_config, device_arch
-
-    (timestamp, dir_root, log) = setup_common(args, _teardown)
-
-    dir_root = get_symbolic_link_dir()
-    dir_test = dir_root + '/test'
-    if not os.path.exists(dir_test):
-        os.mkdir(dir_test)
-
-    if args.driver_ver:
-        chrome_driver = 'chromedriver-' + args.driver_ver
-    else:
-        chrome_driver = 'chromedriver'
-
-    if has_process(chrome_driver):
-        execute('sudo killall %s' % chrome_driver, show_cmd=False)
-
-    cmd = dir_webmark + '/driver/' + chrome_driver
-    if args.driver_log:
-        cmd += ' --log-path ' + dir_share_ignore_log + '/chromedriver-' + timestamp + '.log'
-    if args.driver_verbose:
-        cmd += ' --verbose'
-    subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # Sleep a bit to make sure driver is ready
-    time.sleep(1)
-
-    unsetenv('http_proxy')
-    (devices, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
-
-    if len(devices) == 0:
-        warning('No device is connected')
-        android_start_emu('x86')
-    if len(devices) > 1 and not args.device:
-        error('More than one device is connected')
-    if args.device:
-        if args.device != devices[0]:
-            error('Please ensure device is connected')
-        device = args.device
-    else:
-        device = devices[0]
-
-    device_arch = android_get_target_arch(device)
-    device_product = devices_product[0]
-
-    datetime = get_datetime()
-    logger = get_logger(tag='webmark', dir_log=dir_webmark_log, datetime=datetime)
-
-    if args.device_config:
-        device_config = True
-
-    if device_config:
-        governor = args.governor
-        freq = args.freq
-        android_config_device(device=device, device_product=device_product, default=False, governor=governor, freq=freq)
-
-    dryrun = args.dryrun
-
-    ensure_dir(dir_share_ignore_webmark_download)
-    ensure_dir(dir_share_ignore_webmark_result)
-
-
-def _teardown():
-    if device_config:
-        android_config_device(device=device, device_product=device_product, default=True)
 
 if __name__ == '__main__':
     parse_arg()
     setup()
-    WebMark()
+    run()
+    analyze(args.analyze)

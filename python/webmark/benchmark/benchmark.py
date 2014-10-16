@@ -97,7 +97,7 @@ class Benchmark(object):
         if self.dryrun:
             return ['60.0']
         elif self.run_fail:
-            return ['-1.0']
+            return ['0.0']
         else:
             return self.result
 
@@ -166,7 +166,7 @@ class Benchmark(object):
                 if item == 'category':
                     outputs.append(self.category)
                 elif item == 'name':
-                    outputs.append(self.name)
+                    outputs.append(self.__class__.__name__)
                 elif item == 'version':
                     outputs.append(self.version)
                 elif item == 'metric':

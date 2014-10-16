@@ -3,10 +3,13 @@
     {
       "name": "Chrome for Android Performance Test",
       "description": "Chrome for Android Performance Test",
-      "target": {
+      "device": {
+      },
+      "module": {
+        "name": "chrome_stable",
         "os": "android",
         "arch": "x86",
-        "module": "chrome_stable"
+        "version": "38.0.2125.102"
       },
       "cases": [
         {"name": "kraken", "timeout": 1200},

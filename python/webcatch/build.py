@@ -450,12 +450,11 @@ def _build(comb_next):
     if comb_next[COMB_INDEX_REV] > rev_max:
         return
 
-    file_pause = dir_webcatch + '/pause'
-    if os.path.exists(file_pause):
+    if os.path.exists(dir_share_ignore_webcatch_pause):
         info('Paused, and please remove pause file to continue')
         while True:
             time.sleep(1)
-            if os.path.exists(file_pause):
+            if os.path.exists(dir_share_ignore_webcatch_pause):
                 continue
             else:
                 break

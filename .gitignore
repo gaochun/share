@@ -1,10 +1,2 @@
 *.pyc
-
 ignore/
-
-python/webcatch/download
-python/webcatch/log
-python/webcatch/pause
-python/webmark/log
-python/webmark/result
-python/test.py

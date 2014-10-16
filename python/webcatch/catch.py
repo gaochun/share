@@ -55,9 +55,9 @@ def setup():
     target_module = args.target_module
     benchmark = args.benchmark
     comb_name = get_comb_name('-', target_os, target_arch, target_module)
-    dir_download = dir_webcatch + '/download/' + comb_name
+    dir_download = dir_share_ignore_webcatch_download + '/' + comb_name
     ensure_dir(dir_download)
-    ensure_dir(dir_webcatch_log)
+    ensure_dir(dir_share_ignore_webcatch_log)
 
     if args.rev:
         revs_temp = [int(x) for x in args.rev.split('-')]
@@ -196,7 +196,7 @@ def _bisect(index_small, index_big):
                 dir_chromium = dir_project_webcatch_project + '/chromium-' + target_os
 
             dir_src = dir_chromium + '/src'
-            suspect_log = dir_webcatch_log + '/suspect.log'
+            suspect_log = dir_share_ignore_webcatch_log + '/suspect.log'
             execute('rm -f ' + suspect_log)
             rev_hash = chromium_get_rev_hash(dir_src, rev_small_final + 1, rev_big_final)
             revs = sorted(rev_hash.keys())

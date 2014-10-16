@@ -1,0 +1,36 @@
+{
+  "suites": [
+    {
+      "device": {
+        "arch": "x86",
+        "freq": "400000",
+        "product": "ecs_e7"
+      },
+      "module": {
+        "arch": "x86",
+        "name": "chrome_stable",
+        "os": "android"
+      },
+      "cases": [
+        {"name": "kraken", "result": 2400},
+        {"name": "octane", "version": "2.0", "result": 2400},
+        {"name": "sunspider", "version": "1.0.2", "result": 1200},
+
+        {"name": "canvasmark", "result": 1200},
+        {"name": "fishietank", "version": "raf", "result": 17},
+        {"name": "fishietank", "version": "setinterval", "result": 17},
+        {"name": "galactic", "version": "mobile", "result": 1200},
+
+        {"name": "aquarium", "result": 1200},
+        {"name": "cubemap", "result": 1200},
+        {"name": "toonshading", "result": 1200},
+
+        {"name": "fallingleaves", "result": 1200},
+        {"name": "postercircle", "result": 1200},
+
+        {"name": "browsermark", "version": "2.0", "result": 1200},
+        {"name": "browsermark", "version": "2.1", "result": 1200}
+      ]
+    }
+  ]
+}

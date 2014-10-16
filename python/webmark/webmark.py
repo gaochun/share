@@ -116,7 +116,11 @@ def analyze(files_result):
 
         # get baseline_suite
         baseline_suite = ''
-        for line in open(file_result).readlines():
+        fr = open(file_result)
+        lines = fr.readlines()
+        fr.close()
+
+        for line in lines:
             if re.search('"device":', line):
                 device = json.loads(line.replace('"device":', ''))
             elif re.search('"module"', line):
@@ -323,20 +327,12 @@ class Suite:
         if hasvalue(device, 'governor') and hasvalue(device, 'freq'):
             android_config_device(device_id=device.id, device_product=device.product, default=False, governor=device.governor, freq=device.freq)
 
-        # run
-        if module.os:
-            module_os_temp = module.os
-        else:
-            module_os_temp = 'android'
-        if module.arch:
-            module_arch_temp = module.arch
-        else:
-            module_arch_temp = device.arch
-
-        name = '%s-%s-%s-%s-%s-%s-%s' % (timestamp, module_os_temp, module_arch_temp, module.name, module.version, device.id, device.freq)
-        file_result = dir_share_ignore_webmark_result + '/' + timestamp
-
-        # write config to result file
+        # generate result file
+        timestamp_temp = get_datetime()
+        file_result = dir_share_ignore_webmark_result + '/' + timestamp_temp
+        logger.info('Use result file ' + file_result)
+        fw = open(file_result, 'w')
+        ## write config
         data = {
             'device': {},
             'module': {}
@@ -345,9 +341,9 @@ class Suite:
             for m in [x[0] for x in i.FORMAT]:
                 data[i.__class__.__name__.lower()][m] = getattr(i, m)
         config = '"device": %s\n"module": %s\n' % (json.dumps(data['device']), json.dumps(data['module']))
-        fw = open(file_result, 'w')
         fw.write(config)
 
+        # write performance data
         capabilities = get_capabilities(device.id, module.name, args.use_running_app, ['--disable-web-security'])
         for i in range(len(self.cases)):
             if dryrun:
@@ -360,8 +356,8 @@ class Suite:
 
             if not dryrun:
                 driver.quit()
-        fw.close
-        #analyze(file_result)
+        fw.close()
+        analyze(timestamp_temp)
 
         # restore freq
         if hasvalue(device, 'governor') and hasvalue(device, 'freq'):

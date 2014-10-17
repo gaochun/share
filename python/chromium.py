@@ -464,13 +464,13 @@ def setup():
 
     if _need_device():
         if args.device_id:
-            devices_limit = args.device_id.split(',')
+            devices_id_limit = args.device_id.split(',')
         else:
-            devices_limit = []
+            devices_id_limit = []
 
-        if not devices_limit or '192.168.42.1:5555' in devices_limit:
+        if not devices_id_limit or '192.168.42.1:5555' in devices_id_limit:
             connect_device()
-        (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_limit=devices_limit)
+        (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_id_limit=devices_id_limit)
 
         _hack_app_process()
 

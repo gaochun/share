@@ -1642,19 +1642,27 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
         driver.get('chrome://version')
         WebDriverWait(driver, 30, 1).until(_has_element_ver)
-        pattern_version = re.compile('(Chrome|Chrome Beta|Example Chromium) (\d+\.\d+\.\d+\.\d+)')
-        match = pattern_version.search(driver.find_elements_by_class_name('version')[0].get_attribute('innerText'))
-        ver_type_str = match.group(1)
-        if ver_type_str == 'Chrome':
-            ver_type_temp = 'stable'
-        elif ver_type_str == 'Chrome Beta':
+        ver_str = driver.find_elements_by_class_name('version')[0].get_attribute('innerText')
+
+        match = re.search('(\d+\.\d+\.\d+\.\d+)', ver_str)
+        if match:
+            ver_temp = match.group(1)
+        else:
+            error('Could not find the correct version')
+
+        if re.search('Beta', ver_str, re.IGNORECASE):
             ver_type_temp = 'beta'
-        elif ver_type_str == 'Example Chromium':
+        elif re.search('example', ver_str, re.IGNORECASE):
             ver_type_temp = 'example'
-        ver_temp = match.group(2)
+        else:
+            ver_type_temp = 'stable'
+
         pattern_build_id = re.compile('Build ID\s+(.*)')
         match = pattern_build_id.search(driver.find_elements_by_id('build-id-section')[0].get_attribute('innerText'))
-        build_id_temp = match.group(1)
+        if match:
+            build_id_temp = match.group(1)
+        else:
+            error('Could not find the correct build id')
         driver.quit()
         setenv('http_proxy', env_http_proxy)
     execute(adb('uninstall ' + chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_PKG], device_id=device_id))

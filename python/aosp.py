@@ -377,7 +377,10 @@ def flash_image():
     device_arch = targets_arch[0]
     device_type = targets_type[0]
     device_id = devices_id[0]
-    path_fastboot = dir_linux + '/fastboot'
+    if os.path.exists(dir_root + '/out/dist/fastboot'):
+        path_fastboot = dir_root + '/out/dist/fastboot'
+    else:
+        path_fastboot = dir_linux + '/fastboot'
 
     if repo_type != 'upstream':
         dir_extract = '/tmp/' + timestamp
@@ -419,17 +422,18 @@ def flash_image():
         execute('tar xvf ' + file_image, interactive=True, dryrun=False)
 
     # hack the script
-    if repo_type == 'stable':
+    if repo_type == 'stable' or repo_type == 'gminl':
         # Hack flash-all.sh to skip sleep and use our own fastboot
         for line in fileinput.input('flash-all.sh', inplace=1):
-            if re.search('sleep', line):
+            if re.search('sleep', line) and repo_type == 'stable':
                 line = line.replace('sleep', '#sleep')
             elif re.match('fastboot', line):
-                line = dir_linux + '/' + line
+                line = line.replace('fastboot', path_fastboot)
             # We can not use print here as it will generate blank line
             sys.stdout.write(line)
         fileinput.close()
 
+    if repo_type == 'stable':
         # Hack gpt.ini for fast userdata erasion
         result = execute('ls *.ini', return_output=True)
         file_gpt = result[1].rstrip('\n')

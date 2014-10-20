@@ -146,7 +146,7 @@ dir_project_webcatch_project = dir_project_webcatch + '/project'
 dir_project_webcatch_log = dir_project_webcatch + '/log'
 dir_tool = dir_workspace + '/tool'
 
-path_web_benchmark = 'http://' + socket.gethostbyname('wp-02.sh.intel.com')
+path_web_benchmark = 'http://wp-02.sh.intel.com'
 path_web_webbench = path_web_benchmark + '/webbench'
 path_web_webcatch = path_web_benchmark + '/chromium'
 path_web_chrome_android = 'http://wp-03.sh.intel.com/chromium'

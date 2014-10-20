@@ -600,11 +600,13 @@ def sync(force=False):
     if repo_type == 'chrome-android' and ver_cmp(ver, '37.0.2062.117') >= 0:
         if not os.path.exists(dir_src):
             backup_dir(dir_project_chrome_android + '/chromium-android/src')
-            execute('git pull && gclient sync -f -n -j16 && git fetch --tags', interactive=True, abort=True)
+            execute('git pull && gclient sync -f -j16 && git fetch --tags', interactive=True, abort=True)
             restore_dir()
             execute('cp -rf %s/chromium-android/. %s' % (dir_project_chrome_android, dir_root), interactive=True, abort=True)
             backup_dir(dir_src)
-            execute('git checkout -B %s tags/%s && gclient sync --with_branch_heads -j16 -n' % (ver, ver), interactive=True, abort=True)
+            result = execute('git checkout -f -B %s tags/%s && gclient sync --with_branch_heads -j16 -f -n' % (ver, ver), interactive=True, abort=True)
+            if result[0]:
+                error('Could not check out source code of version %s' % ver)
             restore_dir()
     else:
         # Judge if the repo is managed or not

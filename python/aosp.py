@@ -428,7 +428,7 @@ def flash_image():
             if re.search('sleep', line) and repo_type == 'stable':
                 line = line.replace('sleep', '#sleep')
             elif re.match('fastboot', line):
-                line = line.replace('fastboot', path_fastboot)
+                line = line.replace('fastboot', path_fastboot, 1)
             # We can not use print here as it will generate blank line
             sys.stdout.write(line)
         fileinput.close()

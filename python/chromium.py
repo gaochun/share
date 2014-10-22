@@ -1485,6 +1485,8 @@ def _run_gclient(cmd_type, cmd_extra=''):
 
     if cmd_type == 'sync' and args.sync_reset:
         cmd += ' -R'
+    if cmd_type == 'sync':
+        cmd += ' -f'
     cmd += ' -j' + count_cpu
 
     if repo_type == 'chrome-android' and cmd_type == 'runhooks' and ver_cmp(ver, ver_envsetup) < 0:

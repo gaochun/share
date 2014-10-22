@@ -2,9 +2,10 @@
   "suites": [
     {
       "device": {
-        "arch": "x86",
-        "freq": "400000",
-        "product": "ecs_e7"
+        "arch": "x86_64",
+        "freq": 400000,
+        "governor": "powersave",
+        "product": "asus_t100_64p"
       },
       "module": {
         "arch": "x86",
@@ -12,24 +13,126 @@
         "os": "android"
       },
       "cases": [
-        {"name": "kraken", "result": 2400},
-        {"name": "octane", "version": "2.0", "result": 2400},
-        {"name": "sunspider", "version": "1.0.2", "result": 1200},
+        {"name": "kraken", "result": 19560},
+        {"name": "octane", "version": "2.0", "result": 1603},
+        {"name": "sunspider", "version": "1.0.2", "result": 2468},
 
-        {"name": "canvasmark", "result": 1200},
-        {"name": "fishietank", "version": "raf", "result": 17},
-        {"name": "fishietank", "version": "setinterval", "result": 17},
-        {"name": "galactic", "version": "mobile", "result": 1200},
+        {"name": "canvasmark", "result": 3732},
+        {"name": "fishietank", "version": "raf", "result": 14},
+        {"name": "fishietank", "version": "setinterval", "result": 15},
+        {"name": "galactic", "version": "mobile", "result": 28},
 
-        {"name": "aquarium", "result": 1200},
-        {"name": "cubemap", "result": 1200},
-        {"name": "toonshading", "result": 1200},
+        {"name": "aquarium", "result": 34},
+        {"name": "cubemap", "result": 39},
+        {"name": "toonshading", "result": 41},
 
-        {"name": "fallingleaves", "result": 1200},
-        {"name": "postercircle", "result": 1200},
+        {"name": "fallingleaves", "result": 20},
+        {"name": "postercircle", "result": 57},
 
-        {"name": "browsermark", "version": "2.0", "result": 1200},
-        {"name": "browsermark", "version": "2.1", "result": 1200}
+        {"name": "browsermark", "version": "2.0", "result": 1744},
+        {"name": "browsermark", "version": "2.1", "result": 637}
+      ]
+    },
+
+    {
+      "device": {
+        "arch": "x86_64",
+        "freq": 400000,
+        "governor": "powersave",
+        "product": "asus_t100_64p"
+      },
+      "module": {
+        "arch": "x86",
+        "name": "chrome_beta",
+        "os": "android"
+      },
+      "cases": [
+        {"name": "kraken", "result": 19524},
+        {"name": "octane", "version": "2.0", "result": 1577},
+        {"name": "sunspider", "version": "1.0.2", "result": 2474},
+
+        {"name": "canvasmark", "result": 3703},
+        {"name": "fishietank", "version": "raf", "result": 15},
+        {"name": "fishietank", "version": "setinterval", "result": 16},
+        {"name": "galactic", "version": "mobile", "result": 28},
+
+        {"name": "aquarium", "result": 34},
+        {"name": "cubemap", "result": 37},
+        {"name": "toonshading", "result": 44},
+
+        {"name": "fallingleaves", "result": 20},
+        {"name": "postercircle", "result": 54},
+
+        {"name": "browsermark", "version": "2.0", "result": 1750},
+        {"name": "browsermark", "version": "2.1", "result": 643}
+      ]
+    },
+
+    {
+      "device": {
+        "arch": "x86_64",
+        "freq": 400000,
+        "governor": "powersave",
+        "product": "asus_t100_64p"
+      },
+      "module": {
+        "arch": "x86_64",
+        "name": "content_shell",
+        "os": "android"
+      },
+      "cases": [
+        {"name": "kraken", "result": 17691},
+        {"name": "octane", "version": "2.0", "result": 1567},
+        {"name": "sunspider", "version": "1.0.2", "result": 2430},
+
+        {"name": "canvasmark", "result": 3232},
+        {"name": "fishietank", "version": "raf", "result": 22},
+        {"name": "fishietank", "version": "setinterval", "result": 23},
+        {"name": "galactic", "version": "mobile", "result": 37},
+
+        {"name": "aquarium", "result": 43},
+        {"name": "cubemap", "result": 52},
+        {"name": "toonshading", "result": 59},
+
+        {"name": "fallingleaves", "result": 36},
+        {"name": "postercircle", "result": 59},
+
+        {"name": "browsermark", "version": "2.0", "result": 1886},
+        {"name": "browsermark", "version": "2.1", "result": 753}
+      ]
+    },
+
+    {
+      "device": {
+        "arch": "x86_64",
+        "freq": 400000,
+        "governor": "powersave",
+        "product": "asus_t100_64p"
+      },
+      "module": {
+        "arch": "x86",
+        "name": "content_shell",
+        "os": "android"
+      },
+      "cases": [
+        {"name": "kraken", "result": 19321},
+        {"name": "octane", "version": "2.0", "result": 1569},
+        {"name": "sunspider", "version": "1.0.2", "result": 2720},
+
+        {"name": "canvasmark", "result": 3389},
+        {"name": "fishietank", "version": "raf", "result": 18},
+        {"name": "fishietank", "version": "setinterval", "result": 19},
+        {"name": "galactic", "version": "mobile", "result": 31},
+
+        {"name": "aquarium", "result": 35},
+        {"name": "cubemap", "result": 44},
+        {"name": "toonshading", "result": 52},
+
+        {"name": "fallingleaves", "result": 30},
+        {"name": "postercircle", "result": 59},
+
+        {"name": "browsermark", "version": "2.0", "result": 1811},
+        {"name": "browsermark", "version": "2.1", "result": 697}
       ]
     }
   ]

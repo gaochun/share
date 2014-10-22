@@ -126,9 +126,17 @@ def analyze(files_result):
             elif re.search('"module"', line):
                 module = json.loads(line.replace('"module":', ''))
         for index in range(len(baseline.suites)):
-            if baseline.suites[index].device.product != device['product']:
-                continue
-            break
+            suite_temp = baseline.suites[index]
+            device_temp = suite_temp.device
+            module_temp = suite_temp.module
+            if device_temp.product == device['product'] and \
+                    device_temp.arch == device['arch'] and \
+                    device_temp.governor == device['governor'] and \
+                    device_temp.freq == device['freq'] and \
+                    module_temp.name == module['name'] and \
+                    module_temp.arch == module['arch'] and \
+                    module_temp.os == module['os']:
+                break
         if index >= len(baseline.suites):
             warning('There is no baseline found for %s' % file_result)
             continue
@@ -152,7 +160,7 @@ def analyze(files_result):
 
                 baseline_result = 0
                 for baseline_case in baseline_suite.cases:
-                    if baseline_case.name == case['name']:
+                    if baseline_case.name == case['name'] and (not case.has_key('version') or baseline_case.version == case['version']):
                         baseline_result = float(baseline_case.result)
                         break
                 if baseline_result < 0.01:
@@ -329,7 +337,7 @@ class Suite:
 
         # generate result file
         timestamp_temp = get_datetime()
-        file_result = dir_share_ignore_webmark_result + '/' + timestamp_temp
+        file_result = dir_share_ignore_webmark_result + '/%s-%s-%s-%s-%s-%s-%s.txt' %(timestamp_temp, device.product, device.arch, module.os, module.arch, module.name, module.version)
         logger.info('Use result file ' + file_result)
         fw = open(file_result, 'w')
         ## write config
@@ -357,7 +365,7 @@ class Suite:
             if not dryrun:
                 driver.quit()
         fw.close()
-        analyze(timestamp_temp)
+        analyze(file_result)
 
         # restore freq
         if hasvalue(device, 'governor') and hasvalue(device, 'freq'):

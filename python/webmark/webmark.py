@@ -160,7 +160,7 @@ def analyze(files_result):
 
                 baseline_result = 0
                 for baseline_case in baseline_suite.cases:
-                    if baseline_case.name == case['name'] and (not case.has_key('version') or baseline_case.version == case['version']):
+                    if baseline_case.name == case['name'] and ('version' not in case or baseline_case.version == case['version']):
                         baseline_result = float(baseline_case.result)
                         break
                 if baseline_result < 0.01:
@@ -337,7 +337,7 @@ class Suite:
 
         # generate result file
         timestamp_temp = get_datetime()
-        file_result = dir_share_ignore_webmark_result + '/%s-%s-%s-%s-%s-%s-%s.txt' %(timestamp_temp, device.product, device.arch, module.os, module.arch, module.name, module.version)
+        file_result = dir_share_ignore_webmark_result + '/%s-%s-%s-%s-%s-%s-%s.txt' % (timestamp_temp, device.product, device.arch, module.os, module.arch, module.name, module.version)
         logger.info('Use result file ' + file_result)
         fw = open(file_result, 'w')
         ## write config

@@ -112,6 +112,10 @@ examples:
     parser.add_argument('--product-brand', dest='product_brand', help='product brand', choices=['ecs', 'fxn'], default='ecs')
     parser.add_argument('--product-name', dest='product_name', help='product name', choices=['e7', 'anchor8'], default='e7')
 
+    parser.add_argument('--device-id', dest='device_id', help='device id separated by comma')
+    parser.add_argument('--device-governor', dest='device_governor', help='device governor')
+    parser.add_argument('--device-freq', dest='device_freq', type=int, help='device freq')
+
     add_argument_common(parser)
 
     args = parser.parse_args()
@@ -619,6 +623,17 @@ def cts_run():
     execute(cmd, interactive=True)
 
 
+def set_governor():
+    if not args.device_governor and not args.device_freq:
+        return
+
+    _setup_device()
+    if args.device_governor == 'default':
+        android_config_device(device_id=devices_id[0], device_product=devices_product[0], default=True)
+    else:
+        android_config_device(device_id=devices_id[0], device_product=devices_product[0], default=False, governor=args.device_governor, freq=args.device_freq)
+
+
 def _sync_repo(dir, cmd):
     backup_dir(dir)
     result = execute(cmd, interactive=True, dryrun=False, file_log=log)
@@ -825,7 +840,8 @@ def _setup_device():
 
     if repo_type == 'stable':
         connect_device()
-    (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
+
+    (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_id_limit=args.device_id)
 
 if __name__ == "__main__":
     parse_arg()
@@ -844,3 +860,5 @@ if __name__ == "__main__":
     analyze()
     push()
     cts_run()
+
+    set_governor()

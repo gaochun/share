@@ -274,7 +274,7 @@ def has_recent_change(path_file, interval=24 * 3600):
 # interactive: Need user's input if true. Default to False.
 def execute(command, show_cmd=True, show_duration=False, show_progress=False, return_output=False, dryrun=False, abort=False, file_log='', interactive=False):
     if file_log:
-        command = 'bash -o pipefail -c "%s 2>&1 | tee -a %s ; ( exit ${PIPESTATUS} )"' % (command, file_log)
+        command = 'bash -o pipefail -c "%s 2>&1 | tee -a %s; (exit ${PIPESTATUS})"' % (command, file_log)
 
     if show_cmd:
         cmd(command)
@@ -513,6 +513,13 @@ def stop_prixoxy():
 # device_model: AOSP_on_Intel_Platform, ZTE_V975. This is unused.
 # device_product: get from device:xxx, asus_t100, redhookbay. This is unused.
 def setup_device(devices_id_limit=[]):
+    if not devices_id_limit:
+        devices_id_limit_list = []
+    elif isinstance(devices_id_limit, str):
+        devices_id_limit_list = devices_id_limit.split(',')
+    elif isinstance(devices_id_limit, list):
+        devices_id_limit_list = devices_id_limit
+
     devices_id = []
     devices_product = []
     devices_type = []
@@ -574,10 +581,10 @@ def setup_device(devices_id_limit=[]):
         devices_mode.append('system')
 
     # filter out unnecessary
-    if devices_id_limit:
+    if devices_id_limit_list:
         # This has to be reversed and deleted from end
         for index, device_id in reversed(list(enumerate(devices_id))):
-            if device_id not in devices_id_limit:
+            if device_id not in devices_id_limit_list:
                 del devices_id[index]
                 del devices_product[index]
                 del devices_type[index]
@@ -1171,6 +1178,10 @@ def android_config_device(device_id, device_product, default, governor='', freq=
     freq_min = device_product_info[device_product]['freq_min']
     freq_max = device_product_info[device_product]['freq_max']
     governor_default = device_product_info[device_product]['governor']
+    if governor == '' and freq:
+        governor = 'powersave'
+    if governor == 'performance':
+        freq = freq_max
     if not default and (freq < freq_min or freq > freq_max):
         error('The frequency is not in range')
 
@@ -1214,6 +1225,11 @@ def android_config_device(device_id, device_product, default, governor='', freq=
         su = True
     for cmd in cmds:
         execute_adb_shell(cmd=cmd, su=su, device_id=device_id, abort=True)
+
+    if default:
+        info('Set governor and freq to default')
+    else:
+        info('Set governor to %s and freq to %s' % (governor, freq))
 
 
 def android_enter_fastboot(device_id):

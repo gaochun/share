@@ -36,20 +36,23 @@ SMALL_NUMBER = 0.000001
 LARGE_NUMBER = 10000
 REPEAT_TIMES = '20'
 
+
 def avg(self):
         if len(self.sequence) < 1:
             return None
         else:
             return sum(self.sequence) / len(self.sequence)
 
+
 def get_data(name, result):
     for item in result:
         if item[0] == name:
             data = map(float, item[1].split(','))
             avg = sum(data) / len(data)
-            return '%.2f' %avg
+            return '%.2f' % avg
 
     return NA
+
 
 def _get_device_to_target():
     global device_to_target
@@ -78,12 +81,13 @@ def _get_device_to_target():
 
     device_to_target_fixup = {'32300bd273508f3b': NEXUS4}
     for device in device_to_target_fixup:
-        if device_to_target.has_key(device):
+        if device in device_to_target:
             device_to_target[device] = (device_to_target_fixup[device], ONLINE)
         else:
             device_to_target[device] = (device_to_target_fixup[device], OFFLINE)
 
     device_to_target[HOST] = (HOST, ONLINE)
+
 
 def remote_debug():
     if not args.remote_debug:
@@ -92,6 +96,7 @@ def remote_debug():
     backup_dir(src_dir)
     execute('platform_tools/android/bin/android_gdb_exe ' + args.test_type + ' ' + args.run_option)
     restore_dir()
+
 
 def recover():
     if not args.recover:
@@ -102,6 +107,7 @@ def recover():
     for device in device_to_target:
         if device_to_target[device][1] == ONLINE and device_to_target[device][0] != HOST:
             execute('adb -s ' + device + ' shell start')
+
 
 def _parse_format_result(dir, file_log, results):
     backup_dir(dir)
@@ -121,6 +127,7 @@ def _parse_format_result(dir, file_log, results):
         results.append(re.findall(p, line))
 
     restore_dir()
+
 
 def average():
     average_dir = args.average
@@ -175,6 +182,7 @@ def average():
 
     restore_dir()
 
+
 def parse_result(dir, file_log):
     if args.test_type != 'bench':
         return
@@ -223,6 +231,7 @@ def parse_result(dir, file_log):
     fw.close()
 
     restore_dir()
+
 
 def download():
     if not args.download:
@@ -280,12 +289,14 @@ def download():
 
     restore_dir()
 
+
 def _item_in_list(item, list):
     for i in range(len(list)):
         if item == list[i][0]:
             return True
 
     return False
+
 
 def compare():
     if not args.compare:
@@ -354,7 +365,8 @@ def compare():
 
         print config[i] + ' ' + '% ' + files[0] + ' ' + files[1]
         for j in range(len(diffs[i])):
-            print diffs[i][j][0] + ' ' + ('%.2f' %(diffs[i][j][1] * 100)) + ' ' + diffs[i][j][2] + ' ' + diffs[i][j][3]
+            print diffs[i][j][0] + ' ' + ('%.2f' % (diffs[i][j][1] * 100)) + ' ' + diffs[i][j][2] + ' ' + diffs[i][j][3]
+
 
 # According to args.device, which have to be connected, and the corresponding target is known
 def run():
@@ -374,7 +386,7 @@ def run():
             run_devices.append(device)
             continue
 
-        if not device_to_target.has_key(device) or device_to_target[device][1] == OFFLINE:
+        if device not in device_to_target or device_to_target[device][1] == OFFLINE:
             warn('Device ' + device + ' is not connected')
         elif device_to_target[device][0] == UNKNOWN:
             warn('Target for device ' + device + ' is unknown')
@@ -398,7 +410,7 @@ def run():
             else:
                 configuration = ''
 
-            execute('platform_tools/android/bin/linux/adb -s ' + device +  ' shell stop')
+            execute('platform_tools/android/bin/linux/adb -s ' + device + ' shell stop')
             command = 'platform_tools/android/bin/android_run_skia' + ' ' + args.test_type + ' -d ' + target + ' -s ' + device + configuration
 
             if args.run_option:
@@ -417,7 +429,7 @@ def run():
 
         for i in range(args.run_times):
             file_log = get_datetime() + '-' + device + '-' + args.test_type + '-origin' + log_suffix
-            command = command + ' 2>&1 |tee ' + group_log_dir + file_log
+            command = redirect_cmd(command, group_log_dir + file_log)
             start = datetime.datetime.now()
             execute(command)
             elapsed = (datetime.datetime.now() - start)
@@ -426,16 +438,18 @@ def run():
             time.sleep(2)
 
         if not args.run_nonroot and device != HOST:
-            execute('platform_tools/android/bin/linux/adb -s ' + device +  ' shell start')
+            execute('platform_tools/android/bin/linux/adb -s ' + device + ' shell start')
 
         if args.run_times > 1:
             average(group_log_dir)
 
     restore_dir()
 
+
 def _ensure_in_list(item, list):
-    if not item in list:
+    if item not in list:
         list.append(item)
+
 
 # According to targets, which are from args.target and
 # args.device (guess the target, and no need to connect)
@@ -458,7 +472,7 @@ def build():
         _get_device_to_target()
 
         for device in args.device.split(','):
-            if device_to_target.has_key(device):
+            if device in device_to_target:
                 _ensure_in_list(device_to_target[device][0], targets)
             else:
                 warn('Could not guess out target for device: ' + device)
@@ -490,6 +504,7 @@ def build():
 
     restore_dir()
 
+
 # https://sites.google.com/site/skiadocs/developer-documentation/contributing-code/using-git
 def update():
     if not args.update:
@@ -503,6 +518,7 @@ def update():
     restore_dir()
 
     restore_dir()
+
 
 def setup():
     global root_dir
@@ -541,6 +557,7 @@ def setup():
     os.putenv('https_proxy', 'https://proxy-shz.intel.com:911')
     os.putenv('PATH', platform_tools_dir + 'android/bin/linux:' + os.getenv('PATH'))
 
+
 def replace_gdb():
     if not args.replace_gdb:
         return
@@ -550,6 +567,7 @@ def replace_gdb():
     execute('ln -s /workspace/topic/android/ndk/android-ndk-r9/prebuilt/android-x86/gdbserver/gdbserver ' + gdb_server_path)
     execute('rm -f ' + gdb_client_path)
     execute('ln -s /workspace/topic/android/ndk/android-ndk-r9/toolchains/x86-4.8/prebuilt/linux-x86_64/bin/i686-linux-android-gdb ' + gdb_client_path)
+
 
 def restore_gdb():
     if not args.restore_gdb:
@@ -561,12 +579,13 @@ def restore_gdb():
     execute('rm -f ' + gdb_client_path)
     execute('ln -s /workspace/topic/android/ndk/skia-ndk-r8e-x86-linux_v14/bin/i686-linux-android-gdb ' + gdb_client_path)
 
+
 def handle_option():
     global args
 
-    parser = argparse.ArgumentParser(description = 'Script to update, build and run Skia for Android IA',
-                                     formatter_class = argparse.RawTextHelpFormatter,
-                                     epilog = '''
+    parser = argparse.ArgumentParser(description='Script to update, build and run Skia for Android IA',
+                                     formatter_class=argparse.RawTextHelpFormatter,
+                                     epilog='''
 examples:
 
   update:

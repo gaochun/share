@@ -314,7 +314,8 @@ def build():
 
         if args.build_showcommands:
             cmd += ' showcommands'
-        cmd += ' -j16 2>&1 |tee -a ' + log
+        cmd += ' -j16'
+        cmd = redirect_cmd(cmd, log)
         cmd = bashify_cmd(cmd)
         result = execute(cmd, interactive=True, dryrun=False)
         if result[0]:
@@ -622,7 +623,8 @@ def cts_run():
 
 def _sync_repo(dir, cmd):
     backup_dir(dir)
-    result = execute(cmd + ' 2>&1 |tee -a ' + log, interactive=True, dryrun=False)
+    cmd = redirect_cmd(cmd, log)
+    result = execute(cmd, interactive=True, dryrun=False)
     if result[0]:
         error('Failed to sync ' + dir)
     restore_dir()

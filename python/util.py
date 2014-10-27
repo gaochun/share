@@ -331,6 +331,10 @@ def suffix_cmd(cmd, args, log):
     return cmd
 
 
+def redirect_cmd(cmd, log):
+    return cmd + ' 2>&1 |tee -a ' + log + '; test ${PIPESTATUS[0]} -eq 0'
+
+
 # Patch command if it needs to run on server
 def remotify_cmd(cmd, server):
     if re.match('ubuntu', server):

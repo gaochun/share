@@ -429,9 +429,8 @@ def run():
 
         for i in range(args.run_times):
             file_log = get_datetime() + '-' + device + '-' + args.test_type + '-origin' + log_suffix
-            command = redirect_cmd(command, group_log_dir + file_log)
             start = datetime.datetime.now()
-            execute(command)
+            execute(command, file_log=group_log_dir + file_log)
             elapsed = (datetime.datetime.now() - start)
             info('Time elapsed to run: ' + str(elapsed.seconds) + 's')
             parse_result(group_log_dir, file_log)

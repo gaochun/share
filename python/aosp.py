@@ -315,9 +315,7 @@ def build():
         if args.build_showcommands:
             cmd += ' showcommands'
         cmd += ' -j16'
-        cmd = redirect_cmd(cmd, log)
-        cmd = bashify_cmd(cmd)
-        result = execute(cmd, interactive=True, dryrun=False)
+        result = execute(cmd, interactive=True, dryrun=False, file_log=log)
         if result[0]:
             error('Failed to build %s %s %s' % (target_arch, target_type, target_module))
 
@@ -623,8 +621,7 @@ def cts_run():
 
 def _sync_repo(dir, cmd):
     backup_dir(dir)
-    cmd = redirect_cmd(cmd, log)
-    result = execute(cmd, interactive=True, dryrun=False)
+    result = execute(cmd, interactive=True, dryrun=False, file_log=log)
     if result[0]:
         error('Failed to sync ' + dir)
     restore_dir()

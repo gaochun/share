@@ -273,6 +273,9 @@ def has_recent_change(path_file, interval=24 * 3600):
 # file_log: Print stderr to log file if existed. Default to ''.
 # interactive: Need user's input if true. Default to False.
 def execute(command, show_cmd=True, show_duration=False, show_progress=False, return_output=False, dryrun=False, abort=False, file_log='', interactive=False):
+    if file_log:
+        command = 'bash -o pipefail -c "%s 2>&1 | tee -a %s ; ( exit ${PIPESTATUS} )"' % (command, file_log)
+
     if show_cmd:
         cmd(command)
 
@@ -304,9 +307,6 @@ def execute(command, show_cmd=True, show_duration=False, show_progress=False, re
         else:
             result = [ret, '']
 
-    if file_log:
-        os.system('echo ' + err + ' >>' + file_log)
-
     end_time = datetime.datetime.now().replace(microsecond=0)
     time_diff = end_time - start_time
 
@@ -320,7 +320,7 @@ def execute(command, show_cmd=True, show_duration=False, show_progress=False, re
 
 
 def bashify_cmd(cmd):
-    return 'bash -c "' + cmd + '"'
+    return 'bash -o pipefail -c "' + cmd + '"'
 
 
 def suffix_cmd(cmd, args, log):
@@ -329,10 +329,6 @@ def suffix_cmd(cmd, args, log):
     if log:
         cmd += ' --log ' + log
     return cmd
-
-
-def redirect_cmd(cmd, log):
-    return cmd + ' 2>&1 |tee -a ' + log + '; test ${PIPESTATUS[0]} -eq 0'
 
 
 # Patch command if it needs to run on server

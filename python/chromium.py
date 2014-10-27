@@ -772,8 +772,7 @@ def build(force=False):
     if args.build_verbose:
         cmd_ninja += ' -v'
 
-    cmd_ninja = redirect_cmd(cmd_ninja, log)
-    result = execute(cmd_ninja, interactive=True)
+    result = execute(cmd_ninja, interactive=True, file_log=log)
     timer_stop(name_func)
     if result[0]:
         error('Failed to execute command: ' + cmd_ninja)
@@ -1254,8 +1253,7 @@ def _test_run_device(index_device, results):
                 cmd += ' -d ' + device_id + ' --' + build_type
                 if args.test_verbose:
                     cmd += ' -v'
-                cmd = redirect_cmd(cmd, dir_test_device_product + '/' + suite + '.log')
-                result = execute(cmd, interactive=True)
+                result = execute(cmd, interactive=True, file_log=dir_test_device_product + '/' + suite + '.log')
                 if result[0]:
                     warning('Failed to run "' + suite + '"')
                 else:

@@ -18,6 +18,7 @@ def parse_arg():
                                      epilog='''
 examples:
   python %(prog)s --config config.json
+  python %(prog)s --analyze all
   python %(prog)s --module-os android --module-arch x86 --module-name content_shell --case fishietank --case-config '"count_fish": 10, "path": "internal"'
 ''')
 
@@ -110,7 +111,12 @@ def analyze(files_result):
     if not files_result:
         return
 
-    for file_result in files_result.split(','):
+    if files_result == 'all':
+        files_result_todo = os.listdir(dir_share_ignore_webmark_result)
+    else:
+        files_result_todo = files_result.split(',')
+
+    for file_result in files_result_todo:
         if file_result[0] != '/':
             file_result = dir_share_ignore_webmark_result + '/' + file_result
 

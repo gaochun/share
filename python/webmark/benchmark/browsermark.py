@@ -22,7 +22,8 @@ class browsermark(Benchmark):
             '2D Rendering', '3D Rendering', 'Crunch', 'Resize',
             'Advance Search', 'Create Source', 'Dynamic Create', 'Search',
             'Graphics Canvas', 'Graphics SVG', 'Graphics WebGL',
-            'Array Blur', 'Array Weighted', 'String Chat'
+            'Array Blur', 'Array Weighted', 'String Chat',
+            'CSS', 'DOM', 'Graphics', 'Javascript',
         ],
         'test': 'all',
     }
@@ -77,7 +78,11 @@ class browsermark(Benchmark):
             time.sleep(2)
             if self.test != 'all':
                 select = Select(driver.find_element_by_class_name('selectTest'))
-                select.select_by_visible_text('——— ' + self.test)
+                if self.test in ['CSS', 'DOM', 'Graphics', 'Javascript']:
+                    prefix = '—— '
+                else:
+                    prefix = '——— '
+                select.select_by_visible_text(prefix + self.test)
             driver.find_element_by_class_name('launchIcon').click()
 
     def cond1(self, driver):

@@ -74,6 +74,7 @@ device_product_info = {
         'freq_max': 1400000,
         'count_cpu': 4,
         'scaling_driver': 'intel_pstate',
+        'count_cstate': 7,
     },
     # ZTE Geek
     'V975': {
@@ -83,7 +84,8 @@ device_product_info = {
         'freq_min': 800000,
         'freq_max': 2000000,
         'count_cpu': 4,
-        'scaling_driver': 'sfi-cpufreq'
+        'scaling_driver': 'sfi-cpufreq',
+        'count_cstate': 7,
     },
     'cruise7': {
         'governors': ['performance', 'powersave'],
@@ -92,11 +94,13 @@ device_product_info = {
         'freq_min': 600000,
         'freq_max': 2200000,
         'count_cpu': 4,
-        'scaling_driver': 'intel_pstate'
-    }
+        'scaling_driver': 'intel_pstate',
+        'count_cstate': 6,
+    },
 }
 device_product_info['asus_t100_64p'] = device_product_info['asus_t100']
 device_product_info['ecs_e7'] = device_product_info['cruise7']
+device_product_info['cruise8'] = device_product_info['cruise7']
 
 
 # <path>
@@ -1178,17 +1182,13 @@ def android_config_device(device_id, device_product, default, governor='', freq=
     freq_min = device_product_info[device_product]['freq_min']
     freq_max = device_product_info[device_product]['freq_max']
     governor_default = device_product_info[device_product]['governor']
-    if governor == '' and freq:
+    count_cstate = device_product_info[device_product]['count_cstate']
+    if not governor and freq:
         governor = 'powersave'
     if governor == 'performance':
         freq = freq_max
     if not default and (freq < freq_min or freq > freq_max):
         error('The frequency is not in range')
-
-    if device_product in ['ecs_e7']:
-        cstate_max = 6
-    else:
-        cstate_max = 7
 
     cmds = []
     for i in range(count_cpu):
@@ -1197,7 +1197,7 @@ def android_config_device(device_id, device_product, default, governor='', freq=
             #cmds.append('echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_setspeed' % ('<unsupported>', str(i)))
             cmds.append('echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_min_freq' % (freq_min, str(i)))
             cmds.append('echo %s > /sys/devices/system/cpu/cpu%s/cpufreq/scaling_max_freq' % (freq_max, str(i)))
-            for j in range(1, cstate_max):
+            for j in range(1, count_cstate):
                 cmds.append('echo "0" > /sys/devices/system/cpu/cpu%s/cpuidle/state%s/disable' % (str(i), str(j)))
         else:
             #peeknpoke s w 0 670 0
@@ -1217,7 +1217,7 @@ def android_config_device(device_id, device_product, default, governor='', freq=
                 cmds.append(cmd_min)
 
             # fix to C0
-            for j in range(1, cstate_max):
+            for j in range(1, count_cstate):
                 cmds.append('echo "1" > /sys/devices/system/cpu/cpu%s/cpuidle/state%s/disable' % (str(i), str(j)))
 
     su = False

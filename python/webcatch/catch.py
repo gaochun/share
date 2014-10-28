@@ -3,10 +3,10 @@ import sys
 sys.path.append(sys.path[0] + '/..')
 from util import *
 
-target_os = ''
-target_arch = ''
-target_module = ''
-benchmark = ''
+module_os = ''
+module_arch = ''
+module_name = ''
+case_name = ''
 revs = []
 baseline = []
 comb_name = ''
@@ -19,28 +19,38 @@ index = 0
 
 
 def handle_option():
-    global args
+    global args, args_dict
     parser = argparse.ArgumentParser(description='Script to bisect regression',
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog='''
 examples:
 
-  python %(prog)s -r 218527-226662 --benchmark cocos
-  python %(prog)s -r 264037-266292 --benchmark browsermark --benchmark-config '"test": "Search", "version": "2.0"'
+  python %(prog)s -r 218527-226662 --case-name cocos
+  python %(prog)s -r 264037-266292 --case-name browsermark --case-config '"test": "Search", "version": "2.0"'
 
 ''')
-    parser.add_argument('--target-os', dest='target_os', help='target os', choices=target_os_all, default='android')
-    parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=target_arch_all, default='x86')
-    parser.add_argument('--target-module', dest='target_module', help='target module', choices=target_module_all, default='content_shell')
-    parser.add_argument('--benchmark', dest='benchmark', help='benchmark', required=True)
-    parser.add_argument('--benchmark-config', dest='benchmark_config', help='benchmark config')
+    group_device = parser.add_argument_group('device')
+    group_device.add_argument('--device-id', dest='device_id', help='device id separated by comma')
+    group_device.add_argument('--device-freq', dest='device_freq', type=int, help='device freq')
+    group_device.add_argument('--device-governor', dest='device_governor', help='device governor')
+
+    group_module = parser.add_argument_group('module')
+    group_module.add_argument('--module-arch', dest='module_arch', help='module arch', default='x86')
+    group_module.add_argument('--module-name', dest='module_name', help='module name', default='content_shell')
+    group_module.add_argument('--module-os', dest='module_os', help='module os', default='android')
+    group_module.add_argument('--module-path', dest='module_path', help='module path')
+
+    group_case = parser.add_argument_group('case')
+    group_case.add_argument('--case-name', dest='case_name', help='case name')
+    group_case.add_argument('--case-config', dest='case_config', help='case config')
+
     parser.add_argument('--dir-chromium', dest='dir_chromium', help='chromium dir')
     parser.add_argument('-r', '--rev', dest='rev', help='revision from A to B')
     parser.add_argument('--diff', dest='diff', type=int, help='percentage gap between good and bad', default=5)
-    parser.add_argument('--governor', dest='governor', help='governor')
     parser.add_argument('--skip-install', dest='skip_install', help='skip the installation of module')
 
     args = parser.parse_args()
+    args_dict = vars(args)
 
     if len(sys.argv) <= 1:
         parser.print_help()
@@ -48,13 +58,13 @@ examples:
 
 
 def setup():
-    global target_os, target_arch, target_module, comb_name, benchmark, dir_download, revs, baseline_a, baseline_b
+    global module_os, module_arch, module_name, comb_name, case_name, dir_download, revs, baseline_a, baseline_b
 
-    target_os = args.target_os
-    target_arch = args.target_arch
-    target_module = args.target_module
-    benchmark = args.benchmark
-    comb_name = get_comb_name('-', target_os, target_arch, target_module)
+    module_os = args.module_os
+    module_arch = args.module_arch
+    module_name = args.module_name
+    case_name = args.case_name
+    comb_name = get_comb_name('-', module_os, module_arch, module_name)
     dir_download = dir_share_ignore_webcatch_download + '/' + comb_name
     ensure_dir(dir_download)
     ensure_dir(dir_share_ignore_webcatch_log)
@@ -81,7 +91,7 @@ def setup():
 
     _bisect(0, len(revs) - 1)
 
-    if target_os == 'linux' and target_module == 'chrome':
+    if module_os == 'linux' and module_name == 'chrome':
         sandbox_file = '/usr/local/sbin/chrome-devel-sandbox'
         if not os.path.exists(sandbox_file):
             error('SUID Sandbox file "' + sandbox_file + '" does not exist')
@@ -92,7 +102,7 @@ def setup():
 
 def _get_revs(rev_min, rev_max):
     global revs
-    url = path_web_webcatch + '/%s-%s-%s/' % (target_os, target_arch, target_module)
+    url = path_web_webcatch + '/%s-%s-%s/' % (module_os, module_arch, module_name)
     try:
         u = urllib2.urlopen(url)
     except:
@@ -114,14 +124,19 @@ def _run(rev):
             error('Failed to download revision %s' % str(rev))
     restore_dir()
 
-    cmd = python_webmark + ' --target-os ' + target_os + ' --target-arch ' + target_arch + ' --target-module ' + target_module + ' --benchmark ' + benchmark
-    if args.benchmark_config:
-        cmd += ' --benchmark-config ' + '\'' + args.benchmark_config + '\''
+    cmd = python_webmark
+    for arg in ['device-id', 'device-governor', 'device-freq', 'module-arch', 'module-name', 'module-os', 'case-name']:
+        var = arg.replace('-', '_')
+        if var in args_dict and args_dict[var]:
+            cmd += ' --%s %s' % (arg, args_dict[var])
+
+    if args.case_config:
+        cmd += ' --case-config ' + '\'' + args.case_config + '\''
     if not args.skip_install:
-        cmd += ' --target-module-path %s/%s.apk' % (dir_download, str(rev))
+        cmd += ' --module-path %s/%s.apk' % (dir_download, str(rev))
     result_cmd = execute(cmd, return_output=True, show_progress=True)
     if result_cmd[0]:
-        error('Failed to run benchmark ' + benchmark + ' with revision ' + str(rev))
+        error('Failed to run case_name ' + case_name + ' with revision ' + str(rev))
 
     return _parse_result(result_cmd[1])
 
@@ -170,9 +185,6 @@ def _parse_result(output):
 def _bisect(index_small, index_big):
     global revs
 
-    rev_small = revs[index_small]
-    rev_big = revs[index_big]
-
     # finish the bisect
     if index_small + 1 == index_big:
         info('<history>')
@@ -185,7 +197,7 @@ def _bisect(index_small, index_big):
         rev_big_final = revs[index_big]
 
         if rev_small_final + 1 == rev_big_final:
-            info('Revision ' + str(rev_small) + ' is the exact commit for regression')
+            info('Revision ' + str(rev_small_final) + ' is the exact commit for regression')
         else:
             info('The regression is between revisions (' + str(revs[index_small]) + ',' + str(revs[index_big]) + '], but there is no build for further investigation')
 
@@ -193,7 +205,7 @@ def _bisect(index_small, index_big):
             if args.dir_chromium:
                 dir_chromium = args.dir_chromium
             else:
-                dir_chromium = dir_project_webcatch_project + '/chromium-' + target_os
+                dir_chromium = dir_project_webcatch_project + '/chromium-' + module_os
 
             dir_src = dir_chromium + '/src'
             suspect_log = dir_share_ignore_webcatch_log + '/suspect.log'

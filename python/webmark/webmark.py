@@ -28,6 +28,7 @@ examples:
     group_device.add_argument('--device-id', dest='device_id', help='device id separated by comma')
     group_device.add_argument('--device-freq', dest='device_freq', type=int, help='device freq')
     group_device.add_argument('--device-governor', dest='device_governor', help='device governor')
+
     group_module = parser.add_argument_group('module')
     group_module.add_argument('--module-arch', dest='module_arch', help='module arch')
     group_module.add_argument('--module-driver', dest='module_driver', help='module driver')
@@ -272,7 +273,7 @@ class Baseline:
     ]
 
     def __init__(self):
-        file_baseline = 'baseline.json'
+        file_baseline = dir_webmark + '/baseline.json'
         if not os.path.isfile(file_baseline):
             error(file_baseline + ' is not a valid file.')
         f = file(file_baseline)

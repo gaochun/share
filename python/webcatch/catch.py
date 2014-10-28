@@ -111,7 +111,7 @@ def _get_revs(rev_min, rev_max):
     html = u.read()
     pattern = re.compile('href="(\d+).apk"')
     revs_temp = pattern.findall(html)
-    revs = [int(x) for x in revs_temp if int(x) >= rev_min and int(x) <= rev_max]
+    revs = sorted([int(x) for x in revs_temp if int(x) >= rev_min and int(x) <= rev_max])
     if len(revs) < 2:
         error('The valid versions are not enough for bisect')
 

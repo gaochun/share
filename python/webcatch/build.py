@@ -28,8 +28,8 @@ slave_only = False
 
 # (target_os, target_arch, target_module): [binary_format, rev_min_built, rev_max_built]
 comb_valid = {
-    ('android', 'x86', 'content_shell'): ['(.*).apk$', 260368, 295230],
-    ('android', 'x86_64', 'content_shell'): ['(.*).apk$', 260368, 293910],
+    ('android', 'x86', 'content_shell'): ['(.*).apk$', 260368, 301780],
+    ('android', 'x86_64', 'content_shell'): ['(.*).apk$', 260368, 301780],
     ('android', 'x86', 'webview'): ['(.*).apk$', 233137, 252136],
     ('linux', 'x86', 'chrome'): ['(.*).tar.gz$', 233137, 236088],
     #['android', 'arm', 'content_shell'],
@@ -71,6 +71,7 @@ examples:
   python %(prog)s -b -r 217377-225138
   python %(prog)s -b --target-os linux --target-module chrome -r 233137-242710 --build-every 5
   python %(prog)s -b --target-os android --target-module content_shell --keep_out
+  python %(prog)s -b --target-os android --target-arch x86 --target-module content_shell --rev 300661 --build-every 1 --build-skip-mark
 
 ''')
     parser.add_argument('--target-os', dest='target_os', help='target os', default='all')
@@ -80,6 +81,7 @@ examples:
     parser.add_argument('--build', dest='build', help='build', action='store_true')
     parser.add_argument('--build-every', dest='build_every', help='build every number', type=int, default=10)
     parser.add_argument('--build-fail-max', dest='build_fail_max', help='maximum failure number of build', type=int, default=1)
+    parser.add_argument('--build-skip-mark', dest='build_skip_mark', help='build regardless of comb_valid', action='store_true')
     parser.add_argument('--keep-out', dest='keep_out', help='do not remove out dir after failure', action='store_true')
     parser.add_argument('--slave-only', dest='slave_only', help='only do things at slave machine, for sake of test', action='store_true')
     parser.add_argument('--clean-lock', dest='clean_lock', help='clean all lock files', action='store_true')
@@ -645,10 +647,11 @@ def _rev_is_built(comb, rand=False):
         return False
     else:
         # skip the rev marked as built
-        comb_valid_rev_min = comb_valid[(target_os, target_arch, target_module)][COMB_VALID_INDEX_REV_MIN]
-        comb_valid_rev_max = comb_valid[(target_os, target_arch, target_module)][COMB_VALID_INDEX_REV_MAX]
-        if rev >= comb_valid_rev_min and rev <= comb_valid_rev_max:
-            return True
+        if not args.build_skip_mark:
+            comb_valid_rev_min = comb_valid[(target_os, target_arch, target_module)][COMB_VALID_INDEX_REV_MIN]
+            comb_valid_rev_max = comb_valid[(target_os, target_arch, target_module)][COMB_VALID_INDEX_REV_MAX]
+            if rev >= comb_valid_rev_min and rev <= comb_valid_rev_max:
+                return True
 
         if rand:
             second = random.randint(1, 10)

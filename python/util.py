@@ -37,6 +37,7 @@ timer = {}
 
 # webmark
 webmark_format = ['category', 'name', 'version', 'metric', 'result']
+webmark_result_str = 'Result: '
 
 # servers that webcatch can build on
 servers_webcatch = [

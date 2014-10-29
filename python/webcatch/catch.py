@@ -47,7 +47,7 @@ examples:
     parser.add_argument('--dir-chromium', dest='dir_chromium', help='chromium dir')
     parser.add_argument('-r', '--rev', dest='rev', help='revision from A to B')
     parser.add_argument('--diff', dest='diff', type=int, help='percentage gap between good and bad', default=5)
-    parser.add_argument('--skip-install', dest='skip_install', help='skip the installation of module')
+    parser.add_argument('--skip-install', dest='skip_install', help='skip the installation of module', action='store_true')
 
     args = parser.parse_args()
     args_dict = vars(args)
@@ -168,7 +168,7 @@ def _get_diff(result, baseline):
 
 def _parse_result(output):
     results = []
-    pattern = re.compile('Result: (.*)')
+    pattern = re.compile('%s(.*)' % webmark_result_str)
     match = pattern.search(output, re.MULTILINE)
     if match:
         results = match.group(1).split(',')

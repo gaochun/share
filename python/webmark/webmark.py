@@ -367,7 +367,7 @@ class Suite:
                 driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
             result = self.cases[i].run(driver)
             fw.write(result + '\n')
-            logger.info('Result: ' + result)
+            logger.info(webmark_result_str + result)
 
             if not dryrun:
                 driver.quit()

@@ -95,7 +95,7 @@ class Benchmark(object):
 
     def get_result(self, driver):
         if self.dryrun:
-            return ['60.0']
+            return [str(random.randint(1, 60))]
         elif self.run_fail:
             return ['0.0']
         else:
@@ -144,8 +144,20 @@ class Benchmark(object):
             if count_results == 0:
                 error('There is no result for ' + self.name)
 
+            results = sorted(results, key=lambda i: i[0])
             results_final = []
-            if self.stat == 'average':
+            if self.stat == 'median':
+                count_results = len(results)
+                if count_results % 2:
+                    results_final = results[(count_results - 1) / 2]
+                else:
+                    results_total = results[(count_results - 1) / 2]
+                    count_result = len(results[0])
+                    for i in range(count_result):
+                        results_total[i] += results[(count_results - 1) / 2 + 1][i]
+                    for i in range(count_result):
+                        results_final.append(round(results_total[i] / 2, 2))
+            elif self.stat == 'average':
                 results_total = results[0]
                 count_result = len(results[0])
                 for i in range(1, count_results):
@@ -155,11 +167,11 @@ class Benchmark(object):
                 for i in range(count_result):
                     results_final.append(round(results_total[i] / count_results, 2))
             elif self.stat == 'min' or self.stat == 'max':
-                results = sorted(results, key=lambda i: i[0])
                 if self.stat == 'min':
                     results_final = results[0]
                 else:
                     results_final = results[-1]
+            info('Case result: ' + ','.join([str(x) for x in results_final]))
 
             outputs = []
             for item in webmark_format:

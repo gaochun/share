@@ -42,3 +42,8 @@ mysql -u root -p
 * remove webbench/browsermark/browsermark.local/configuration/production.php
 * wp-02.sh.intel.com:8001/install
 </browsermark>
+
+<zsh>
+* ctrl+left/right: move by word
+* ctrl+w: clear previous word
+</zsh>

@@ -381,6 +381,7 @@ examples:
 
     group_misc = parser.add_argument_group('misc')
     group_misc.add_argument('--analyze', dest='analyze', help='analyze test tombstone', action='store_true')
+    group_misc.add_argument('--analyze-type', dest='analyze_type', help='type to analyze', choices=['tombstone', 'anr'], default='tombstone')
     group_misc.add_argument('--owner', dest='owner', help='find owner for latest commit', action='store_true')
     group_misc.add_argument('--layout', dest='layout', help='layout test')
     group_misc.add_argument('--backup-test', dest='backup_test', help='backup test, so that bug can be easily reproduced by others')
@@ -846,6 +847,7 @@ def postbuild(force=False):
             ## strip if needed
             if not os.path.exists(file_libchrome):
                 execute('cp -f lib*prebuilt.so %s' % (file_libchrome), interactive=True, abort=True, dryrun=False)
+            if os.path.getsize(file_libchrome) > 100000000:
                 execute(dir_tool + '/' + target_arch_strip[target_arch] + ' ' + file_libchrome, abort=True, dryrun=False)
             ## replace the original one
             execute('cp -f %s %s/' % (file_libchrome, dir_chromium_lib), interactive=True, abort=True)
@@ -1112,7 +1114,7 @@ def analyze():
     if not args.analyze:
         return
 
-    analyze_issue(dir_chromium=dir_root, ver='2.0')
+    analyze_issue(dir_chromium=dir_root, type=args.analyze_type, ver='2.0')
 
 
 def backup_test():

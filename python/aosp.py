@@ -96,7 +96,8 @@ examples:
     parser.add_argument('--backup-skip-server', dest='backup_skip_server', help='only local backup', action='store_true')
     parser.add_argument('--start-emu', dest='start_emu', help='start the emulator. Copy sdcard.img to dir_root and rename it as sdcard-<arch>.img', action='store_true')
     parser.add_argument('--dir-emu', dest='dir_emu', help='emulator dir')
-    parser.add_argument('--analyze', dest='analyze', help='analyze tombstone or ANR file')
+    parser.add_argument('--analyze', dest='analyze', help='analyze test tombstone', action='store_true')
+    parser.add_argument('--analyze-type', dest='analyze_type', help='type to analyze', choices=['tombstone', 'anr'], default='tombstone')
     parser.add_argument('--push', dest='push', help='push updates to system', action='store_true')
     parser.add_argument('--remove-out', dest='remove_out', help='remove out dir before build', action='store_true')
     parser.add_argument('--hack-app-process', dest='hack_app_process', help='hack app_process', action='store_true')
@@ -557,7 +558,7 @@ def analyze():
     if len(devices_type) > 1 or devices_type[0] != 'baytrail':
         error('Only baytrail is supported to analyze')
 
-    analyze_issue(dir_aosp=dir_root, type=args.analyze, ver=repo_ver)
+    analyze_issue(dir_aosp=dir_root, type=args.analyze_type, ver=repo_ver)
 
 
 def push():

@@ -29,6 +29,8 @@ ACT_ALL = ACT_DOWNLOAD | ACT_FILE | ACT_DIR | ACT_CHECK
 
 cmd_common = python_chromium + ' --repo-type chrome-android --target-os android --target-module chrome'
 
+devices_id = []
+
 
 def parse_arg():
     global args, args_dict
@@ -48,7 +50,8 @@ examples:
     parser.add_argument('--ver', dest='ver', help='version', default='all')
     parser.add_argument('--ver-type', dest='ver_type', help='ver type', default='all')
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', default='all')
-    parser.add_argument('--analyze', dest='analyze', help='analyze tombstone file')
+    parser.add_argument('--analyze', dest='analyze', help='analyze test tombstone', action='store_true')
+    parser.add_argument('--analyze-type', dest='analyze_type', help='type to analyze', choices=['tombstone', 'anr'], default='tombstone')
     add_argument_common(parser)
 
     args = parser.parse_args()
@@ -245,9 +248,8 @@ def analyze():
     if not args.analyze:
         return
 
-    f = open(args.analyze)
-    lines = f.readlines()
-    f.close()
+    _setup_device()
+    lines = analyze_file(device_id=devices_id[0], type=args.analyze_type)
     dirs_symbol = []
     pattern = re.compile('libchrome\.(.*)\.so')
     for line in lines:
@@ -264,6 +266,15 @@ def analyze():
             break
 
     get_symbol(lines, dirs_symbol)
+
+
+def _setup_device():
+    global devices_id, devices_product, devices_type, devices_arch, devices_mode
+
+    if devices_id:
+        return
+
+    (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
 
 
 def _get_combos(dirs_check, target_arch):

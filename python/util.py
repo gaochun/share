@@ -715,6 +715,26 @@ def connect_device(device_id='', mode='system'):
         return device_connected(device_id, mode)
 
 
+def analyze_file(device_id='', type='tombstone'):
+    connect_device(device_id=device_id)
+
+    if type == 'tombstone':
+        result = execute(adb(cmd='shell \ls /data/tombstones', device_id=device_id), return_output=True)
+        files = result[1].split('\n')
+        file_name = files[-2].strip()
+        execute(adb(cmd='pull /data/tombstones/' + file_name + ' /tmp/', device_id=device_id))
+        result = execute('cat /tmp/' + file_name, return_output=True)
+        info('Get tombstone file as /tmp/%s' % file_name)
+        lines = result[1].split('\n')
+    elif type == 'anr':
+        execute(adb(cmd='pull /data/anr/traces.txt /tmp/', device_id=device_id))
+        result = execute('cat /tmp/traces.txt', return_output=True)
+        info('Get anr file as /tmp/traces.txt')
+        lines = result[1].split('\n')
+
+    return lines
+
+
 def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android', device_id='', type='tombstone', ver='0.0'):
     if device_id == '' or device_id == '192.168.42.1:5555':
         device_type = 'baytrail'
@@ -730,22 +750,7 @@ def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/work
         dir_chromium + '/src/out-%s/out/Release/lib' % target_arch,
     ]
 
-    connect_device(device_id=device_id)
-
-    if type == 'tombstone':
-        result = execute(adb(cmd='shell \ls /data/tombstones'), return_output=True)
-        files = result[1].split('\n')
-        file_name = files[-2].strip()
-        info('Start to analyze ' + file_name)
-        execute(adb(cmd='pull /data/tombstones/' + file_name + ' /tmp/'))
-        result = execute('cat /tmp/' + file_name, return_output=True)
-        lines = result[1].split('\n')
-    elif type == 'anr':
-        execute(adb(cmd='pull /data/anr/traces.txt /tmp/'))
-        result = execute('cat /tmp/traces.txt', return_output=True)
-        lines = result[1].split('\n')
-
-    get_symbol(lines, dirs_symbol)
+    get_symbol(analyze_file(device_id=device_id, type=type), dirs_symbol)
 
 
 def get_symbol(lines, dirs_symbol):

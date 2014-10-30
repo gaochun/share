@@ -13,11 +13,12 @@
         "os": "android"
       },
       "cases": [
-        {"name": "kraken", "result": 19560},
+        {"name": "kraken", "version": "1.1", "result": 19560},
         {"name": "octane", "version": "2.0", "result": 1603},
         {"name": "sunspider", "version": "1.0.2", "result": 2468},
 
-        {"name": "canvasmark", "result": 3732},
+        {"name": "canvas2dc10k", "result": 8.9},
+        {"name": "canvasmark", "version": "2013", "result": 3732},
         {"name": "fishietank", "version": "raf", "result": 14},
         {"name": "fishietank", "version": "setinterval", "result": 15},
         {"name": "galactic", "version": "mobile", "result": 28},
@@ -47,11 +48,12 @@
         "os": "android"
       },
       "cases": [
-        {"name": "kraken", "result": 19524},
+        {"name": "kraken", "version": "1.1", "result": 19524},
         {"name": "octane", "version": "2.0", "result": 1577},
         {"name": "sunspider", "version": "1.0.2", "result": 2474},
 
-        {"name": "canvasmark", "result": 3703},
+        {"name": "canvas2dc10k", "result": 8.8},
+        {"name": "canvasmark", "version": "2013", "result": 3703},
         {"name": "fishietank", "version": "raf", "result": 15},
         {"name": "fishietank", "version": "setinterval", "result": 16},
         {"name": "galactic", "version": "mobile", "result": 28},
@@ -61,7 +63,7 @@
         {"name": "toonshading", "result": 44},
 
         {"name": "fallingleaves", "result": 20},
-        {"name": "postercircle", "result": 54},
+        {"name": "postercircle", "result": 58},
 
         {"name": "browsermark", "version": "2.0", "result": 1750},
         {"name": "browsermark", "version": "2.1", "result": 643}
@@ -81,11 +83,12 @@
         "os": "android"
       },
       "cases": [
-        {"name": "kraken", "result": 17691},
+        {"name": "kraken", "version": "1.1", "result": 17691},
         {"name": "octane", "version": "2.0", "result": 1567},
         {"name": "sunspider", "version": "1.0.2", "result": 2430},
 
-        {"name": "canvasmark", "result": 3232},
+        {"name": "canvas2dc10k", "result": 17.5},
+        {"name": "canvasmark", "version": "2013", "result": 3232},
         {"name": "fishietank", "version": "raf", "result": 22},
         {"name": "fishietank", "version": "setinterval", "result": 23},
         {"name": "galactic", "version": "mobile", "result": 37},
@@ -115,11 +118,12 @@
         "os": "android"
       },
       "cases": [
-        {"name": "kraken", "result": 19321},
+        {"name": "kraken", "version": "1.1", "result": 19321},
         {"name": "octane", "version": "2.0", "result": 1569},
         {"name": "sunspider", "version": "1.0.2", "result": 2720},
 
-        {"name": "canvasmark", "result": 3389},
+        {"name": "canvas2dc10k", "result": 13.1},
+        {"name": "canvasmark", "version": "2013", "result": 3389},
         {"name": "fishietank", "version": "raf", "result": 18},
         {"name": "fishietank", "version": "setinterval", "result": 19},
         {"name": "galactic", "version": "mobile", "result": 31},

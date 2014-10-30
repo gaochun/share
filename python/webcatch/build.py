@@ -68,10 +68,10 @@ def parse_arg():
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog='''
 examples:
-  python %(prog)s -b -r 217377-225138
-  python %(prog)s -b --target-os linux --target-module chrome -r 233137-242710 --build-every 5
-  python %(prog)s -b --target-os android --target-module content_shell --keep_out
-  python %(prog)s -b --target-os android --target-arch x86 --target-module content_shell --rev 300661 --build-every 1 --build-skip-mark
+  python %(prog)s --build -r 217377-225138
+  python %(prog)s --build --target-os linux --target-module chrome -r 233137-242710 --build-every 5
+  python %(prog)s --build --target-os android --target-module content_shell --keep_out
+  python %(prog)s --build --target-os android --target-arch x86 --target-module content_shell --rev 300661 --build-every 1 --build-skip-mark
 
 ''')
     parser.add_argument('--target-os', dest='target_os', help='target os', default='all')

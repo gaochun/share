@@ -338,6 +338,8 @@ function preexec {
 }
 
 ##### Followings are added by Yang #####
+bindkey '5D' emacs-backward-word
+bindkey '5C' emacs-forward-word
 
 # Set profile
 ifconfig |grep -E "tun0|10.239" >/dev/null

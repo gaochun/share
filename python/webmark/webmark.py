@@ -82,12 +82,16 @@ def setup():
     if has_process(chrome_driver):
         execute('sudo killall %s' % chrome_driver, show_cmd=False)
 
-    cmd = dir_webmark + '/driver/' + chrome_driver
+    args_tmp = [dir_webmark + '/driver/' + chrome_driver]
     if args.driver_log:
-        cmd += ' --log-path ' + dir_share_ignore_webmark_log + '/chromedriver-' + timestamp + '.log'
+        log_tmp = dir_share_ignore_webmark_log + '/chromedriver-' + timestamp + '.log'
+        args_tmp.append('--log-path=' + log_tmp)
+        info('Chromedriver log file: ' + log_tmp)
+
     if args.driver_verbose:
-        cmd += ' --verbose'
-    subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        args_tmp.append('--verbose')
+
+    subprocess.Popen(args_tmp, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # Sleep a bit to make sure driver is ready
     time.sleep(1)
 

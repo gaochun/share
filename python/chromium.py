@@ -842,15 +842,16 @@ def postbuild(force=False):
             backup_dir(dir_out_build_type + '/lib')
             ## backup the one with symbol, which should be done only once
             path_file_libchrome = '%s/%s' % (dir_server_chrome_android_todo_comb, file_libchrome)
-            if not os.path.exists(path_file_libchrome):
-                execute('cp -f lib*prebuilt.so %s' % path_file_libchrome, interactive=True, abort=True, dryrun=False)
-            ## strip if needed
+            result = execute('ls lib*prebuilt.so', return_output=True)
+            file_libchrome_prebuilt = result[1].split('/')[-1].strip('\n')
+            # backup the file with symbol
+            if not is_same_file(file_libchrome_prebuilt, path_file_libchrome):
+                execute('cp -f %s %s' % (file_libchrome_prebuilt, path_file_libchrome), interactive=True, abort=True, dryrun=False)
+                execute(dir_tool + '/' + target_arch_strip[target_arch] + ' ' + file_libchrome_prebuilt + ' -o ' + file_libchrome, abort=True, dryrun=False)
             if not os.path.exists(file_libchrome):
-                execute('cp -f lib*prebuilt.so %s' % (file_libchrome), interactive=True, abort=True, dryrun=False)
-            if os.path.getsize(file_libchrome) > 100000000:
-                execute(dir_tool + '/' + target_arch_strip[target_arch] + ' ' + file_libchrome, abort=True, dryrun=False)
-            ## replace the original one
-            execute('cp -f %s %s/' % (file_libchrome, dir_chromium_lib), interactive=True, abort=True)
+                execute(dir_tool + '/' + target_arch_strip[target_arch] + ' ' + file_libchrome_prebuilt + ' -o ' + file_libchrome, abort=True, dryrun=False)
+            # replace the file without symbol
+            execute('cp -f %s %s/%s' % (file_libchrome, dir_chromium_lib, file_libchrome), interactive=True, abort=True)
             restore_dir()
 
             # replace libpeerconnection.so
@@ -879,7 +880,6 @@ def postbuild(force=False):
             execute('%s/zipalign -f -v 4 %s_unaligned.apk %s.apk' % (dir_tool, name_apk, name_apk), interactive=True, abort=True)
             execute('rm -f %s_unaligned.apk' % name_apk, abort=True)
             restore_dir()
-
         _update_phase(get_caller_name())
 
 

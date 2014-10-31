@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# format: import, globals, functions
+# globals: misc, path, chromium
+# functions: misc, file, android, chromium, internal
+
+# <import>
 import os
 import platform
 import sys
@@ -21,7 +26,11 @@ import fileinput
 import random
 import select
 import atexit
+import hashlib
+# </import>
 
+# <globals>
+## <misc>
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -102,9 +111,10 @@ device_product_info = {
 device_product_info['asus_t100_64p'] = device_product_info['asus_t100']
 device_product_info['ecs_e7'] = device_product_info['cruise7']
 device_product_info['cruise8'] = device_product_info['cruise7']
+## </misc>
 
 
-# <path>
+## <path>
 def _get_real_dir(path):
     return os.path.split(os.path.realpath(path))[0]
 dir_temp = _get_real_dir(__file__)
@@ -158,9 +168,9 @@ path_web_chrome_android = 'http://wp-03.sh.intel.com/chromium'
 path_server_backup = '//wp-01.sh.intel.com/backup'
 
 dir_home = os.getenv('HOME')
-# </path>
+## </path>
 
-# <chromium>
+## <chromium>
 chromium_rev_max = 9999999
 
 # src/build/android/pylib/constants.py
@@ -206,26 +216,12 @@ CHROMIUM_MAJORVER_INFO_INDEX_REV = 0
 
 # revision range to care about
 chromium_rev_default = [chromium_majorver_info[36][CHROMIUM_MAJORVER_INFO_INDEX_REV], 999999]
-# </chromium>
+## </chromium>
+# </globals>
 
 
-def backup_log(log_new, verbose=False):
-    global log_stack, log
-    log_stack.append(log)
-    log = log_new
-
-    if verbose:
-        info('Switched to new log file ' + log)
-
-
-def restore_log(verbose=False):
-    global log_stack, log
-    log_old = log_stack.pop()
-    log = log_old
-    if verbose:
-        info('Switched to old log file ' + log)
-
-
+# <functions>
+## <misc>
 def info(msg):
     _msg(msg)
 
@@ -253,6 +249,30 @@ def error(msg, abort=True, error_code=1):
         quit(error_code)
 
 
+def trace_func(frame, event, arg, indent=[0]):
+    path_file = frame.f_code.co_filename
+    name_func = frame.f_code.co_name
+    name_file = path_file.split('/')[-1]
+    if path_file[:4] != '/usr' and path_file != '<string>':
+        if event == 'call':
+            indent[0] += 2
+            trace('-' * indent[0] + '> call %s:%s' % (name_file, name_func))
+        elif event == 'return':
+            trace('<' + '-' * indent[0] + ' exit %s:%s' % (name_file, name_func))
+            indent[0] -= 2
+    return trace_func
+
+
+def hasvalue(obj, member):
+    if not hasattr(obj, member):
+        return False
+
+    if getattr(obj, member) == '':
+        return False
+
+    return True
+
+
 def get_datetime(format='%Y%m%d%H%M%S'):
     return time.strftime(format, time.localtime())
 
@@ -260,13 +280,6 @@ def get_datetime(format='%Y%m%d%H%M%S'):
 # get seconds since 1970-01-01
 def get_epoch_second():
     return int(time.time())
-
-
-def has_recent_change(path_file, interval=24 * 3600):
-    if get_epoch_second() - os.path.getmtime(path_file) < interval:
-        return True
-    else:
-        return False
 
 
 # TODO: The interactive solution doesn't use subprocess now, which can not support show_progress and return_output now.
@@ -347,15 +360,6 @@ def remotify_cmd(cmd, server):
     return 'ssh %s@%s %s' % (username, server, cmd)
 
 
-def has_process(name):
-    r = os.popen('ps auxf |grep -c ' + name)
-    count = int(r.read())
-    if count == 2:
-        return False
-
-    return True
-
-
 def shell_source(shell_cmd, use_bash=False):
     if use_bash:
         cmd = bashify_cmd('. ' + shell_cmd + '; env')
@@ -368,29 +372,83 @@ def shell_source(shell_cmd, use_bash=False):
         os.environ[key] = value
 
 
-# Get the dir of symbolic link, for example: /workspace/project/chromium-android instead of /workspace/project/gyagp/share/python
-def get_symbolic_link_dir():
-    if sys.argv[0][0] == '/':  # Absolute path
-        script_path = sys.argv[0]
+def pause_resume(seconds=5):
+    info('You have ' + str(seconds) + ' seconds to type "enter" to pause')
+    i, o, e = select.select([sys.stdin], [], [], seconds)
+    if i:
+        info('Please type "r" to resume')
+        while True:
+            input = raw_input()
+            if input == 'r':
+                break
+
+
+def apply_patch(patches, dir_patches):
+    if not os.path.exists(dir_patches):
+        return
+
+    for dir_repo in patches:
+        if not os.path.exists(dir_repo):
+            error(dir_repo + ' does not exist')
+
+        for patch in patches[dir_repo]:
+            path_patch = dir_patches + '/' + patch
+            if _patch_applied(dir_repo, path_patch):
+                info('Patch ' + patch + ' was applied before, so is just skipped here')
+            else:
+                backup_dir(dir_repo)
+                cmd = 'git am ' + path_patch
+                result = execute(cmd, show_progress=True)
+                restore_dir()
+                if result[0]:
+                    error('Fail to apply patch ' + patch)
+
+
+def get_logger(tag, dir_log, datetime='', level=logging.DEBUG):
+    ensure_dir(dir_log)
+    formatter = logging.Formatter('[%(asctime)s - %(levelname)s] %(message)s', '%Y-%m-%d %H:%M:%S')
+    logger = logging.getLogger(tag)
+    logger.setLevel(level)
+
+    if datetime:
+        dt = datetime
     else:
-        script_path = os.getcwd() + '/' + sys.argv[0]
-    return os.path.split(script_path)[0]
+        dt = get_datetime()
+    file_log = logging.FileHandler(dir_log + '/' + dt + '.log')
+    file_log.setFormatter(formatter)
+    logger.addHandler(file_log)
+
+    console = logging.StreamHandler()
+    console.setFormatter(formatter)
+    logger.addHandler(console)
+
+    return logger
 
 
-def backup_dir(dir_new, verbose=False):
-    global dir_stack
-    dir_stack.append(os.getcwd())
-    os.chdir(dir_new)
+def backup_log(log_new, verbose=False):
+    global log_stack, log
+    log_stack.append(log)
+    log = log_new
+
     if verbose:
-        info('Switched to ' + dir_new)
+        info('Switched to new log file ' + log)
 
 
-def restore_dir(verbose=False):
-    global dir_stack
-    dir_old = dir_stack.pop()
-    os.chdir(dir_old)
+def restore_log(verbose=False):
+    global log_stack, log
+    log_old = log_stack.pop()
+    log = log_old
     if verbose:
-        info('Switched to ' + dir_old)
+        info('Switched to old log file ' + log)
+
+
+def has_process(name):
+    r = os.popen('ps auxf |grep -c ' + name)
+    count = int(r.read())
+    if count == 2:
+        return False
+
+    return True
 
 
 def package_installed(pkg):
@@ -426,15 +484,6 @@ def send_mail(sender, to, subject, content, type='plain'):
         error('Failed to send mail at ' + host_name, abort=False)
     finally:
         smtp.quit()
-
-
-# upload file to specified samba server
-def backup_smb(server, dir_server, file_local, dryrun=False):
-    result = execute('smbclient %s -N -c "prompt; recurse; cd %s; mput %s"' % (server, dir_server, file_local), interactive=True, dryrun=dryrun)
-    if result[0]:
-        warning('Failed to upload: ' + file_local)
-    else:
-        info('Succeeded to upload: ' + file_local)
 
 
 def set_path(path_extra=''):
@@ -504,108 +553,6 @@ def stop_prixoxy():
         execute('sudo killall privoxy')
 
 
-# [device_id, device_product, device_type, device_mode, device_target_arch]
-# device_id: used to connect to it
-# device_product: from product:xxx
-# device_type: baytrail, generic
-# device_mode: system, fastboot
-# device_target_arch: x86, arm, etc.
-
-# Example:
-# T100: xxx, asus_t100, baytrail, system, x86
-# V975: xxx, V975, clovertrail, system, x86
-# Emulator: xxx, generic, arm
-
-# device_model: AOSP_on_Intel_Platform, ZTE_V975. This is unused.
-# device_product: get from device:xxx, asus_t100, redhookbay. This is unused.
-def setup_device(devices_id_limit=[]):
-    if not devices_id_limit:
-        devices_id_limit_list = []
-    elif isinstance(devices_id_limit, str):
-        devices_id_limit_list = devices_id_limit.split(',')
-    elif isinstance(devices_id_limit, list):
-        devices_id_limit_list = devices_id_limit
-
-    devices_id = []
-    devices_product = []
-    devices_type = []
-    devices_mode = []
-    devices_arch = []
-    cmd = adb('devices -l')
-    device_lines = commands.getoutput(cmd).split('\n')
-    cmd = 'fastboot devices -l'
-    device_lines += commands.getoutput(cmd).split('\n')
-
-    pattern_fastboot = re.compile('(\S+)\s+fastboot')
-    pattern_nofastboot = re.compile('fastboot: not found')
-    pattern_product = re.compile('product:(.*)')
-    for device_line in device_lines:
-        if re.match('List of devices attached', device_line):
-            continue
-        elif re.match('^\s*$', device_line):
-            continue
-        elif re.search('offline', device_line):
-            continue
-        elif not re.search('device', device_line) and not re.search('fastboot', device_line):
-            continue
-
-        match = pattern_nofastboot.search(device_line)
-        if match:
-            continue
-
-        match = pattern_fastboot.search(device_line)
-        if match:
-            device_id = match.group(1)
-            devices_id.append(device_id)
-            result = execute('fastboot -s %s getvar product' % device_id, return_output=True, show_cmd=False)
-            match = re.search('product: (.*)', result[1])
-            device_product = match.group(1)
-            devices_product.append(device_product)
-            devices_type.append(device_product)
-            devices_mode.append('fastboot')
-            continue
-
-        # may contain more than one space
-        items = device_line.split()
-        for item in items:
-            match = pattern_product.search(item)
-            if match:
-                device_product = match.group(1)
-                devices_product.append(device_product)
-                break
-
-        device_id = items[0]
-        devices_id.append(device_id)
-        if re.search('asus_t100', device_product) or re.search('cruise7', device_product):
-            devices_type.append('baytrail')
-        elif re.search('V975', device_product):
-            devices_type.append('clovertrail')
-        elif re.search('sdk', device_product):
-            devices_type.append('generic')
-        else:
-            devices_type.append('baytrail')
-        devices_mode.append('system')
-
-    # filter out unnecessary
-    if devices_id_limit_list:
-        # This has to be reversed and deleted from end
-        for index, device_id in reversed(list(enumerate(devices_id))):
-            if device_id not in devices_id_limit_list:
-                del devices_id[index]
-                del devices_product[index]
-                del devices_type[index]
-                del devices_mode[index]
-
-    # set up mode
-    for index, device_id in enumerate(devices_id):
-        if devices_mode[index] == 'fastboot':
-            devices_arch.append('')
-        else:
-            devices_arch.append(android_get_target_arch(device_id=device_id))
-
-    return (devices_id, devices_product, devices_type, devices_arch, devices_mode)
-
-
 def timer_start(tag):
     if tag not in timer:
         timer[tag] = [0, 0]
@@ -627,6 +574,304 @@ def get_caller_name():
     return inspect.stack()[1][3]
 
 
+def ensure_package(packages):
+    package_list = packages.split(' ')
+    for package in package_list:
+        result = execute('dpkg -l ' + package, show_cmd=False)
+        if result[0]:
+            error('You need to install package: ' + package)
+
+
+# ver is in format a.b.c.d
+# return 1 if ver_a > ver_b
+# return 0 if ver_a == ver_b
+# return -1 if ver_a < ver_b
+def ver_cmp(ver_a, ver_b):
+    vers_a = [int(x) for x in ver_a.split('.')]
+    vers_b = [int(x) for x in ver_b.split('.')]
+
+    index = 0
+    while index < len(vers_a):
+        if vers_a[index] > vers_b[index]:
+            return 1
+        elif vers_a[index] < vers_b[index]:
+            return -1
+        index += 1
+    return 0
+
+
+def singleton(lock):
+    import fcntl
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except:
+        info(str(lock) + ' is already running..')
+        exit(0)
+
+
+def list_union(a, b):
+    return list(set(a).union(set(b)))
+
+
+def list_intersect(a, b):
+    return list(set(a).intersection(set(b)))
+
+
+def list_diff(a, b):
+    return list(set(a).difference(set(b)))
+
+
+def get_comb_name(splitter, *subs):
+    return splitter.join(subs)
+
+
+def mouse_move(x, y):
+    from Xlib.display import Display
+    from Xlib import X
+    from Xlib.ext.xtest import fake_input
+    d = Display()
+    fake_input(d, X.MotionNotify, x=x, y=y)
+    d.flush()
+
+
+def mouse_click(button=1):
+    from Xlib import X
+    from Xlib.display import Display
+    from Xlib.ext.xtest import fake_input
+
+    d = Display()
+    fake_input(d, X.ButtonPress, button)
+    d.sync()
+    fake_input(d, X.ButtonRelease, button)
+    d.sync()
+
+
+# 13, 5 -> 15
+def roundup(num, base):
+    remainder = num % base
+    if remainder == 0:
+        return num
+
+    return num + base - remainder
+
+
+# 17, 5 -> 15
+def rounddown(num, base):
+    remainder = num % base
+    if remainder == 0:
+        return num
+
+    return num - remainder
+
+
+def setup_common(args, teardown):
+    atexit.register(teardown)
+
+    if args.trace:
+        sys.settrace(trace_func)
+
+    if args.time_fixed:
+        timestamp = get_datetime(format='%Y%m%d')
+    else:
+        timestamp = get_datetime()
+
+    if args.dir_root:
+        dir_root = args.dir_root
+    elif os.path.islink(sys.argv[0]):
+        dir_root = get_symbolic_link_dir()
+    else:
+        dir_root = os.path.abspath(os.getcwd())
+
+    ensure_dir(dir_root)
+    ensure_dir(dir_share_ignore_log)
+    ensure_dir(dir_share_ignore_timestamp)
+
+    if args.log:
+        log = args.log
+    else:
+        category = sys.path[0].split('/')[-1]
+        if category in ['webmark', 'webcatch', 'chrome-android']:
+            log = eval('dir_share_ignore_%s_log' % category) + '/' + timestamp + '.log'
+        else:
+            name_script = sys.argv[0].split('/')[-1].replace('.py', '')
+            log = dir_share_ignore_log + '/' + name_script + '-' + timestamp + '.log'
+    info('Log file: ' + log)
+    backup_log(log, verbose=False)
+
+    set_path(args.path_extra)
+    set_proxy()
+    os.chdir(dir_root)
+
+    return (timestamp, dir_root, log)
+
+
+def add_argument_common(parser):
+    parser.add_argument('--dir-root', dest='dir_root', help='set root directory')
+    parser.add_argument('--log', dest='log', help='log')
+    parser.add_argument('--path-extra', dest='path_extra', help='extra path for execution, such as path for depot_tools')
+    parser.add_argument('--time-fixed', dest='time_fixed', help='fix the time for test sake. We may run multiple tests and results are in same dir', action='store_true')
+    parser.add_argument('--trace', dest='trace', help='trace', action='store_true')
+## </misc>
+
+
+## <file>
+def backup_files(files_backup, dir_backup, dir_src):
+    path_backup = dir_share_ignore_backup + '/' + dir_backup
+    ensure_dir(path_backup)
+    backup_dir(path_backup)
+    info('Begin to backup to ' + path_backup)
+    for dir_dest in files_backup:
+        ensure_dir(dir_dest)
+
+        if isinstance(files_backup[dir_dest], str):
+            files_src = [files_backup[dir_dest]]
+        else:
+            files_src = files_backup[dir_dest]
+
+        for file_src in files_src:
+            if file_src[0] == '/':
+                path_src = file_src
+            else:
+                path_src = dir_src + '/' + file_src
+
+            if not os.path.exists(path_src):
+                warning(path_src + ' could not be found')
+            else:
+                execute('cp -rf ' + path_src + ' ' + dir_dest)
+    restore_dir()
+
+    backup_dir(dir_share_ignore_backup)
+    execute('tar zcf %s.tar.gz %s' % (dir_backup, dir_backup))
+    restore_dir()
+
+
+# Get the dir of symbolic link, for example: /workspace/project/chromium-android instead of /workspace/project/gyagp/share/python
+def get_symbolic_link_dir():
+    if sys.argv[0][0] == '/':  # Absolute path
+        script_path = sys.argv[0]
+    else:
+        script_path = os.getcwd() + '/' + sys.argv[0]
+    return os.path.split(script_path)[0]
+
+
+def backup_dir(dir_new, verbose=False):
+    global dir_stack
+    dir_stack.append(os.getcwd())
+    os.chdir(dir_new)
+    if verbose:
+        info('Switched to ' + dir_new)
+
+
+def restore_dir(verbose=False):
+    global dir_stack
+    dir_old = dir_stack.pop()
+    os.chdir(dir_old)
+    if verbose:
+        info('Switched to ' + dir_old)
+
+
+# is_sylk: If true, just copy as a symbolic link
+def copy_file(file_src, dir_dest, is_sylk=False):
+    if not os.path.exists(file_src):
+        warning(file_src + ' does not exist')
+        return
+
+    file_name = file_src.split('/')[-1]
+    file_dest = dir_dest + '/' + file_name
+    if os.path.islink(file_dest) and os.readlink(file_dest) == file_src:
+        return
+
+    if re.search(dir_home, dir_dest) or re.search(dir_workspace, dir_dest):
+        need_sudo = False
+    else:
+        need_sudo = True
+
+    file_dest_bk = file_dest + '.bk'
+    if os.path.exists(file_dest) and not os.path.exists(file_dest_bk):
+        cmd = 'mv ' + file_dest + ' ' + file_dest_bk
+        if need_sudo:
+            cmd = 'sudo ' + cmd
+        execute(cmd)
+
+    if not os.path.exists(dir_dest):
+        execute('mkdir -p ' + dir_dest)
+
+    backup_dir(dir_dest)
+    if is_sylk:
+        cmd = 'ln -s ' + file_src + ' .'
+    else:
+        cmd = 'cp -f ' + file_src + ' ' + dir_dest
+
+    if need_sudo:
+        cmd = 'sudo ' + cmd
+    execute(cmd)
+    restore_dir()
+
+
+def get_md5(path_file):
+    info('Calculating md5 of %s' % path_file)
+    return hashlib.md5(open(path_file, 'rb').read()).hexdigest()
+
+
+def is_same_file(src, dest):
+    if not os.path.exists(src) or not os.path.exists(dest):
+        return False
+
+    md5_src = get_md5(src)
+    md5_dest = get_md5(dest)
+    if md5_src != md5_dest:
+        print md5_src
+        print md5_dest
+        return False
+    else:
+        info('%s and %s have same md5' % (src, dest))
+
+    return True
+
+
+def has_recent_change(path_file, interval=24 * 3600):
+    if get_epoch_second() - os.path.getmtime(path_file) < interval:
+        return True
+    else:
+        return False
+
+
+# upload file to specified samba server
+def backup_smb(server, dir_server, file_local, dryrun=False):
+    result = execute('smbclient %s -N -c "prompt; recurse; cd %s; mput %s"' % (server, dir_server, file_local), interactive=True, dryrun=dryrun)
+    if result[0]:
+        warning('Failed to upload: ' + file_local)
+    else:
+        info('Succeeded to upload: ' + file_local)
+
+
+def ensure_dir(dir_check, server=''):
+    if server == '':
+        if not os.path.exists(dir_check):
+            os.makedirs(dir_check)
+    else:
+        result = execute(remotify_cmd('ls ' + dir_check, server=server), show_cmd=False)
+        if result[0]:
+            execute(remotify_cmd('mkdir -p ' + dir_check, server=server))
+
+
+def ensure_nodir(dir_check, server=''):
+    if server == '':
+        if os.path.exists(dir_check):
+            execute('rm -rf %s' % dir_check)
+    else:
+        result = execute(remotify_cmd('ls ' + dir_check, server=server), show_cmd=False)
+        if result[0] == 0:
+            execute(remotify_cmd('rm -rf ' + dir_check, server=server))
+
+
+def get_dir(path):
+    return os.path.split(os.path.realpath(path))[0]
+
+## </file>
+
+
+## <android>
 def adb(cmd, device_id=''):
     # some commands do not need -s option
     cmds_none = ['devices', 'connect', 'disconnect']
@@ -786,324 +1031,108 @@ def get_symbol(lines, dirs_symbol):
                 break
 
 
-# is_sylk: If true, just copy as a symbolic link
-def copy_file(file_src, dir_dest, is_sylk=False):
-    if not os.path.exists(file_src):
-        warning(file_src + ' does not exist')
-        return
+# [device_id, device_product, device_type, device_mode, device_target_arch]
+# device_id: used to connect to it
+# device_product: from product:xxx
+# device_type: baytrail, generic
+# device_mode: system, fastboot
+# device_target_arch: x86, arm, etc.
 
-    file_name = file_src.split('/')[-1]
-    file_dest = dir_dest + '/' + file_name
-    if os.path.islink(file_dest) and os.readlink(file_dest) == file_src:
-        return
+# Example:
+# T100: xxx, asus_t100, baytrail, system, x86
+# V975: xxx, V975, clovertrail, system, x86
+# Emulator: xxx, generic, arm
 
-    if re.search(dir_home, dir_dest) or re.search(dir_workspace, dir_dest):
-        need_sudo = False
-    else:
-        need_sudo = True
+# device_model: AOSP_on_Intel_Platform, ZTE_V975. This is unused.
+# device_product: get from device:xxx, asus_t100, redhookbay. This is unused.
+def setup_device(devices_id_limit=[]):
+    if not devices_id_limit:
+        devices_id_limit_list = []
+    elif isinstance(devices_id_limit, str):
+        devices_id_limit_list = devices_id_limit.split(',')
+    elif isinstance(devices_id_limit, list):
+        devices_id_limit_list = devices_id_limit
 
-    file_dest_bk = file_dest + '.bk'
-    if os.path.exists(file_dest) and not os.path.exists(file_dest_bk):
-        cmd = 'mv ' + file_dest + ' ' + file_dest_bk
-        if need_sudo:
-            cmd = 'sudo ' + cmd
-        execute(cmd)
+    devices_id = []
+    devices_product = []
+    devices_type = []
+    devices_mode = []
+    devices_arch = []
+    cmd = adb('devices -l')
+    device_lines = commands.getoutput(cmd).split('\n')
+    cmd = 'fastboot devices -l'
+    device_lines += commands.getoutput(cmd).split('\n')
 
-    if not os.path.exists(dir_dest):
-        execute('mkdir -p ' + dir_dest)
-
-    backup_dir(dir_dest)
-    if is_sylk:
-        cmd = 'ln -s ' + file_src + ' .'
-    else:
-        cmd = 'cp -f ' + file_src + ' ' + dir_dest
-
-    if need_sudo:
-        cmd = 'sudo ' + cmd
-    execute(cmd)
-    restore_dir()
-
-
-def apply_patch(patches, dir_patches):
-    if not os.path.exists(dir_patches):
-        return
-
-    for dir_repo in patches:
-        if not os.path.exists(dir_repo):
-            error(dir_repo + ' does not exist')
-
-        for patch in patches[dir_repo]:
-            path_patch = dir_patches + '/' + patch
-            if _patch_applied(dir_repo, path_patch):
-                info('Patch ' + patch + ' was applied before, so is just skipped here')
-            else:
-                backup_dir(dir_repo)
-                cmd = 'git am ' + path_patch
-                result = execute(cmd, show_progress=True)
-                restore_dir()
-                if result[0]:
-                    error('Fail to apply patch ' + patch)
-
-
-def ensure_dir(dir_check, server=''):
-    if server == '':
-        if not os.path.exists(dir_check):
-            os.makedirs(dir_check)
-    else:
-        result = execute(remotify_cmd('ls ' + dir_check, server=server), show_cmd=False)
-        if result[0]:
-            execute(remotify_cmd('mkdir -p ' + dir_check, server=server))
-
-
-def ensure_nodir(dir_check, server=''):
-    if server == '':
-        if os.path.exists(dir_check):
-            execute('rm -rf %s' % dir_check)
-    else:
-        result = execute(remotify_cmd('ls ' + dir_check, server=server), show_cmd=False)
-        if result[0] == 0:
-            execute(remotify_cmd('rm -rf ' + dir_check, server=server))
-
-
-def get_dir(path):
-    return os.path.split(os.path.realpath(path))[0]
-
-
-def ensure_package(packages):
-    package_list = packages.split(' ')
-    for package in package_list:
-        result = execute('dpkg -l ' + package, show_cmd=False)
-        if result[0]:
-            error('You need to install package: ' + package)
-
-
-# ver is in format a.b.c.d
-# return 1 if ver_a > ver_b
-# return 0 if ver_a == ver_b
-# return -1 if ver_a < ver_b
-def ver_cmp(ver_a, ver_b):
-    vers_a = [int(x) for x in ver_a.split('.')]
-    vers_b = [int(x) for x in ver_b.split('.')]
-
-    index = 0
-    while index < len(vers_a):
-        if vers_a[index] > vers_b[index]:
-            return 1
-        elif vers_a[index] < vers_b[index]:
-            return -1
-        index += 1
-    return 0
-
-
-def singleton(lock):
-    import fcntl
-    try:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except:
-        info(str(lock) + ' is already running..')
-        exit(0)
-
-
-def chrome_android_cleanup(device_id='', module_name=''):
-    for key in chromium_android_info:
-        if not module_name or module_name == key:
-            execute(adb('uninstall ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device_id=device_id))
-
-    #execute(adb('shell rm -rf /data/data/com.example.chromium', device_id=device_id))
-    #execute(adb('shell rm -rf /data/dalvik-cache/*', device_id=device_id))
-
-
-def chrome_android_get_ver_type(device_id=''):
-    ver_type = ''
-    for key in chromium_android_info:
-        if not re.match('^chrom', key):
+    pattern_fastboot = re.compile('(\S+)\s+fastboot')
+    pattern_nofastboot = re.compile('fastboot: not found')
+    pattern_product = re.compile('product:(.*)')
+    for device_line in device_lines:
+        if re.match('List of devices attached', device_line):
             continue
-        if execute_adb_shell(cmd='pm -l |grep ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device_id=device_id):
-            ver_type = key
-            break
+        elif re.match('^\s*$', device_line):
+            continue
+        elif re.search('offline', device_line):
+            continue
+        elif not re.search('device', device_line) and not re.search('fastboot', device_line):
+            continue
 
-    return ver_type
+        match = pattern_nofastboot.search(device_line)
+        if match:
+            continue
 
+        match = pattern_fastboot.search(device_line)
+        if match:
+            device_id = match.group(1)
+            devices_id.append(device_id)
+            result = execute('fastboot -s %s getvar product' % device_id, return_output=True, show_cmd=False)
+            match = re.search('product: (.*)', result[1])
+            device_product = match.group(1)
+            devices_product.append(device_product)
+            devices_type.append(device_product)
+            devices_mode.append('fastboot')
+            continue
 
-def list_union(a, b):
-    return list(set(a).union(set(b)))
-
-
-def list_intersect(a, b):
-    return list(set(a).intersection(set(b)))
-
-
-def list_diff(a, b):
-    return list(set(a).difference(set(b)))
-
-
-def get_comb_name(splitter, *subs):
-    return splitter.join(subs)
-
-
-def mouse_move(x, y):
-    from Xlib.display import Display
-    from Xlib import X
-    from Xlib.ext.xtest import fake_input
-    d = Display()
-    fake_input(d, X.MotionNotify, x=x, y=y)
-    d.flush()
-
-
-def mouse_click(button=1):
-    from Xlib import X
-    from Xlib.display import Display
-    from Xlib.ext.xtest import fake_input
-
-    d = Display()
-    fake_input(d, X.ButtonPress, button)
-    d.sync()
-    fake_input(d, X.ButtonRelease, button)
-    d.sync()
-
-
-def chromium_get_rev_max(dir_src):
-    if not os.path.exists(dir_src):
-        error('Chromium src dir does not exist')
-
-    backup_dir(dir_src)
-    execute('git fetch', dryrun=False)
-    rev_hash = _chromium_get_rev_hash(chromium_rev_max)
-    restore_dir()
-    return rev_hash.keys()[0]
-
-
-# get hash according to rev
-def chromium_get_hash(dir_src, rev):
-    if not os.path.exists(dir_src):
-        error('Chromium src dir does not exist')
-
-    backup_dir(dir_src)
-    rev_hash = _chromium_get_rev_hash(rev, rev, force=False)
-    if not rev_hash:
-        execute('git fetch', dryrun=False)
-        rev_hash = _chromium_get_rev_hash(rev, rev, force=False)
-    restore_dir()
-
-    if not rev_hash:
-        return ''
-    else:
-        return rev_hash[rev]
-
-
-# single rev: return hash for general rev, return ''  if failed to find. return rev_max for chromium_rev_max
-# rev range: return valid hashes within range, return {} if failed to find.
-def chromium_get_rev_hash(dir_src, rev_min, *rev_extra):
-    if len(rev_extra):
-        rev_max = rev_extra[0]
-    else:
-        rev_max = rev_min
-
-    if rev_min > rev_max:
-        return {}
-
-    if not os.path.exists(dir_src):
-        error('Chromium src dir does not exist')
-
-    backup_dir(dir_src)
-    if rev_min == chromium_rev_max:
-        rev_hash = {}
-    else:
-        rev_hash = _chromium_get_rev_hash(rev_min, rev_max, force=False)
-    if not rev_hash:
-        execute('git fetch', dryrun=False)
-        rev_hash = _chromium_get_rev_hash(rev_min, rev_max, force=True)
-    restore_dir()
-
-    if len(rev_extra):
-        return rev_hash
-    elif rev_min == chromium_rev_max:
-        return rev_hash.keys()[0]
-    else:
-        if rev_min in rev_hash:
-            return rev_hash[rev_min]
-        else:
-            return ''
-
-
-def get_logger(tag, dir_log, datetime='', level=logging.DEBUG):
-    ensure_dir(dir_log)
-    formatter = logging.Formatter('[%(asctime)s - %(levelname)s] %(message)s', '%Y-%m-%d %H:%M:%S')
-    logger = logging.getLogger(tag)
-    logger.setLevel(level)
-
-    if datetime:
-        dt = datetime
-    else:
-        dt = get_datetime()
-    file_log = logging.FileHandler(dir_log + '/' + dt + '.log')
-    file_log.setFormatter(formatter)
-    logger.addHandler(file_log)
-
-    console = logging.StreamHandler()
-    console.setFormatter(formatter)
-    logger.addHandler(console)
-
-    return logger
-
-
-def pause_resume(seconds=5):
-    info('You have ' + str(seconds) + ' seconds to type "enter" to pause')
-    i, o, e = select.select([sys.stdin], [], [], seconds)
-    if i:
-        info('Please type "r" to resume')
-        while True:
-            input = raw_input()
-            if input == 'r':
+        # may contain more than one space
+        items = device_line.split()
+        for item in items:
+            match = pattern_product.search(item)
+            if match:
+                device_product = match.group(1)
+                devices_product.append(device_product)
                 break
 
-
-def get_capabilities(device_id, target_module, use_running_app=False, args=[]):
-    capabilities = {}
-    capabilities['chromeOptions'] = {}
-    capabilities['chromeOptions']['androidDeviceSerial'] = device_id
-    capabilities['chromeOptions']['androidPackage'] = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_PKG]
-    capabilities['chromeOptions']['androidUseRunningApp'] = use_running_app
-    capabilities['chromeOptions']['args'] = args
-
-    activity = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_ACT]
-    if activity:
-        capabilities['chromeOptions']['androidActivity'] = activity
-
-    return capabilities
-
-
-def backup_files(files_backup, dir_backup, dir_src):
-    path_backup = dir_share_ignore_backup + '/' + dir_backup
-    ensure_dir(path_backup)
-    backup_dir(path_backup)
-    info('Begin to backup to ' + path_backup)
-    for dir_dest in files_backup:
-        ensure_dir(dir_dest)
-
-        if isinstance(files_backup[dir_dest], str):
-            files_src = [files_backup[dir_dest]]
+        device_id = items[0]
+        devices_id.append(device_id)
+        if re.search('asus_t100', device_product) or re.search('cruise7', device_product):
+            devices_type.append('baytrail')
+        elif re.search('V975', device_product):
+            devices_type.append('clovertrail')
+        elif re.search('sdk', device_product):
+            devices_type.append('generic')
         else:
-            files_src = files_backup[dir_dest]
+            devices_type.append('baytrail')
+        devices_mode.append('system')
 
-        for file_src in files_src:
-            if file_src[0] == '/':
-                path_src = file_src
-            else:
-                path_src = dir_src + '/' + file_src
+    # filter out unnecessary
+    if devices_id_limit_list:
+        # This has to be reversed and deleted from end
+        for index, device_id in reversed(list(enumerate(devices_id))):
+            if device_id not in devices_id_limit_list:
+                del devices_id[index]
+                del devices_product[index]
+                del devices_type[index]
+                del devices_mode[index]
 
-            if not os.path.exists(path_src):
-                warning(path_src + ' could not be found')
-            else:
-                execute('cp -rf ' + path_src + ' ' + dir_dest)
-    restore_dir()
+    # set up mode
+    for index, device_id in enumerate(devices_id):
+        if devices_mode[index] == 'fastboot':
+            devices_arch.append('')
+        else:
+            devices_arch.append(android_get_target_arch(device_id=device_id))
 
-    backup_dir(dir_share_ignore_backup)
-    execute('tar zcf %s.tar.gz %s' % (dir_backup, dir_backup))
-    restore_dir()
+    return (devices_id, devices_product, devices_type, devices_arch, devices_mode)
 
 
-# <android>
 def android_unlock_screen(device_id=''):
     execute(adb(cmd='shell input keyevent 82', device_id=device_id))
 
@@ -1263,101 +1292,112 @@ def android_ensure_root(device_id):
     else:
         error('Can not connect to device')
 
-# </android>
+## </android>
 
 
-# 13, 5 -> 15
-def roundup(num, base):
-    remainder = num % base
-    if remainder == 0:
-        return num
+## <chromium>
+def chromium_get_rev_max(dir_src):
+    if not os.path.exists(dir_src):
+        error('Chromium src dir does not exist')
 
-    return num + base - remainder
-
-
-# 17, 5 -> 15
-def rounddown(num, base):
-    remainder = num % base
-    if remainder == 0:
-        return num
-
-    return num - remainder
+    backup_dir(dir_src)
+    execute('git fetch', dryrun=False)
+    rev_hash = _chromium_get_rev_hash(chromium_rev_max)
+    restore_dir()
+    return rev_hash.keys()[0]
 
 
-def setup_common(args, teardown):
-    atexit.register(teardown)
+# get hash according to rev
+def chromium_get_hash(dir_src, rev):
+    if not os.path.exists(dir_src):
+        error('Chromium src dir does not exist')
 
-    if args.trace:
-        sys.settrace(trace_func)
+    backup_dir(dir_src)
+    rev_hash = _chromium_get_rev_hash(rev, rev, force=False)
+    if not rev_hash:
+        execute('git fetch', dryrun=False)
+        rev_hash = _chromium_get_rev_hash(rev, rev, force=False)
+    restore_dir()
 
-    if args.time_fixed:
-        timestamp = get_datetime(format='%Y%m%d')
+    if not rev_hash:
+        return ''
     else:
-        timestamp = get_datetime()
+        return rev_hash[rev]
 
-    if args.dir_root:
-        dir_root = args.dir_root
-    elif os.path.islink(sys.argv[0]):
-        dir_root = get_symbolic_link_dir()
+
+# single rev: return hash for general rev, return ''  if failed to find. return rev_max for chromium_rev_max
+# rev range: return valid hashes within range, return {} if failed to find.
+def chromium_get_rev_hash(dir_src, rev_min, *rev_extra):
+    if len(rev_extra):
+        rev_max = rev_extra[0]
     else:
-        dir_root = os.path.abspath(os.getcwd())
+        rev_max = rev_min
 
-    ensure_dir(dir_root)
-    ensure_dir(dir_share_ignore_log)
-    ensure_dir(dir_share_ignore_timestamp)
+    if rev_min > rev_max:
+        return {}
 
-    if args.log:
-        log = args.log
+    if not os.path.exists(dir_src):
+        error('Chromium src dir does not exist')
+
+    backup_dir(dir_src)
+    if rev_min == chromium_rev_max:
+        rev_hash = {}
     else:
-        category = sys.path[0].split('/')[-1]
-        if category in ['webmark', 'webcatch', 'chrome-android']:
-            log = eval('dir_share_ignore_%s_log' % category) + '/' + timestamp + '.log'
+        rev_hash = _chromium_get_rev_hash(rev_min, rev_max, force=False)
+    if not rev_hash:
+        execute('git fetch', dryrun=False)
+        rev_hash = _chromium_get_rev_hash(rev_min, rev_max, force=True)
+    restore_dir()
+
+    if len(rev_extra):
+        return rev_hash
+    elif rev_min == chromium_rev_max:
+        return rev_hash.keys()[0]
+    else:
+        if rev_min in rev_hash:
+            return rev_hash[rev_min]
         else:
-            name_script = sys.argv[0].split('/')[-1].replace('.py', '')
-            log = dir_share_ignore_log + '/' + name_script + '-' + timestamp + '.log'
-    info('Log file: ' + log)
-    backup_log(log, verbose=False)
-
-    set_path(args.path_extra)
-    set_proxy()
-    os.chdir(dir_root)
-
-    return (timestamp, dir_root, log)
+            return ''
 
 
-def add_argument_common(parser):
-    parser.add_argument('--dir-root', dest='dir_root', help='set root directory')
-    parser.add_argument('--log', dest='log', help='log')
-    parser.add_argument('--path-extra', dest='path_extra', help='extra path for execution, such as path for depot_tools')
-    parser.add_argument('--time-fixed', dest='time_fixed', help='fix the time for test sake. We may run multiple tests and results are in same dir', action='store_true')
-    parser.add_argument('--trace', dest='trace', help='trace', action='store_true')
+def get_capabilities(device_id, target_module, use_running_app=False, args=[]):
+    capabilities = {}
+    capabilities['chromeOptions'] = {}
+    capabilities['chromeOptions']['androidDeviceSerial'] = device_id
+    capabilities['chromeOptions']['androidPackage'] = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_PKG]
+    capabilities['chromeOptions']['androidUseRunningApp'] = use_running_app
+    capabilities['chromeOptions']['args'] = args
+
+    activity = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_ACT]
+    if activity:
+        capabilities['chromeOptions']['androidActivity'] = activity
+
+    return capabilities
 
 
-def trace_func(frame, event, arg, indent=[0]):
-    path_file = frame.f_code.co_filename
-    name_func = frame.f_code.co_name
-    name_file = path_file.split('/')[-1]
-    if path_file[:4] != '/usr' and path_file != '<string>':
-        if event == 'call':
-            indent[0] += 2
-            trace('-' * indent[0] + '> call %s:%s' % (name_file, name_func))
-        elif event == 'return':
-            trace('<' + '-' * indent[0] + ' exit %s:%s' % (name_file, name_func))
-            indent[0] -= 2
-    return trace_func
+def chrome_android_cleanup(device_id='', module_name=''):
+    for key in chromium_android_info:
+        if not module_name or module_name == key:
+            execute(adb('uninstall ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device_id=device_id))
+
+    #execute(adb('shell rm -rf /data/data/com.example.chromium', device_id=device_id))
+    #execute(adb('shell rm -rf /data/dalvik-cache/*', device_id=device_id))
 
 
-def hasvalue(obj, member):
-    if not hasattr(obj, member):
-        return False
+def chrome_android_get_ver_type(device_id=''):
+    ver_type = ''
+    for key in chromium_android_info:
+        if not re.match('^chrom', key):
+            continue
+        if execute_adb_shell(cmd='pm -l |grep ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device_id=device_id):
+            ver_type = key
+            break
 
-    if getattr(obj, member) == '':
-        return False
-
-    return True
+    return ver_type
+## </chromium>
 
 
-# <internal>
+## <internal>
 def _surpress_warning():
     fileinput
     random
@@ -1439,4 +1479,5 @@ def _msg(msg):
     execute('echo "%s" >>"%s"' % (msg, log), show_cmd=False)
 
 
-# </internal>
+## </internal>
+# </functions>

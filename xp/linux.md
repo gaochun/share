@@ -47,3 +47,13 @@ mysql -u root -p
 * ctrl+left/right: move by word
 * ctrl+w: clear previous word
 </zsh>
+
+<xp>
+* add favorite to gnome shell
+alacarte->add new item->search it in applications->add as favorite
+
+* desktop file is at /usr/share/applications
+* Change command line for chrome
+modify /opt/google/chrome-unstable/google-chrome-unstable
+
+</xp>

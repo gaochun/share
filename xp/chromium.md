@@ -3,6 +3,21 @@
 
 </commit>
 
+<tracing>
+*
+profiling content shell on Android by Linux perf tool: http://code.google.com/p/chromium/wiki/ProfilingContentShellOnAndroid/
+One correction in that wiki: you should define the GYP_DEFINES as following:
+export GYP_DEFINES=”OS=android profiling=1”, or echo “{ ‘GYP_DEFINES’: ‘OS=android profiling=1’, }” > $CHROMIUM_PROJECT   /chromium.gyp_env
+
+*
+http://www.chromium.org/developers/how-tos/trace-event-profiling-tool/recording-tracing-runs/
+a sample:
+build/android/adb_profile_chrome –browser=content_shell –trace-frame-viewer –trace-gpu –t 2
+
+
+</tracing>
+
+
 <gpu>
 * check extension
 content/common/gpu/client/gl_helper_readback_support.cc
@@ -25,6 +40,23 @@ available for both chrome stable and beta
 adb shell 'echo "chrome --disable-fre --disable-web-security --enable-remote-debugging --ignore-certificate-errors --metrics-recording-only" > /data/local/tmp/chrome-command-line'
 
 </option>
+
+<awshell>
+*
+CHROMIUM_OUT_DIR=out-x86/out build/android/adb_gdb_android_webview_shell
+this will pull libs to /tmp/gyagp-adb-gdb-libs
+*
+android_webview/test/shell/
+*
+entry: src/android_webview/test/shell/src/org/chromium/android_webview/shell/AwShellApplication.java
+
+
+src/base/android/java/src/org/chromium/base
+
+--enable-atrace
+
+</awshell>
+
 
 git config rietveld.server https://codereview.chromium.org
 *

@@ -1,8 +1,6 @@
 <todo>
 set up http server on android
-am start content shell
-
-* change sleep time
+mount /system/gfx directory
 </todo>
 
 <useful>
@@ -17,11 +15,25 @@ adb shell screenrecord /sdcard/fail.mp4
 rm -rf /system/app/Chrome
 
 * install stock browser
-cd /system/app/BrowserProviderPorxy && mv BrowserProviderProxy.apk BrowserProviderProxy.apk.bk, restart
+cd /system/app/BrowserProviderProxy && mv BrowserProviderProxy.apk BrowserProviderProxy.apk.bk, restart
 adb install Browser.apk
 
 * adb out of date
 There is a background adb process in host machine. restart host machine to resolve the issue.
+
+* IRDA extension
+GL_EXT_blend_minmax GL_EXT_multi_draw_arrays GL_EXT_texture_filter_anisotropic GL_EXT_texture_compression_s3tc GL_EXT_draw_buffers GL_EXT_color_buffer_float GL_EXT_draw_instanced GL_EXT_texture_rg GL_EXT_map_buffer_range GL_EXT_texture_buffer GL_INTEL_performance_queries GL_INTEL_performance_query GL_EXT_instanced_arrays GL_EXT_texture_storage GL_KHR_debug GL_OES_EGL_image GL_OES_depth24 GL_OES_packed_depth_stencil GL_OES_rgb8_rgba8 GL_OES_depth_texture GL_EXT_color_buffer_half_float GL_OES_vertex_half_float GL_EXT_shadow_samplers GL_OES_standard_derivatives GL_OES_mapbuffer GL_EXT_discard_framebuffer GL_EXT_texture_format_BGRA8888 GL_OES_compressed_paletted_texture GL_OES_EGL_image_external GL_OES_compressed_ETC1_RGB8_texture GL_OES_vertex_array_object GL_OES_get_program_binary GL_OES_texture_3D GL_OES_fbo_render_mipmap GL_OES_texture_float GL_OES_texture_float_linear GL_OES_texture_half_float GL_OES_texture_half_float_linear GL_OES_element_index_uint GL_OES_texture_npot GL_EXT_sRGB GL_EXT_sRGB_write_control GL_EXT_frag_depth GL_APPLE_texture_max_level GL_EXT_occlusion_query_boolean GL_EXT_texture_compression_dxt1 GL_OES_required_internalformat GL_EXT_separate_shader_objects GL_OES_surfaceless_context GL_OES_EGL_sync GL_EXT_robustness GL_EXT_texture_sRGB_decode GL_EXT_shader_texture_lod GL_EXT_unpack_subimage GL_EXT_read_format_bgra GL_EXT_debug_marker GL_KHR_blend_equation_advanced GL_OES_sample_variables GL_OES_shader_multisample_interpolation GL_OES_texture_stencil8 GL_OES_shader_image_atomic GL_EXT_shader_integer_mix GL_EXT_disjoint_timer_query
+
+opengl es 3.0 - build 2.0.27517-ubit-release
+
+*
+application：包含activity, service, content provider, broadcast receiver
+service: 后台服务
+content provider:
+broadcast receiver: 接收信息
+intent: activity之间的通讯，包含动作和数据
+
+task: 逻辑上的应用
 </useful>
 
 
@@ -146,13 +158,19 @@ try {
 
 
 Chromium:
-TODO
+LOG(INFO)
+LOG(ERROR)
 
 Skia:
-TODO
+GrPrintf
+SkDebugf
 
 
 <gdb>
+
+#include <android/log.h>
+__android_log_print()
+
 http://www.chromium.org/developers/how-tos/debugging-on-android
 
 *
@@ -192,41 +210,50 @@ To make the webview stop for debug very early, make below changes to content/app
 1. Include the header "base/debug/debugger.h"
 2. Add a line 'base::debug::WaitForDebugger(30, true);' at the begin of Start() function
 
-* aosp browser (my xp)
-adb shell ps |grep com.android.browser |awk '{print $2}' |xargs adb shell gdbserver :1234 --attach
+</gdb>
+
+<gdb_gyagp>
+*
+[webview_system]
+adb push /workspace/project/aosp-gminl/out/target/product/ecs_e7/system/lib/libwebviewchromium.so /system/lib/
+adb shell stop && adb shell start
+
+*
 adb forward tcp:1234 tcp:1234
 
+*
+adb shell ps |grep <pkg> |awk '{print $2}' |xargs adb shell gdbserver :1234 --attach
+[aosp_browser] com.android.browser
+[awshell] org.chromium.android_webview.shell
+
+*
 /workspace/project/chromium-android/src/third_party/android_tools/ndk/toolchains/x86-4.8/prebuilt/linux-x86_64/bin/i686-linux-android-gdb
-(gdb)
+
+* (gdb)
 target remote :1234
-set solib-search-path /workspace/project/aosp-gminl/out/target/product/ecs_e7/symbols/system/lib/
+[aosp_browser] set solib-search-path /workspace/project/aosp-gminl/out/target/product/ecs_e7/symbols/system/lib/
+[awshell] set solib-search-path /workspace/project/chromium-android/src/out-x86/out/Release/lib
 
-GrPrintf
-
+*
 b GrGpuGL.cpp:1426
 b GrGpu.cpp:234
 b GrPaint.cpp:47
 b GrContext::drawRect
 b GrContext.cpp:830
 b GrInOrderDrawBuffer.cpp:665
-
-        kDraw_Cmd           = 1,
-        kStencilPath_Cmd    = 2,
-        kSetState_Cmd       = 3,
-        kSetClip_Cmd        = 4,
-        kClear_Cmd          = 5,
-        kCopySurface_Cmd    = 6,
-        kDrawPath_Cmd       = 7,
-        kDrawPaths_Cmd      = 8,
-
 clearRect() -> transparent black (0x00000000)
 16777215=FFFFFF
 fColor = 0xFF000000
 
-adb push /workspace/project/aosp-gminl/out/target/product/ecs_e7/system/lib/libwebviewchromium.so /system/lib/
-adb shell stop && adb shell start
 
-</gdb>
+* command line
+build/android/adb_android_webview_command_line --wait-for-java-debugger: write option to target
+[chrome] chrome-command-line
+[awshell] android-webview-command-line
+
+
+</gdb_gyagp>
+
 
 </debug>
 
@@ -261,6 +288,9 @@ adb shell am start -n com.chrome.beta/com.chrome.beta.Main -d "chrome://version"
 
 * content shell
 adb shell am start -n org.chromium.content_shell/.ContentShellApplication -d "about:version"
+
+* webview shell
+adb shell am start -n org.chromium.android_webview.shell/.AwShellActivity -d "http://wp-02.sh.intel.com/gytemp/rect0.html"
 
 * self-build chrome
 adb shell am start -n com.android.chromium/com.google.android.apps.chrome.Main -d "chrome://version"
@@ -313,6 +343,10 @@ sudo dhclient br0
 <tethering>
 
 <reverse_tethering>
+http://forum.xda-developers.com/showthread.php?t=2287494
+http://forum.xda-developers.com/google-nexus-5/general/android-l-usb-tethering-t2801781
+http://forum.xda-developers.com/google-nexus-5/help/android-l-simple-script-fix-wifi-usb-t2826720
+
 android device shares the connection of desktop
 
 Host:
@@ -338,6 +372,11 @@ Target:
 # Add routing & DNS
 route add default gw 192.168.42.2 dev eth0
 /system/bin/dnsmasq -2 -x -i lo -S 10.248.2.5 --pid-file
+
+*
+cd /workspace/tool && sudo linux/run.sh
+
+
 
 </reverse_tethering>
 

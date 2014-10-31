@@ -863,6 +863,11 @@ def ensure_nodir(dir_check, server=''):
             execute(remotify_cmd('rm -rf ' + dir_check, server=server))
 
 
+def ensure_file(path_file):
+    if not os.path.exists(path_file):
+        execute('touch ' + path_file, show_cmd=True)
+
+
 def get_dir(path):
     return os.path.split(os.path.realpath(path))[0]
 

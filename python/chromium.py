@@ -533,7 +533,7 @@ def buildid(force=False):
     execute('rm -rf temp', show_cmd=False)
 
     # emulator would behave abnormally after several services. So we just start a new one for each round.
-    (ver_temp, ver_type_temp, build_id_temp) = _chrome_android_get_info(target_arch_temp, chrome_android_apk)
+    (result, ver_temp, ver_type_temp, build_id_temp) = _chrome_android_get_info(target_arch_temp, chrome_android_apk)
     info('build id is ' + build_id_temp)
     dir_todo = '%s/%s/%s-%s' % (dir_server_chrome_android_todo, target_arch_temp, ver_temp, ver_type_temp)
     dirs_check = [
@@ -1631,7 +1631,7 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         ver_temp = ''
         ver_type_temp = ''
         build_id_temp = ''
-        execute_adb_shell(cmd='am start -n %s/%s -d "chrome://version"' % (chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_PKG], chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_ACT]), device_id=device_id)
+        result = execute_adb_shell(cmd='am start -n %s/%s -d "chrome://version"' % (chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_PKG], chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_ACT]), device_id=device_id, show_cmd=True)
     else:
         #The following code does not work for com.example.chromium as webdriver.Remote() would hang.
         #adb shell input tap 400 1040
@@ -1669,9 +1669,10 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
             error('Could not find the correct build id')
         driver.quit()
         setenv('http_proxy', env_http_proxy)
+        result = True
     execute(adb('uninstall ' + chromium_android_info[chromium_android_type][CHROMIUM_ANDROID_INFO_INDEX_PKG], device_id=device_id))
 
-    return (ver_temp, ver_type_temp, build_id_temp)
+    return (result, ver_temp, ver_type_temp, build_id_temp)
 
 
 def _update_phase(phase):

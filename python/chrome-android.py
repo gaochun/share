@@ -258,12 +258,12 @@ def analyze():
             ver_part = match.group(1)
             break
 
-    dir_android_chrome = dir_server_chromium + '/android-x86-chrome'
-    dirs = os.listdir(dir_android_chrome)
-    for d in dirs:
-        if re.search(ver_part, d):
-            dirs_symbol.append(dir_android_chrome + '/' + d)
-            break
+    for dir_temp in [dir_server_chromium + '/android-x86-chrome', dir_server_chromium + '/android-chrome-todo/x86']:
+        dirs = os.listdir(dir_temp)
+        for d in dirs:
+            if re.search(ver_part, d):
+                dirs_symbol.append(dir_temp + '/' + d)
+                break
 
     get_symbol(lines, dirs_symbol)
 

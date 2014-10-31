@@ -820,8 +820,6 @@ def is_same_file(src, dest):
     md5_src = get_md5(src)
     md5_dest = get_md5(dest)
     if md5_src != md5_dest:
-        print md5_src
-        print md5_dest
         return False
     else:
         info('%s and %s have same md5' % (src, dest))

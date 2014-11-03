@@ -20,7 +20,7 @@ index = 0
 
 def handle_option():
     global args, args_dict
-    parser = argparse.ArgumentParser(description='Script to bisect regression',
+    parser = argparse.ArgumentParser(description='Script to bisect change',
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog='''
 examples:
@@ -197,9 +197,9 @@ def _bisect(index_small, index_big):
         rev_big_final = revs[index_big]
 
         if rev_small_final + 1 == rev_big_final:
-            info('Revision ' + str(rev_big_final) + ' is the exact commit for regression')
+            info('Revision ' + str(rev_big_final) + ' is the exact commit for change')
         else:
-            info('The regression is between revisions (' + str(revs[index_small]) + ',' + str(revs[index_big]) + '], but there is no build for further investigation')
+            info('The change is between revisions (' + str(revs[index_small]) + ',' + str(revs[index_big]) + '], but there is no build for further investigation')
 
         if rev_big_final - rev_small_final < 15:
             if args.dir_chromium:

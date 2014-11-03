@@ -15,7 +15,7 @@ from selenium import webdriver
 import urllib2
 from util import *
 
-dir_root = dir_project + '/chrome-android'
+dir_root = ''
 vers = []
 ver_types = []
 target_archs = []
@@ -67,6 +67,7 @@ def setup():
     global dir_root, log, timestamp
 
     (timestamp, dir_root, log) = setup_common(args, _teardown)
+    dir_root = dir_project + '/chrome-android'
 
     if args.ver_type == 'all':
         ver_types = ['stable', 'beta']

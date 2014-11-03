@@ -101,7 +101,7 @@ def setup():
     else:
         devices_id_limit = []
     (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_id_limit=devices_id_limit)
-    if len(devices_id) == 0:
+    if len(devices_id) == 0 and not args.dryrun:
         error('No device is connected')
 
 
@@ -140,12 +140,12 @@ def analyze(files_result):
             suite_temp = baseline.suites[index]
             device_temp = suite_temp.device
             module_temp = suite_temp.module
-            if device_temp.product == device['product'] and \
-                    device_temp.arch == device['arch'] and \
-                    device_temp.governor == device['governor'] and \
+            if device_temp.arch == device['arch'] and \
                     device_temp.freq == device['freq'] and \
-                    module_temp.name == module['name'] and \
+                    device_temp.governor == device['governor'] and \
+                    device_temp.product == device['product'] and \
                     module_temp.arch == module['arch'] and \
+                    module_temp.name == module['name'] and \
                     module_temp.os == module['os']:
                 break
         if index >= len(baseline.suites):
@@ -172,8 +172,22 @@ def analyze(files_result):
                 baseline_result = 0
                 for baseline_case in baseline_suite.cases:
                     if baseline_case.name == case['name'] and ('version' not in case or baseline_case.version == case['version']):
-                        baseline_result = float(baseline_case.result)
-                        break
+                        results_range = baseline_case.result.split(',')
+                        for result_range in results_range:
+                            results_temp = result_range.split(':')
+                            range_temp = results_temp[0]
+                            result_temp = results_temp[1].strip()
+                            if re.search('-', range_temp):
+                                ranges_temp = range_temp.split('-')
+                                range_temp_min = ranges_temp[0]
+                                range_temp_max = ranges_temp[1]
+                            else:
+                                range_temp_min = range_temp
+                                range_temp_max = range_temp
+
+                            if ver_cmp(module_temp.version, range_temp_min) >= 0 and ver_cmp(module_temp.version, range_temp_max) <= 0:
+                                baseline_result = float(result_temp)
+                                break
                 if baseline_result < 0.01:
                     analysis = '?'
                 else:
@@ -234,6 +248,15 @@ class Webmark:
                     if name_arg in args_dict and args_dict[name_arg]:
                         data[c.__name__.lower()][m] = args_dict[name_arg]
 
+            if args.dryrun:
+                data['device']['arch'] = 'dryrun'
+                data['device']['freq'] = 0
+                data['device']['governor'] = 'dryrun'
+                data['device']['product'] = 'dryrun'
+                data['module']['arch'] = 'dryrun'
+                data['module']['name'] = 'dryrun'
+                data['module']['os'] = 'dryrun'
+
             if args.case_config:
                 case_config = ', ' + args.case_config
             else:
@@ -292,9 +315,8 @@ class Suite:
         ['cases', 'M', 'A'],
         ['description', 'O', 'P'],
         ['device', 'M', 'O'],
-        ['name', 'O', 'P'],
         ['module', 'M', 'O'],
-
+        ['name', 'O', 'P'],
     ]
 
     def __init__(self, data):
@@ -343,12 +365,11 @@ class Suite:
                 error('Can not install ' + module_path)
 
         # change freq
-        if hasvalue(device, 'governor') and hasvalue(device, 'freq'):
+        if hasvalue(device, 'governor') and hasvalue(device, 'freq') and not args.dryrun:
             android_config_device(device_id=device.id, device_product=device.product, default=False, governor=device.governor, freq=device.freq)
 
         # generate result file
-        timestamp_temp = get_datetime()
-        file_result = dir_share_ignore_webmark_result + '/%s-%s-%s-%s-%s-%s-%s.txt' % (timestamp_temp, device.product, device.arch, module.os, module.arch, module.name, module.version)
+        file_result = dir_share_ignore_webmark_result + '/%s-%s-%s-%s-%s-%s-%s.txt' % (timestamp, device.product, device.arch, module.os, module.arch, module.name, module.version)
         logger.info('Use result file ' + file_result)
         fw = open(file_result, 'w')
         ## write config
@@ -363,11 +384,11 @@ class Suite:
         fw.write(config)
 
         # write performance data
-        capabilities = get_capabilities(device.id, module.name, args.use_running_app, ['--disable-web-security'])
         for i in range(len(self.cases)):
             if dryrun:
                 driver = None
             else:
+                capabilities = get_capabilities(device.id, module.name, args.use_running_app, ['--disable-web-security'])
                 driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
             result = self.cases[i].run(driver)
             fw.write(result + '\n')
@@ -379,7 +400,7 @@ class Suite:
         analyze(file_result)
 
         # restore freq
-        if hasvalue(device, 'governor') and hasvalue(device, 'freq'):
+        if hasvalue(device, 'governor') and hasvalue(device, 'freq') and not args.dryrun:
             android_config_device(device_id=device.id, device_product=device.product, default=True)
 
         # uninstall module
@@ -390,9 +411,9 @@ class Suite:
 class Device:
     FORMAT = [
         ['arch', 'O', 'P'],
-        ['id', 'O', 'P'],
         ['freq', 'O', 'P', 0],
         ['governor', 'O', 'P'],
+        ['id', 'O', 'P'],
         ['product', 'O', 'P'],
     ]
 

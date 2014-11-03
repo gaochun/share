@@ -590,8 +590,21 @@ def ver_cmp(ver_a, ver_b):
     vers_a = [int(x) for x in ver_a.split('.')]
     vers_b = [int(x) for x in ver_b.split('.')]
 
+    # make sure two lists have same length and add 0s for short one.
+    len_a = len(vers_a)
+    len_b = len(vers_b)
+    len_max = max(len_a, len_b)
+    len_diff = abs(len_a - len_b)
+    vers_diff = []
+    for i in range(len_diff):
+        vers_diff.append(0)
+    if len_a < len_b:
+        vers_a.extend(vers_diff)
+    elif len_b < len_a:
+        vers_b.extend(vers_diff)
+
     index = 0
-    while index < len(vers_a):
+    while index < len_max:
         if vers_a[index] > vers_b[index]:
             return 1
         elif vers_a[index] < vers_b[index]:

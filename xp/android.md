@@ -160,6 +160,7 @@ try {
 Chromium:
 LOG(INFO)
 LOG(ERROR)
+printf 没有作用
 
 Skia:
 GrPrintf
@@ -257,6 +258,12 @@ build/android/adb_android_webview_command_line --wait-for-java-debugger: write o
 
 </debug>
 
+<opengl>
+* frameworks/native/opengl
+
+
+
+</opengl>
 
 <am>
 start an activity, service, broadcast intent, instrumentation, profile, monitor

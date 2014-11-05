@@ -387,6 +387,7 @@ fi
 alias add="adb disconnect 192.168.42.1"
 alias adc="adb connect 192.168.42.1"
 alias adr="adb root && adb remount"
+alias adl="adb logcat -c && adb logcat 2>&1 |tee /workspace/gytemp/logcat.txt"
 alias ads="adb shell"
 
 export PATH=$PATH:/workspace/project/depot_tools

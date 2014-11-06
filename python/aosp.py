@@ -105,7 +105,7 @@ examples:
     parser.add_argument('--cts-run', dest='cts_run', help='package to run with cts, such as android.webkit, com.android.cts.browserbench')
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'all'], default='x86_64')
-    parser.add_argument('--target-type', dest='target_type', help='target type, can be baytrail for t100, generic, mrd7, mako for nexus4, hammerhead for nexus5, flo for nexus7', default='baytrail')
+    parser.add_argument('--target-type', dest='target_type', help='target type, can be baytrail for t100, generic, mrd7, mako for nexus4, hammerhead for nexus5, flo for nexus7, manta for nexus 10', default='baytrail')
     parser.add_argument('--target-module', dest='target_module', help='target module', choices=['libwebviewchromium', 'webview', 'browser', 'cts', 'system', 'all'], default='system')
 
     parser.add_argument('--variant', dest='variant', help='variant', choices=['user', 'userdebug', 'eng'], default='userdebug')
@@ -815,6 +815,9 @@ def _get_repo_info():
             elif merge == 'android-4.4.4_r1':
                 repo_type = 'upstream'
                 repo_ver = '4.4.4.1'
+            elif merge == 'android-5.0.0_r2':
+                repo_type = 'upstream'
+                repo_ver = '5.0.0'
             elif merge == 'abt/private/topic/aosp_stable/master':
                 repo_type = 'stable'
                 if os.path.exists('device/intel/baytrail/asus_t100'):

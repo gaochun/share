@@ -171,7 +171,7 @@ def analyze(files_result):
 
                 baseline_result = 0
                 for baseline_case in baseline_suite.cases:
-                    if baseline_case.name == case['name'] and ('version' not in case or baseline_case.version == case['version']):
+                    if baseline_case.name == case['name'] and ('NA' == case['version'] or baseline_case.version == case['version']):
                         results_range = baseline_case.result.split(',')
                         for result_range in results_range:
                             results_temp = result_range.split(':')
@@ -185,7 +185,7 @@ def analyze(files_result):
                                 range_temp_min = range_temp
                                 range_temp_max = range_temp
 
-                            if ver_cmp(module_temp.version, range_temp_min) >= 0 and ver_cmp(module_temp.version, range_temp_max) <= 0:
+                            if ver_cmp(module['version'], range_temp_min) >= 0 and ver_cmp(module_temp.version, range_temp_max) <= 0:
                                 baseline_result = float(result_temp)
                                 break
                 if baseline_result < 0.01:

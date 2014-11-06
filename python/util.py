@@ -769,10 +769,11 @@ def get_symbolic_link_dir():
 
 def backup_dir(dir_new, verbose=False):
     global dir_stack
-    dir_stack.append(os.getcwd())
+    dir_old = os.getcwd()
+    dir_stack.append(dir_old)
     os.chdir(dir_new)
     if verbose:
-        info('Switched to ' + dir_new)
+        info('Switched from %s to %s' % (dir_old, dir_new))
 
 
 def restore_dir(verbose=False):

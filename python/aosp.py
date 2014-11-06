@@ -75,6 +75,7 @@ examples:
   python %(prog)s -b --disable-2nd-arch  --build-skip-mk --target-module libwebviewchromium --build-no-dep
   python %(prog)s --target-type generic --backup --backup-skip-server --time-fixed
   python %(prog)s --build --target-type flo --version KTU84P
+  python %(prog)s --init --repo-branch android-5.0.0_r2 --sync --repo-type upstream
 ''')
 
     parser.add_argument('--init', dest='init', help='init', action='store_true')
@@ -192,8 +193,9 @@ def init():
         file_repo = 'https://storage.googleapis.com/git-repo-downloads/repo'
     elif repo_type == 'stable' or repo_type == 'gminl' or repo_type == 'gminl64':
         file_repo = 'http://android.intel.com/repo'
-    elif repo_type == 'irdakk':
+    elif repo_type == 'irdakk' or repo_type == 'irdal':
         file_repo = 'https://buildbot-otc.jf.intel.com/repo.otc'
+
     execute('curl -k --noproxy intel.com %s >./repo' % file_repo, interactive=True)
     execute('chmod +x ./repo')
 
@@ -207,6 +209,8 @@ def init():
         cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/topic/gmin/l-dev/aosp/64bit/master'
     elif repo_type == 'irdakk':
         cmd = 'repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b irda/kitkat/master'
+    elif repo_type == 'irdal':
+        cmd = 'repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b irda/l-dev/master'
     execute(cmd, interactive=True)
 
     execute('./repo sync -c -j16', interactive=True)
@@ -415,9 +419,9 @@ def flash_image():
             elif repo_type == 'irdakk':
                 file_image = dir_root + '/out/target/product/irda/irda-ktu84p-factory.tgz'
             elif repo_type == 'gminl':
-                file_image = dir_root + '/out/target/product/%s_%s/%s_%s-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)
+                file_image = dir_root + '/out/target/product/%s_%s/%s_%s-lrx21n-factory.tgz' % (product_brand, product_name, product_brand, product_name)
             elif repo_type == 'gminl64':
-                file_image = dir_root + '/out/target/product/%s_%s_64p/%s_%s_64p-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)
+                file_image = dir_root + '/out/target/product/%s_%s_64p/%s_%s_64p-lrx21n-factory.tgz' % (product_brand, product_name, product_brand, product_name)
 
         if not os.path.exists(file_image):
             error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
@@ -648,6 +652,8 @@ def _get_combo(device_arch, device_type):
         combo = 'aosp_' + device_type + '-' + variant
     elif repo_type == 'irdakk':
         combo = 'irda-%s' % variant
+    elif repo_type == 'irdal':
+        combo = 'coho-%s' % variant
     elif repo_type == 'gminl':
         if not product_brand or not product_name:
             error('Please designate product brand and name')
@@ -698,9 +704,9 @@ def _backup_one(arch, device_type, module):
     elif repo_type == 'irdakk':
         files_backup = {'.': 'out/target/product/irda/irda-ktu84p-factory.tgz'}
     elif repo_type == 'gminl':
-        files_backup = {'.': 'out/target/product/%s_%s/%s_%s-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
+        files_backup = {'.': 'out/target/product/%s_%s/%s_%s-lrx21n-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
     elif repo_type == 'gminl64':
-        files_backup = {'.': 'out/target/product/%s_%s_64p/%s_%s_64p-lmp-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
+        files_backup = {'.': 'out/target/product/%s_%s_64p/%s_%s_64p-lrx21n-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
     elif repo_type == 'stable':
         product = get_product(arch, device_type, ver=repo_ver)
 

@@ -1,0 +1,40 @@
+From e4cd09530363ab0a61c5662c5589bf5bb44de806 Mon Sep 17 00:00:00 2001
+From: Yang Gu <yang.gu@intel.com>
+Date: Tue, 4 Nov 2014 08:53:32 +0800
+Subject: [PATCH] Fix spdy crash
+
+---
+ .../data_reduction_proxy/browser/data_reduction_proxy_settings.cc | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/components/data_reduction_proxy/browser/data_reduction_proxy_settings.cc b/components/data_reduction_proxy/browser/data_reduction_proxy_settings.cc
+index a2ca75d..7c9125d 100644
+--- a/components/data_reduction_proxy/browser/data_reduction_proxy_settings.cc
++++ b/components/data_reduction_proxy/browser/data_reduction_proxy_settings.cc
+@@ -170,7 +170,11 @@ void DataReductionProxySettings::SetProxyConfigurator(
+ }
+ 
+ bool DataReductionProxySettings::IsDataReductionProxyEnabled() {
++#if defined(SPDY_PROXY_AUTH_ORIGIN)
+   return spdy_proxy_auth_enabled_.GetValue() || IsEnabledOnCommandLine();
++#else
++  return IsEnabledOnCommandLine();
++#endif
+ }
+ 
+ bool
+@@ -179,7 +183,11 @@ DataReductionProxySettings::IsDataReductionProxyAlternativeEnabled() const {
+ }
+ 
+ bool DataReductionProxySettings::IsDataReductionProxyManaged() {
++#if defined(SPDY_PROXY_AUTH_ORIGIN)
+   return spdy_proxy_auth_enabled_.IsManaged();
++#else
++  return false;
++#endif
+ }
+ 
+ void DataReductionProxySettings::SetDataReductionProxyEnabled(bool enabled) {
+-- 
+1.9.1
+

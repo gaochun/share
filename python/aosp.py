@@ -267,7 +267,7 @@ def build():
         return
 
     # Set up JDK
-    backup_dir(dir_python)
+    backup_dir(dir_share_python)
     if repo_type == 'irdakk' or repo_type == 'upstream' and ver_cmp(repo_ver, '5.0') < 0:
         execute('python version.py -t java -s jdk1.6.0_45')
     else:

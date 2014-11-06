@@ -68,7 +68,7 @@ def setup():
         pkgs_common.append('gcc-%s-multilib' % ver_gcc)
         pkgs_common.append('g++-%s-multilib' % ver_gcc)
 
-    backup_dir(dir_python)
+    backup_dir(dir_share_python)
 
 
 def patch_sudo():

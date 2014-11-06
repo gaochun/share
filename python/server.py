@@ -138,7 +138,7 @@ def _run_one(cb):
         execute('touch ' + file_cb)
         cmd = globals()[cb]()
         if cmd:
-            cmd = 'python ' + dir_python + '/' + cmd
+            cmd = 'python ' + dir_share_python + '/' + cmd
             cmd = suffix_cmd(cmd, args, log)
             execute(cmd, interactive=True)
 

@@ -67,7 +67,7 @@ rev_clang = 287416
 # postbuild: generate new package, so with symbol, etc. depends on ver, target_arch and ver_type.
 # verify: install new package to device to verify its correctness.  depends on ver, target_arch and ver_type.
 # notify: send out email notification.  depends on ver, target_arch and ver_type.
-chrome_android_phase_all = ['buildid', 'init', 'sync', 'runhooks', 'prebuild', 'makefile', 'build', 'postbuild', 'verify', 'backup', 'notify']
+chrome_android_phase_all = ['buildid', 'init', 'sync', 'runhooks', 'prebuild', 'patch', 'makefile', 'build', 'postbuild', 'verify', 'backup', 'notify']
 ver = ''
 ver_type = ''
 chrome_android_soname = ''
@@ -119,7 +119,7 @@ test_suite = {}
 repo_type_info = {
     'default': {
         'rev': chromium_rev_max,
-        'dir_patches': dir_python,
+        'dir_patches': dir_share_python,
         'patches': {},
         # (device_type, target_arch): {}
         # device_type can be 'baytrail', 'generic'
@@ -127,7 +127,7 @@ repo_type_info = {
     },
     'x64': {
         'rev': 302728,
-        'dir_patches': dir_python + '/chromium-patches/x64',
+        'dir_patches': dir_share_python + '/chromium-patches/x64',
         'patches': {
             'src': [
                 #'0001-Enlarge-kThreadLocalStorageSize-to-satisfy-test.patch',
@@ -638,13 +638,6 @@ def sync(force=False):
         _update_phase(get_caller_name())
 
 
-def patch(force=False):
-    if not args.patch and not force:
-        return
-
-    apply_patch(patches, dir_patches)
-
-
 def prebuild(force=False):
     global chrome_android_soname
 
@@ -671,6 +664,22 @@ def prebuild(force=False):
 
         restore_dir()
 
+        _update_phase(get_caller_name())
+
+
+def patch(force=False):
+    if not args.patch and not force:
+        return
+
+    if repo_type == 'chrome-android':
+        dir_patches = dir_share_python + '/chrome-android'
+        patches = {}
+        if ver_cmp(ver, '38') > 0 and ver_cmp(ver, '39') < 0:
+            patches['src'] = ['0001-Fix-spdy-crash.patch']
+
+    apply_patch(patches, dir_patches)
+
+    if repo_type == 'chrome-android':
         _update_phase(get_caller_name())
 
 

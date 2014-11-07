@@ -83,37 +83,8 @@ test_command_default = [
     #'perf'
 ]
 
-# See details at build/android/pylib/gtest/gtest_config.py
-gtest_suite_default = [
-    'android_webview_unittests',
-    'base_unittests',
-    'breakpad_unittests',  # Need breakpad
-    'cc_unittests',
-    'components_unittests',
-    'content_unittests',
-    'events_unittests',
-    'gl_tests',
-    'gpu_unittests',
-    'ipc_tests',
-    'media_unittests',
-    'net_unittests',
-    'sandbox_linux_unittests',
-    'sql_unittests',
-    'sync_unit_tests',
-    'ui_unittests',
-    'unit_tests',  # Need breakpad
-    'webkit_unit_tests',
-    'content_gl_tests',  # experimental suite
-    #'content_browsertests',  # webrtc
-]
-
-instrumentation_suite_default = [
-    'ContentShellTest',
-    'ChromeShellTest',
-    'AndroidWebViewTest',
-    'MojoTest',
-]
-
+gtest_suite_default = []
+instrumentation_suite_default = []
 test_suite = {}
 
 repo_type_info = {
@@ -509,11 +480,13 @@ def setup():
         else:
             setenv('GYP_DEFINES', 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os)
 
-    # Setup test_suite
-    for command in _setup_list('test_command'):
-        test_suite[command] = []
-        for suite in _setup_list(command + '_suite'):
-            test_suite[command].append(suite)
+    if args.test_build or args.test_run or args.test_drybuild or args.test_dryrun:
+        _get_suite_default()
+        # Setup test_suite
+        for command in _setup_list('test_command'):
+            test_suite[command] = []
+            for suite in _setup_list(command + '_suite'):
+                test_suite[command].append(suite)
 
 
 def buildid(force=False):
@@ -1152,6 +1125,52 @@ def backup_test():
 
 
 ########## Internal function begin ##########
+def _get_suite_default():
+    global gtest_suite_default, instrumentation_suite_default
+
+    # gtest
+    f = open('src/build/android/pylib/gtest/gtest_config.py')
+    lines = f.readlines()
+    f.close()
+    i = 0
+    while i < len(lines):
+        for suite in ['EXPERIMENTAL_TEST_SUITES', 'STABLE_TEST_SUITES']:
+            if re.match(suite, lines[i]):
+                len_old = len(gtest_suite_default)
+                i = i + 1
+                while not re.match(']', lines[i]):
+                    match = re.search('\'(.*)\'', lines[i])
+                    if match:
+                        gtest_suite_default.append(match.group(1))
+                    i = i + 1
+
+                if len(gtest_suite_default) == len_old:
+                    error('Could not find suite ' + suite)
+        i = i + 1
+    if len(gtest_suite_default) == 0:
+        error('Could not find suite for gtest')
+
+    # instrumentation
+    f = open('src/build/android/buildbot/bb_device_steps.py')
+    lines = f.readlines()
+    f.close()
+    i = 0
+    while i < len(lines):
+        if re.match('INSTRUMENTATION_TESTS =', lines[i]):
+            len_old = len(instrumentation_suite_default)
+            i = i + 1
+            while not re.match('    \]\)', lines[i]):
+                match = re.search('\'(.*Test)\'', lines[i])
+                if match:
+                    instrumentation_suite_default.append(match.group(1))
+                i = i + 1
+            break
+        i = i + 1
+
+    if len(instrumentation_suite_default) == len_old:
+        error('Could not find suite for instrumentation')
+
+
 def _test_build_name(command, name):
     cmd = 'ninja -j' + count_cpu + ' -C ' + dir_out_build_type + ' ' + name
     result = execute(cmd, interactive=True)

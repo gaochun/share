@@ -84,7 +84,16 @@ test_command_default = [
 ]
 
 gtest_suite_default = []
-instrumentation_suite_default = []
+# {test_apk : [target, name, apk, apk_package, test_apk, test_data, host_driven_root, ...]}
+instrumentation_suite_default = {}
+INSTRUMENTATION_SUITE_DEFAULT_INDEX_TARGET = 0
+INSTRUMENTATION_SUITE_DEFAULT_INDEX_NAME = 1
+INSTRUMENTATION_SUITE_DEFAULT_INDEX_APK = 2
+INSTRUMENTATION_SUITE_DEFAULT_INDEX_APK_PACKAGE = 3
+INSTRUMENTATION_SUITE_DEFAULT_INDEX_TEST_APK = 4
+INSTRUMENTATION_SUITE_DEFAULT_INDEX_TEST_DATA = 5
+INSTRUMENTATION_SUITE_DEFAULT_INDEX_HOST_DRIVEN_ROOT = 6
+
 test_suite = {}
 
 repo_type_info = {
@@ -1043,14 +1052,7 @@ def test_build(force=False):
                 else:
                     name = suite + '_apk'
             elif command == 'instrumentation':
-                if suite == 'ContentShellTest':
-                    name = 'content_shell_apk content_shell_test_apk'
-                elif suite == 'ChromeShellTest':
-                    name = 'chrome_shell_apk chrome_shell_test_apk'
-                elif suite == 'AndroidWebViewTest':
-                    name = 'android_webview_apk android_webview_test_apk'
-                elif suite == 'MojoTest':
-                    name = 'mojo_test_apk'
+                name = instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_TARGET]
 
             result = _test_build_name(command, name)
             if result:
@@ -1158,13 +1160,26 @@ def _get_suite_default():
     while i < len(lines):
         if re.match('INSTRUMENTATION_TESTS =', lines[i]):
             len_old = len(instrumentation_suite_default)
-            i = i + 1
+            test_temp = []
             while not re.match('    \]\)', lines[i]):
-                match = re.search('\'(.*Test)\'', lines[i])
-                if match:
-                    instrumentation_suite_default.append(match.group(1))
+                if re.search('I\(', lines[i]):
+                    test_temp = ['']
+
+                line_temp = lines[i].replace('\n', '').replace(' ', '').replace('I', '', 1).replace('(', '').replace(')', '').replace(',', '').replace('\'', '')
+                if line_temp == 'None':
+                    line_temp = ''
+                test_temp.append(line_temp)
+
+                if re.search('\)\,', lines[i]):
+                    # get target
+                    name = test_temp[INSTRUMENTATION_SUITE_DEFAULT_INDEX_NAME]
+                    name = name.replace('WebView', 'Webview')
+                    name = (re.sub('([A-Z])', lambda p: '_' + p.group(1).lower(), name)).lstrip('_')
+                    target = name + '_apk' + ' ' + name + '_test_apk'
+                    test_temp[INSTRUMENTATION_SUITE_DEFAULT_INDEX_TARGET] = target
+
+                    instrumentation_suite_default[test_temp[INSTRUMENTATION_SUITE_DEFAULT_INDEX_TEST_APK]] = test_temp
                 i = i + 1
-            break
         i = i + 1
 
     if len(instrumentation_suite_default) == len_old:
@@ -1213,15 +1228,7 @@ def _test_run_device(index_device, results):
 
                 if command == 'instrumentation':
                     # Install packages before running
-                    if suite == 'ContentShellTest':
-                        apks = ['org.chromium.content_shell_apk', 'ContentShell.apk']
-                    elif suite == 'ChromeShellTest':
-                        apks = ['org.chromium.chrome.shell', 'ChromeShell.apk']
-                    elif suite == 'AndroidWebViewTest':
-                        apks = ['org.chromium.android_webview.shell', 'AndroidWebView.apk']
-                    elif suite == 'MojoTest':
-                        apks = []
-
+                    apks = [instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_APK_PACKAGE], instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_APK]]
                     if apks:
                         _install_apk(device_id=device_id, apks=apks, force=True)
 
@@ -1261,14 +1268,8 @@ def _test_run_device(index_device, results):
                     else:
                         cmd += ' -t 60'
 
-                if suite == 'ContentShellTest':
-                    cmd += ' --test_data content:content/test/data/android/device_files'
-                elif suite == 'ChromeShellTest':
-                    cmd += ' --test_data chrome:chrome/test/data/android/device_files'  # --host-driven-root?
-                elif suite == 'AndroidWebViewTest':
-                    cmd += ' --test_data webview:android_webview/test/data/device_files'
-                elif suite == 'MojoTest':
-                    cmd += ''
+                if instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_TEST_DATA]:
+                    cmd += ' --test_data ' + instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_TEST_DATA]
 
                 cmd += ' --num_retries 1'
                 if args.test_filter:

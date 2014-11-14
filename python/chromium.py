@@ -650,6 +650,7 @@ def prebuild(force=False):
 
 
 def patch(force=False):
+    global patches, dir_patches
     if not args.patch and not force:
         return
 

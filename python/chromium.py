@@ -1268,7 +1268,7 @@ def _test_run_device(index_device, results):
                     else:
                         cmd += ' -t 60'
 
-                if instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_TEST_DATA]:
+                if suite in instrumentation_suite_default and instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_TEST_DATA]:
                     cmd += ' --test_data ' + instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_TEST_DATA]
 
                 cmd += ' --num_retries 1'

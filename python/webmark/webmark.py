@@ -185,7 +185,7 @@ def analyze(files_result):
                                 range_temp_min = range_temp
                                 range_temp_max = range_temp
 
-                            if ver_cmp(module['version'], range_temp_min) >= 0 and ver_cmp(module_temp.version, range_temp_max) <= 0:
+                            if ver_cmp(module['version'], range_temp_min) >= 0 and ver_cmp(module['version'], range_temp_max) <= 0:
                                 baseline_result = float(result_temp)
                                 break
                 if baseline_result < 0.01:

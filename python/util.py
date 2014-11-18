@@ -1155,11 +1155,19 @@ def android_unlock_screen(device_id=''):
 
 
 def android_set_screen_lock_none(device_id=''):
-    execute_adb_shell(cmd='am start -n com.android.settings/.SecuritySettings && sleep 5 && input tap 200 150 && sleep 5 && input tap 200 100 && am force-stop com.android.settings', device_id=device_id)
+    ver = android_get_ver(device_id=device_id)
+    if ver_cmp(ver, '5.0') >= 0:
+        info('Andorid Lollipop does not support to set screen lock to none')
+    else:
+        execute_adb_shell(cmd='am start -n com.android.settings/.SecuritySettings && sleep 5 && input tap 200 150 && sleep 5 && input tap 200 100 && am force-stop com.android.settings', device_id=device_id)
 
 
 def android_set_display_sleep_30mins(device_id=''):
-    execute_adb_shell(cmd='am start -n com.android.settings/.DisplaySettings && sleep 5 && input tap 200 250 && sleep 5 && input tap 500 550 && am force-stop com.android.settings', device_id=device_id)
+    ver = android_get_ver(device_id=device_id)
+    if ver_cmp(ver, '5.0') >= 0:
+        execute_adb_shell(cmd='am start -n com.android.settings/.DisplaySettings && sleep 2 && input tap 200 400 && sleep 2 && input tap 500 800 && am force-stop com.android.settings', device_id=device_id)
+    else:
+        execute_adb_shell(cmd='am start -n com.android.settings/.DisplaySettings && sleep 5 && input tap 200 250 && sleep 5 && input tap 500 550 && am force-stop com.android.settings', device_id=device_id)
 
 
 def android_is_screen_on(device_id=''):
@@ -1190,6 +1198,10 @@ def android_get_info(key, device_id=''):
     cmd = adb(cmd='shell grep %s= system/build.prop' % key, device_id=device_id)
     result = execute(cmd, return_output=True, show_cmd=False)
     return result[1].replace(key + '=', '').rstrip('\r\n')
+
+
+def android_get_ver(device_id=''):
+    return android_get_info('ro.build.version.release', device_id=device_id)
 
 
 def android_get_target_arch(device_id=''):

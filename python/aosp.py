@@ -46,7 +46,7 @@ product_name = ''
 repo_type = ''  # upstream, stable, mcg, gminl, irdakk, gminl64
 repo_branch = ''
 # stable from 20140624, combo changed to asus_t100-userdebug, etc.
-repo_ver = '0.0'
+repo_ver = ''
 
 patches_build_common = {
     # Emulator
@@ -103,6 +103,7 @@ examples:
     parser.add_argument('--remove-out', dest='remove_out', help='remove out dir before build', action='store_true')
     parser.add_argument('--hack-app-process', dest='hack_app_process', help='hack app_process', action='store_true')
     parser.add_argument('--cts-run', dest='cts_run', help='package to run with cts, such as android.webkit, com.android.cts.browserbench')
+    parser.add_argument('--ready', dest='ready', help='ready the device', action='store_true')
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'all'], default='x86_64')
     parser.add_argument('--target-type', dest='target_type', help='target type, can be baytrail for t100, generic, mrd7, mako for nexus4, hammerhead for nexus5, flo for nexus7, manta for nexus 10', default='baytrail')
@@ -130,7 +131,7 @@ def setup():
     global targets_arch, targets_type, targets_module
     global dir_chromium, dir_out, chromium_version
     global use_upstream_chromium, patches_build
-    global repo_type, repo_ver, variant
+    global variant
     global product_brand, product_name
     global dir_root, log, timestamp
 
@@ -141,15 +142,6 @@ def setup():
     variant = args.variant
     product_brand = args.product_brand
     product_name = args.product_name
-
-    if not os.path.exists('.repo'):
-        if not args.repo_type:
-            error('Please designate repo type')
-        repo_type = args.repo_type
-    else:
-        (repo_type, repo_ver) = _get_repo_info()
-    info('repo type is ' + repo_type)
-    info('repo version is ' + repo_ver)
 
     for cmd in ['adb', 'git', 'gclient']:
         result = execute('which ' + cmd, show_cmd=False)
@@ -188,6 +180,8 @@ def setup():
 def init():
     if not args.init:
         return()
+
+    _setup_repo()
 
     if repo_type == 'upstream':
         file_repo = 'https://storage.googleapis.com/git-repo-downloads/repo'
@@ -265,6 +259,8 @@ def remove_out():
 def build():
     if not args.build:
         return
+
+    _setup_repo()
 
     # Set up JDK
     backup_dir(dir_share_python)
@@ -378,6 +374,7 @@ def flash_image():
         return
 
     _setup_device()
+    _setup_repo()
 
     if len(devices_id) < 1:
         error('You must have device connected')
@@ -639,6 +636,18 @@ def set_governor():
         android_config_device(device_id=devices_id[0], device_product=devices_product[0], default=False, governor=args.device_governor, freq=args.device_freq)
 
 
+def ready():
+    if not args.ready:
+        return
+
+    _setup_device()
+    device_id = devices_id[0]
+    android_keep_screen_on(device_id=device_id)
+    android_unlock_screen(device_id=device_id)
+    android_set_screen_lock_none(device_id=device_id)
+    android_set_display_sleep_30mins(device_id=device_id)
+
+
 def _sync_repo(dir, cmd):
     backup_dir(dir)
     result = execute(cmd, interactive=True, dryrun=False, file_log=log)
@@ -648,6 +657,7 @@ def _sync_repo(dir, cmd):
 
 
 def _get_combo(device_arch, device_type):
+    _setup_repo()
     if repo_type == 'upstream':
         combo = 'aosp_' + device_type + '-' + variant
     elif repo_type == 'irdakk':
@@ -696,6 +706,7 @@ def _get_combo(device_arch, device_type):
 # (x86, generic, webview) is included in 1
 
 def _backup_one(arch, device_type, module):
+    _setup_repo()
     if repo_type == 'upstream':
         pass
         #dest_dir = dir_backup_img + get_datetime() + '-' + device_id + '-' + variant + '/'
@@ -799,6 +810,7 @@ def _patch_remove(patches):
 
 
 def _get_repo_info():
+    _setup_repo()
     f = open('.repo/manifests.git/config')
     lines = f.readlines()
     f.close()
@@ -848,10 +860,25 @@ def _setup_device():
     if devices_id:
         return
 
-    if repo_type == 'stable':
-        connect_device()
-
     (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_id_limit=args.device_id)
+
+
+def _setup_repo():
+    global repo_type, repo_ver
+
+    if repo_type:
+        return
+
+    if not os.path.exists('.repo'):
+        if not args.repo_type:
+            error('Please designate repo type')
+        repo_type = args.repo_type
+        repo_ver = '0.0'
+    else:
+        (repo_type, repo_ver) = _get_repo_info()
+    info('repo type is ' + repo_type)
+    info('repo version is ' + repo_ver)
+
 
 if __name__ == "__main__":
     parse_arg()
@@ -870,5 +897,6 @@ if __name__ == "__main__":
     analyze()
     push()
     cts_run()
+    ready()
 
     set_governor()

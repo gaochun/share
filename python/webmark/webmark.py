@@ -155,7 +155,7 @@ def analyze(files_result):
 
         # analyze
         for line in fileinput.input(file_result, inplace=1):
-            if not re.search('"device"', line) and not re.search('"module"', line):
+            if not re.search('"time"', line) and not re.search('"device"', line) and not re.search('"module"', line):
                 # get case info
                 case = {}
                 results = line.split(',')
@@ -369,7 +369,7 @@ class Suite:
             android_config_device(device_id=device.id, device_product=device.product, default=False, governor=device.governor, freq=device.freq)
 
         # generate result file
-        file_result = dir_share_ignore_webmark_result + '/%s-%s-%s-%s-%s-%s-%s.txt' % (timestamp, device.product, device.arch, module.os, module.arch, module.name, module.version)
+        file_result = dir_share_ignore_webmark_result + '/%s-%s-%s-%s-%s-%s-%s-%s-%s.txt' % (device.product, device.arch, device.governor, device.freq, module.os, module.arch, module.name, module.version, timestamp)
         logger.info('Use result file ' + file_result)
         fw = open(file_result, 'w')
         ## write config
@@ -380,7 +380,7 @@ class Suite:
         for i in [device, module]:
             for m in [x[0] for x in i.FORMAT]:
                 data[i.__class__.__name__.lower()][m] = getattr(i, m)
-        config = '"device": %s\n"module": %s\n' % (json.dumps(data['device']), json.dumps(data['module']))
+        config = '"time": %s\n"device": %s\n"module": %s\n' % (timestamp, json.dumps(data['device']), json.dumps(data['module']))
         fw.write(config)
 
         # write performance data

@@ -107,6 +107,16 @@ device_product_info = {
         'scaling_driver': 'intel_pstate',
         'count_cstate': 6,
     },
+    'surftab': {
+        'governors': ['performance', 'powersave'],
+        'governor': 'powersave',
+        'freqs': [],
+        'freq_min': 600000,
+        'freq_max': 1832600,
+        'count_cpu': 4,
+        'scaling_driver': 'intel_pstate',
+        'count_cstate': 6,
+    },
 }
 device_product_info['asus_t100_64p'] = device_product_info['asus_t100']
 device_product_info['ecs_e7'] = device_product_info['cruise7']

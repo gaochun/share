@@ -174,8 +174,11 @@ dir_tool = dir_workspace + '/tool'
 path_web_benchmark = 'http://wp-02.sh.intel.com'
 path_web_webbench = path_web_benchmark + '/webbench'
 path_web_webcatch = path_web_benchmark + '/chromium'
+path_web_webmark = path_web_benchmark + '/webmark'
+path_web_webmark_result = path_web_webmark + '/result'
 path_web_chrome_android = 'http://wp-03.sh.intel.com/chromium'
 path_server_backup = '//wp-01.sh.intel.com/backup'
+path_server_webmark = '//wp-02.sh.intel.com/webmark'
 
 dir_home = os.getenv('HOME')
 ## </path>

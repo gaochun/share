@@ -50,6 +50,8 @@ examples:
     parser.add_argument('--use-running-app', dest='use_running_app', help='use running app', action='store_true', default=False)
     parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true', default=False)
     parser.add_argument('--analyze', dest='analyze', help='file to analyze')
+    parser.add_argument('--upload', dest='upload', help='file to upload')
+    parser.add_argument('--formal', dest='formal', help='formal benchmark results, which would send email and backup to samba server', action='store_true')
 
     add_argument_common(parser)
 
@@ -121,6 +123,7 @@ def analyze(files_result):
     else:
         files_result_todo = files_result.split(',')
 
+    contents_change = ''
     for file_result in files_result_todo:
         if file_result[0] != '/':
             file_result = dir_share_ignore_webmark_result + '/' + file_result
@@ -154,6 +157,9 @@ def analyze(files_result):
         baseline_suite = baseline.suites[index]
 
         # analyze
+        content_regression = ''
+        content_improvement = ''
+        content_change = ''
         for line in fileinput.input(file_result, inplace=1):
             if not re.search('"time"', line) and not re.search('"device"', line) and not re.search('"module"', line):
                 # get case info
@@ -205,6 +211,11 @@ def analyze(files_result):
                                 change = '+'
 
                         analysis = '%s%s%%' % (change, diff)
+
+                        if change == '-':
+                            content_regression += '%s<br>' % (line)
+                        elif change == '+':
+                            content_improvement += '%s<br>' % (line)
                     else:
                         analysis = '='
 
@@ -214,6 +225,33 @@ def analyze(files_result):
                     line = line.rstrip('\n') + ',' + analysis + '\n'
 
             sys.stdout.write(line)
+            if content_regression or content_improvement:
+                content_change = '<a href="%s" target="_blank">%s</a><br>%s%s<br>' % (path_web_webmark_result + file_result.split('/')[-1], file_result.split('/')[-1].replace('.txt', ''), content_regression, content_improvement)
+        contents_change += content_change
+    if args.formal and contents_change:
+        to = ['zhiqiangx.yu@intel.com', 'guanxian.li@intel.com']
+        send_mail('webperf@intel.com', to, 'Webmark for Android - performance suspects', contents_change, type='html')
+
+
+def upload(files_result):
+    if  not files_result:
+        return
+
+    if files_result == 'all':
+        files_result_todo = os.listdir(dir_share_ignore_webmark_result)
+    else:
+        files_result_todo = files_result.split(',')
+
+    backup_dir(dir_share_ignore_webmark_result)
+    for file_result in files_result_todo:
+        file_result = file_result.split('/')[-1]
+
+        file_result_server = re.sub('-[\d]{14}', lambda p: '', file_result)
+        execute('cp %s %s' % (file_result, file_result_server))
+        backup_smb(path_server_webmark, 'result', file_result_server)
+        execute('rm %s' %file_result_server)
+
+    restore_dir()
 
 
 def _teardown():
@@ -398,6 +436,8 @@ class Suite:
                 driver.quit()
         fw.close()
         analyze(file_result)
+        if args.formal:
+            upload(file_result)
 
         # restore freq
         if hasvalue(device, 'governor') and hasvalue(device, 'freq') and not args.dryrun:
@@ -569,3 +609,4 @@ if __name__ == '__main__':
     setup()
     run()
     analyze(args.analyze)
+    upload(args.upload)

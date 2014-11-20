@@ -78,7 +78,7 @@ commands = [
     ('deb', 'apt-cache policy <package_name>', 'Show status and version', TYPE_NULL),
     ('deb', 'apt-cache depends <package_name>', 'Show dependency', TYPE_NULL),
     ('deb', 'apt-cache rdepends <package_name>', 'Show reverse dependency', TYPE_NULL),
-    ('deb', 'apt-file search <file_name>', 'Find package according to file name', TYPE_NULL),
+    ('deb', 'apt-file -a i386 search <file_name>', 'Find package according to file name', TYPE_NULL),
     ('deb', 'pkg-config --modversion gtk+-2.0', 'Check version of module', TYPE_NULL),
     ('zypper', 'zypper si <package_name>', 'Install source package', TYPE_NULL),
     ('zypper', 'zypper wp <file_name>', 'Find package according to file name', TYPE_NULL),

@@ -39,22 +39,26 @@ mp_mode = 1
 host_name = socket.gethostname()
 file_history = ''
 
-def setup():
-	global file_history
 
-	if host_name == 'gyagp_parent':
-		file_history = 'history-parent.txt'
-	else:
-		file_history = 'history.txt'
+def setup():
+    global file_history
+
+    if host_name == 'gyagp_parent':
+        file_history = 'history-parent.txt'
+    else:
+        file_history = 'history.txt'
+
 
 def get_time():
     return time.strftime('%Y-%m-%d %X', time.localtime(time.time()))
+
 
 def copy_text_to_clipboard(text):
     win32clipboard.OpenClipboard()
     win32clipboard.EmptyClipboard()
     win32clipboard.SetClipboardText(text)
     win32clipboard.CloseClipboard()
+
 
 def update_line(lines, records, record_index):
     records_number = len(records)
@@ -111,9 +115,9 @@ def update_line(lines, records, record_index):
     if len(new) > 0:
         print ':) ' + output_prefix + ' has an update'
 
-        line_new = line.replace(fields[HISTORY], new[len(new)-1][0]) + '\n'
+        line_new = line.replace(fields[HISTORY], new[len(new) - 1][0]) + '\n'
 
-        line_added_title = '== ' + fields[NAME] + ',' + new[0][0] + '-' + new[len(new)-1][0] + ',' + get_time() + ' ==\n'
+        line_added_title = '== ' + fields[NAME] + ',' + new[0][0] + '-' + new[len(new) - 1][0] + ',' + get_time() + ' ==\n'
         line_added_link = ''
         for new_index in range(0, len(new)):
             line_added_link = line_added_link + new[new_index][1] + '\n'
@@ -122,6 +126,7 @@ def update_line(lines, records, record_index):
     else:
         print output_prefix + ' has no update'
         return (False, line_index, '', '', '')
+
 
 def update_history():
     has_update = False
@@ -160,13 +165,12 @@ def update_history():
         # Append to records
         records.append(line_index)
 
-
     # Update line
     records_number = len(records)
     all_links = ''
     if mp_mode:
         process_number = min(multiprocessing.cpu_count(), records_number)
-        pool = Pool(processes = process_number)
+        pool = Pool(processes=process_number)
         results = []
 
         for record_index in range(0, records_number):
@@ -184,7 +188,7 @@ def update_history():
 
         for i in results:
             r = i.get()
-            if r[0] == True:
+            if r[0]:
                 lines[r[1]] = r[2]
                 lines.append(r[3])
                 lines.append(r[4])
@@ -200,7 +204,7 @@ def update_history():
             print output_prefix + ' is processing ...'
 
             r = update_line(lines, records, record_index)
-            if r[0] == True:
+            if r[0]:
                 has_update = True
 
     # Handle no update

@@ -335,6 +335,7 @@ examples:
     group_basic.add_argument('--build-skip-mk', dest='build_skip_mk', help='skip the generation of makefile', action='store_true')
     group_basic.add_argument('--build-fail-max', dest='build_fail_max', help='allow n build failures before it stops', type=int, default=1)
     group_basic.add_argument('--build-verbose', dest='build_verbose', help='output verbose info. Find log at out/Release/.ninja_log', action='store_true')
+    group_basic.add_argument('--build-profiling', dest='build_profiling', help='enable profiling by adding profiling=1 into GYP_DEFINES', action='store_true')
     group_basic.add_argument('--postbuild', dest='postbuild', help='postbuild', action='store_true')
     group_basic.add_argument('--verify', dest='verify', help='verify', action='store_true')
     group_basic.add_argument('--backup', dest='backup', help='backup', action='store_true')
@@ -466,15 +467,16 @@ def setup():
             dir_server_chrome_android_todo_comb = dir_server_chrome_android_todo + '/' + target_arch + '/' + ver + '-' + ver_type
             chrome_android_file_readme = dir_server_chrome_android_todo_comb + '/README'
 
+    gyp_defines = ''
     if target_os == 'windows':
-        setenv('GYP_DEFINES', 'werror= disable_nacl=1 component=shared_library enable_svg=0 windows_sdk_path="d:/user/ygu5/project/chromium/win_toolchain/win8sdk"')
+        gyp_defines += 'werror= disable_nacl=1 component=shared_library enable_svg=0 windows_sdk_path="d:/user/ygu5/project/chromium/win_toolchain/win8sdk"'
         setenv('GYP_MSVS_VERSION', '2010e')
         setenv('GYP_MSVS_OVERRIDE_PATH', 'd:/user/ygu5/project/chromium/win_toolchain')
         setenv('WDK_DIR', 'd:/user/ygu5/project/chromium/win_toolchain/WDK')
         setenv('DXSDK_DIR', 'd:/user/ygu5/project/chromium/win_toolchain/DXSDK')
         setenv('WindowsSDKDir', 'd:/user/ygu5/project/chromium/win_toolchain/win8sdk')
     elif target_os == 'linux':
-        setenv('GYP_DEFINES', 'werror= disable_nacl=1 component=shared_library enable_svg=0')
+        gyp_defines += 'werror= disable_nacl=1 component=shared_library enable_svg=0'
         setenv('CHROME_DEVEL_SANDBOX', '/usr/local/sbin/chrome-devel-sandbox')
     elif target_os == 'android':
         if repo_type != 'chrome-android' and rev < rev_envsetup:
@@ -485,9 +487,14 @@ def setup():
                 error('Environment is not well set')
 
         if repo_type != 'chrome-android' and rev < rev_gyp_defines or repo_type == 'chrome-android' and not args.chrome_android_apk and ver_cmp(ver, ver_gyp_defines) < 0:
-            setenv('GYP_DEFINES', 'werror= disable_nacl=1 enable_svg=0')
+            gyp_defines += 'werror= disable_nacl=1 enable_svg=0'
         else:
-            setenv('GYP_DEFINES', 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os)
+            gyp_defines += 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os
+
+    if args.build_profiling:
+        gyp_defines += ' profiling=1'
+
+    setenv('GYP_DEFINES', gyp_defines)
 
     if args.test_build or args.test_run or args.test_drybuild or args.test_dryrun:
         _get_suite_default()

@@ -810,7 +810,6 @@ def _patch_remove(patches):
 
 
 def _get_repo_info():
-    _setup_repo()
     f = open('.repo/manifests.git/config')
     lines = f.readlines()
     f.close()

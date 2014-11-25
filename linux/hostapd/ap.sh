@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # Usage:
 # sudo apt-get install hostapd dnsmasq
 # cp dnsmasq.conf /etc
@@ -5,12 +7,17 @@
 # uncomment net.ipv4.ip_forward=1 in /etc/sysctl.conf
 # sudo ./ap.sh
 
-# To stop the ap
-# killall hostapd
+killall hostapd
+hostname=$(hostname)
+
+if [ $hostname = "wp-01" ] ; then
+    EXTERNAL=eth1
+elif [ $hostname = "ubuntu-ygu5-01" ] ; then
+    EXTERNAL=eth2
+fi
 
 nmcli nm wifi off
 rfkill unblock wlan
-EXTERNAL=eth2
 iptables -F
 iptables -X
 iptables -t nat -F
@@ -19,7 +26,6 @@ iptables -t nat -A POSTROUTING -s 192.168.0.0/8 -o $EXTERNAL -j MASQUERADE
 iptables -A FORWARD -s 192.168.0.0/8 -o $EXTERNAL -j ACCEPT
 iptables -A FORWARD -d 192.168.0.0/8 -m conntrack --ctstate ESTABLISHED,RELATED -i $EXTERNAL -j ACCEPT
 
-killall hostapd
 ifconfig wlan0 192.168.0.1
 hostapd -B /etc/hostapd/hostapd.conf
 /etc/init.d/dnsmasq restart

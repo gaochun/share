@@ -43,9 +43,9 @@ product_name = ''
 # variable product: out/target/product/asus_t100_64p|baytrail_64p
 # variable combo: lunch asus_t100_64p-userdebug|aosp_baytrail_64p-eng
 # out/dist asus_t100_64p-bootloader-eng.gyagp|aosp_baytrail_64p-bootloader-userdebug.gyagp
-repo_type = ''  # upstream, stable, mcg, gminl, irdakk, gminl64
+repo_type = ''  # upstream, stable, mcg, gminl, irdakk, gminl64, stable-old
 repo_branch = ''
-# stable from 20140624, combo changed to asus_t100-userdebug, etc.
+# stable-old from 20140624, combo changed to asus_t100-userdebug, etc.
 repo_ver = ''
 
 patches_build_common = {
@@ -185,7 +185,7 @@ def init():
 
     if repo_type == 'upstream':
         file_repo = 'https://storage.googleapis.com/git-repo-downloads/repo'
-    elif repo_type == 'stable' or repo_type == 'gminl' or repo_type == 'gminl64':
+    elif repo_type == 'stable' or repo_type == 'gminl' or repo_type == 'gminl64' or repo_type == 'stable-old':
         file_repo = 'http://android.intel.com/repo'
     elif repo_type == 'irdakk' or repo_type == 'irdal':
         file_repo = 'https://buildbot-otc.jf.intel.com/repo.otc'
@@ -196,6 +196,8 @@ def init():
     if repo_type == 'upstream':
         cmd = './repo init -u https://android.googlesource.com/platform/manifest -b ' + args.repo_branch
     elif repo_type == 'stable':
+        cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/private/topic/aosp_stable/lmaster'
+    elif repo_type == 'stable-old':
         cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/private/topic/aosp_stable/master'
     elif repo_type == 'gminl':
         cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/topic/gmin/l-dev/master'
@@ -408,7 +410,7 @@ def flash_image():
             else:
                 file_image = args.file_image.split('/')[-1]
         else:
-            if repo_type == 'stable':
+            if repo_type == 'stable-old':
                 if ver_cmp(repo_ver, '2.0') >= 0:
                     file_image = dir_root + '/out/dist/%s-om-factory.tgz' % get_product(device_arch, device_type, ver=repo_ver)
                 else:
@@ -427,10 +429,10 @@ def flash_image():
         execute('tar xvf ' + file_image, interactive=True, dryrun=False)
 
     # hack the script
-    if repo_type == 'stable' or repo_type == 'gminl':
+    if repo_type == 'stable-old' or repo_type == 'gminl':
         # Hack flash-all.sh to skip sleep and use our own fastboot
         for line in fileinput.input('flash-all.sh', inplace=1):
-            if re.search('sleep', line) and repo_type == 'stable':
+            if re.search('sleep', line) and repo_type == 'stable-old':
                 line = line.replace('sleep', '#sleep')
             elif re.match('fastboot', line):
                 line = line.replace('fastboot', path_fastboot, 1)
@@ -438,7 +440,7 @@ def flash_image():
             sys.stdout.write(line)
         fileinput.close()
 
-    if repo_type == 'stable':
+    if repo_type == 'stable-old':
         # Hack gpt.ini for fast userdata erasion
         result = execute('ls *.ini', return_output=True)
         file_gpt = result[1].rstrip('\n')
@@ -462,7 +464,7 @@ def flash_image():
         execute('./flash-all.sh', interactive=True, dryrun=False)
         execute('timeout 10s %s -s %s reboot' % (path_fastboot, device_id))
         execute('rm -rf ' + dir_extract, dryrun=False)
-    elif repo_type == 'stable':
+    elif repo_type == 'stable-old':
         execute('./flash-all.sh -t ' + ip, interactive=True, dryrun=False)
         execute('timeout 10s %s -t %s reboot' % (path_fastboot, ip))
         execute('rm -rf ' + dir_extract, dryrun=False)
@@ -471,7 +473,7 @@ def flash_image():
         restore_dir()
 
     # wait until system boots up
-    if repo_type == 'stable':
+    if repo_type == 'stable-old':
         is_connected = False
         sleep_sec = 3
         for i in range(0, 60):
@@ -676,7 +678,20 @@ def _get_combo(device_arch, device_type):
             combo_suffix = '-' + variant
             combo = combo_prefix + device_arch + combo_suffix
         elif device_type == 'baytrail':
-            if repo_type == 'stable' and ver_cmp(repo_ver, '2.0') >= 0:
+            combo_prefix = 'ecs_e7'
+            combo_suffix = '-' + variant
+
+            if device_arch == 'x86_64':
+                combo = combo_prefix + '_64p' + combo_suffix
+            elif device_arch == 'x86':
+                combo = combo_prefix + combo_suffix
+    elif repo_type == 'stable-old':
+        if device_type == 'generic':
+            combo_prefix = 'aosp_'
+            combo_suffix = '-' + variant
+            combo = combo_prefix + device_arch + combo_suffix
+        elif device_type == 'baytrail':
+            if ver_cmp(repo_ver, '2.0') >= 0:
                 combo_prefix = 'asus_t100'
                 combo_suffix = '-' + variant
 
@@ -695,7 +710,7 @@ def _get_combo(device_arch, device_type):
     return combo
 
 
-# All valid combination for stable:
+# All valid combination for stable and stable-old:
 # 1. x86_64, baytrail, webview
 # 2. x86_64, baytrail, system
 # 3. x86, baytrail, system
@@ -718,7 +733,7 @@ def _backup_one(arch, device_type, module):
         files_backup = {'.': 'out/target/product/%s_%s/%s_%s-lrx21n-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
     elif repo_type == 'gminl64':
         files_backup = {'.': 'out/target/product/%s_%s_64p/%s_%s_64p-lrx21n-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
-    elif repo_type == 'stable':
+    elif repo_type == 'stable' or repo_type == 'stable-old':
         product = get_product(arch, device_type, ver=repo_ver)
 
         if module == 'webview':
@@ -764,7 +779,7 @@ def _backup_one(arch, device_type, module):
                 }
 
     dir_backup = timestamp + '-' + repo_type
-    if repo_type == 'stable':
+    if repo_type == 'stable' or repo_type == 'stable-old':
         dir_backup += '-' + arch + '-' + device_type + '-' + module + '-' + chromium_version
     elif repo_type == 'gminl':
         dir_backup += '-' + product_brand + '-' + product_name
@@ -829,8 +844,11 @@ def _get_repo_info():
             elif merge == 'android-5.0.0_r2':
                 repo_type = 'upstream'
                 repo_ver = '5.0.0'
-            elif merge == 'abt/private/topic/aosp_stable/master':
+            elif merge == 'abt/private/topic/aosp_stable/lmaster':
                 repo_type = 'stable'
+                repo_ver = '2.0'
+            elif merge == 'abt/private/topic/aosp_stable/master':
+                repo_type = 'stable-old'
                 if os.path.exists('device/intel/baytrail/asus_t100'):
                     repo_ver = '2.0'
                 else:

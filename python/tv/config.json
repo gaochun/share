@@ -1,0 +1,96 @@
+{
+    "movies": {
+        "BigBang": {
+            "state": "active", 
+            "season": 8, 
+            "episode": 9, 
+            "resources": {
+                "cn163": [
+                    "3639", 
+                    "(\\d+).*1024.mkv"
+                ]
+            }
+        }, 
+        "DowntonAbbey": {
+            "state": "active", 
+            "season": 5, 
+            "episode": 8, 
+            "resources": {
+                "cn163": [
+                    "390", 
+                    "(\\d+).*1024.mkv"
+                ]
+            }
+        }, 
+        "Flash": {
+            "state": "active", 
+            "season": 1, 
+            "episode": 6, 
+            "resources": {
+                "cn163": [
+                    "3213", 
+                    "(\\d+).*1024.mkv"
+                ]
+            }
+        }, 
+        "Forever": {
+            "state": "active", 
+            "season": 1, 
+            "episode": 9, 
+            "resources": {
+                "cn163": [
+                    "8049", 
+                    "(\\d+).*1024.mkv"
+                ]
+            }
+        }, 
+        "Homeland": {
+            "state": "active", 
+            "season": 4, 
+            "episode": 9, 
+            "resources": {
+                "cn163": [
+                    "3389", 
+                    "(\\d+).*1024.mkv"
+                ]
+            }
+        }, 
+        "Knick": {
+            "state": "active", 
+            "season": 1, 
+            "episode": 10, 
+            "resources": {
+                "cn163": [
+                    "3404", 
+                    "(\\d+).*1024.mkv"
+                ]
+            }
+        }, 
+        "PersonOfInterest": {
+            "state": "active", 
+            "season": 4, 
+            "episode": 8, 
+            "resources": {
+                "cn163": [
+                    "3197", 
+                    "(\\d+).*1024.mkv"
+                ]
+            }
+        }, 
+        "Revenge": {
+            "state": "active", 
+            "season": 4, 
+            "episode": 7, 
+            "resources": {
+                "cn163": [
+                    "3645", 
+                    "(\\d+).*1024.mkv"
+                ]
+            }
+        }
+    }, 
+    "sites": {
+        "cn163": "http://cn163.net/archives", 
+        "yyets": "http://www.yyets.com/php/resource"
+    }
+}

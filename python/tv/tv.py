@@ -3,41 +3,61 @@
 
 # Need to install pywin32: http://sourceforge.net/projects/pywin32
 
+import json
+from HTMLParser import HTMLParser
 import urllib2
 import re
 import os
-import commands
-from sgmllib import SGMLParser
 from httplib import BadStatusLine
 import time
-import datetime
 import sys
 import socket
-
 import multiprocessing
 from multiprocessing import Pool
-
 import win32clipboard
+import collections
 
-# define each line of history
-NAME = 0
-FORMAT = 1
-ID = 2
-HISTORY = 3
+RESOURCES_INDEX_URL = 0
+RESOURCES_INDEX_PATTERN = 1
 
-PAUSE_STR = 'PAUSE'
-END_STR = 'END'
+UPDATE_INDEX_SEASONEPISODE = 0
+UPDATE_INDEX_LINK = 1
 
-URL_PREFIX = 'http://www.yyets.com/php/resource/'
-
-# Enable debug mode or not
-debug_mode = 0
-
-# Enable multiprocess mode or not
-mp_mode = 1
+LINK_INDEX_EPISODE = 0
+LINK_INDEX_LINK = 1
 
 host_name = socket.gethostname()
 file_history = ''
+
+
+class Parser(HTMLParser):
+    def __init__(self, pattern, episode):
+        HTMLParser.__init__(self)
+        self.pattern = pattern
+        self.episode = episode
+        self.is_a = False
+        self.href = ''
+        self.links = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'a':
+            self.is_a = True
+            for (name, value) in attrs:
+                if name == 'href':
+                    self.href = value
+                    break
+
+    def handle_endtag(self, tag):
+        if tag == 'a':
+            self.is_a = False
+
+    def handle_data(self, data):
+        if self.is_a:
+            match = re.search(self.pattern, data)
+            if match:
+                episode_tmp = int(match.group(1))
+                if episode_tmp > self.episode:
+                    self.links.append([episode_tmp, self.href])
 
 
 def setup():
@@ -60,176 +80,89 @@ def copy_text_to_clipboard(text):
     win32clipboard.CloseClipboard()
 
 
-def update_line(lines, records, record_index):
-    records_number = len(records)
-    line_index = records[record_index]
-    line = lines[line_index]
-    fields = line.split(',')
+def check_update():
+    # check each movie
+    f = file('config.json', 'r+')
+    config = json.load(f, object_pairs_hook=collections.OrderedDict)
+    sites = config['sites']
+    movies = config['movies']
+    count_movie = len(movies)
+    count_process = min(multiprocessing.cpu_count(), count_movie)
+    pool = Pool(processes=count_process)
+    outputs = []
+    for movie in movies:
+        print 'Checking ' + movie
+        outputs.append(pool.apply_async(check_update_one, (sites, movies, movie,)))
+    pool.close()
+    pool.join()
 
-    output_prefix = str(record_index + 1) + '/' + str(records_number) + ' ' + fields[NAME]
+    # set updates
+    updates = {}
+    for output in outputs:
+        output_tmp = output.get()
+        movie = output_tmp.keys()[0]
+        updates_one = output_tmp[movie]
+        if len(updates_one) == 0:
+            print movie + ' has no update'
+        else:
+            print movie + ' has an update'
+            updates[movie] = updates_one
 
-    # get the html
-    if debug_mode:
-        file = open(fields[ID] + '.htm')
-        html = file.read()
+    # set lines for history.txt and links for clipboard
+    lines = []
+    links = []
+    if not len(updates):
+        print '== Overall there is no update =='
+        lines.append('== There is no update at ' + get_time() + ' ==')
     else:
-        url = URL_PREFIX + fields[ID]
-        try:
-            u = urllib2.urlopen(url)
-        except BadStatusLine:
-            print 'Check failed'
-            lines.append('== ' + fields[NAME] + ',Check failed,' + get_time() + ' ==\n')
-            return (False, line_index, '', '')
-        html = u.read()
+        print '== Overall there is an update =='
+        lines.append('== There is an update at ' + get_time() + ' ==')
+        for movie in updates:
+            movies[movie]['episode'] = int(updates[movie][-1][UPDATE_INDEX_SEASONEPISODE][-2:])
+            for update_tmp in updates[movie]:
+                lines.append(movie + ',' + update_tmp[UPDATE_INDEX_SEASONEPISODE] + ',' + update_tmp[UPDATE_INDEX_LINK])
+                links.append(update_tmp[UPDATE_INDEX_LINK])
 
-    # Check if it has update
-    xl_pattern = re.compile('thunderrestitle.*?迅')
-    urls = xl_pattern.findall(html)
+    # update config
+    if len(updates):
+        f.seek(0)
+        json.dump(config, f, indent=4)
+    f.close()
 
-    format_pattern = re.compile(fields[FORMAT])
-    episodePattern = re.compile('(' + fields[HISTORY][0:4] + '\d\d)')
-    thunderPattern = re.compile('(thunder\:.*)\"')
-    new = []
-    for url in urls:
-        # find all with relative format
-        if format_pattern.search(url):
-            # find all suitable episode
-            episodeMatch = episodePattern.search(url)
-            if not episodeMatch:
+    # update history
+    os.chdir(sys.path[0])
+    f = open(file_history, 'a')
+    for line in lines:
+        f.write(line + '\n')
+    f.close()
+
+    raw_input('Press <enter>')
+    copy_text_to_clipboard('\n'.join(links))
+
+
+def check_update_one(sites, movies, movie):
+    updates_one = []
+    if movies[movie]['state'] == 'active':
+        season = movies[movie]['season']
+        episode = movies[movie]['episode']
+        resources = movies[movie]['resources']
+        for site in resources:
+            url = sites[site] + '/' + resources[site][RESOURCES_INDEX_URL]
+
+            try:
+                u = urllib2.urlopen(url)
+            except BadStatusLine:
+                print 'Check failed'
                 continue
-            currentEpisode = int(episodeMatch.group(0)[4:6])
-            historyEpisode = int(fields[HISTORY][4:6])
-            if currentEpisode <= historyEpisode:
-                continue
+            html = u.read().decode('utf-8')
+            parser = Parser(resources[site][RESOURCES_INDEX_PATTERN], episode)
+            parser.feed(html)
 
-            # get the link
-            thunderMatch = thunderPattern.search(url)
-            if not thunderMatch:
-                continue
-            r = []
-            r.append(episodeMatch.group(0))
-            r.append(thunderMatch.group(1))
-            new.append(r)
+            for link in parser.links:
+                updates_one.append(['S%02dE%02d' % (season, link[LINK_INDEX_EPISODE]), link[LINK_INDEX_LINK]])
+    return {movie: updates_one}
 
-    # Handle update
-    if len(new) > 0:
-        print ':) ' + output_prefix + ' has an update'
-
-        line_new = line.replace(fields[HISTORY], new[len(new) - 1][0]) + '\n'
-
-        line_added_title = '== ' + fields[NAME] + ',' + new[0][0] + '-' + new[len(new) - 1][0] + ',' + get_time() + ' ==\n'
-        line_added_link = ''
-        for new_index in range(0, len(new)):
-            line_added_link = line_added_link + new[new_index][1] + '\n'
-
-        return (True, line_index, line_new, line_added_title, line_added_link)
-    else:
-        print output_prefix + ' has no update'
-        return (False, line_index, '', '', '')
-
-
-def update_history():
-    has_update = False
-
-    # each item is the index of line to be checked
-    records = []
-
-    # Get lines
-    if debug_mode:
-        lines = ['Spar,人人影视.mp4,11176,S03E01', 'Homeland,rmvb,11088,S02E05']
-    else:
-        file = open(file_history)
-        lines = file.readlines()
-        file.close()
-
-    # Update records
-    for line_index in range(0, len(lines)):
-        # Skip blank line
-        if not lines[line_index].strip():
-            continue
-
-        # Check if pause meets
-        m = re.match(PAUSE_STR + ' (\d+-\d+-\d+ \d+:\d+:\d+)', lines[line_index])
-        if m:
-            diff = datetime.datetime.today() - datetime.datetime.strptime(m.group(1), '%Y-%m-%d %X')
-            if diff.days < 30:
-                break
-            else:
-                lines[line_index] = PAUSE_STR + ' ' + get_time() + '\n'
-                continue
-
-        # Check if end meets
-        if re.search(END_STR, lines[line_index]):
-            break
-
-        # Append to records
-        records.append(line_index)
-
-    # Update line
-    records_number = len(records)
-    all_links = ''
-    if mp_mode:
-        process_number = min(multiprocessing.cpu_count(), records_number)
-        pool = Pool(processes=process_number)
-        results = []
-
-        for record_index in range(0, records_number):
-            line_index = records[record_index]
-            line = lines[line_index]
-            fields = line.split(',')
-            output_prefix = str(record_index + 1) + '/' + str(records_number) + ' ' + fields[NAME]
-            print output_prefix + ' is processing ...'
-
-            results.append(pool.apply_async(update_line, (lines, records, record_index,)))
-
-        print '\n'
-        pool.close()
-        pool.join()
-
-        for i in results:
-            r = i.get()
-            if r[0]:
-                lines[r[1]] = r[2]
-                lines.append(r[3])
-                lines.append(r[4])
-                all_links += r[4]
-                has_update = True
-
-    else:
-        for record_index in range(0, records_number):
-            line_index = records[record_index]
-            line = lines[line_index]
-            fields = line.split(',')
-            output_prefix = str(record_index + 1) + '/' + str(records_number) + ' ' + fields[NAME]
-            print output_prefix + ' is processing ...'
-
-            r = update_line(lines, records, record_index)
-            if r[0]:
-                has_update = True
-
-    # Handle no update
-    if not has_update:
-        print 'There is no update at all!'
-        lines.append('== All,No update,' + get_time() + ' ==\n')
-
-    # Update history file
-    if debug_mode:
-        print lines
-    else:
-        os.chdir(sys.path[0])
-        if os.path.exists('history_old.txt'):
-            os.remove('history_old.txt')
-
-        os.rename(file_history, 'history_old.txt')
-
-        f = open(file_history, 'w')
-        for line in lines:
-            f.write(line)
-        f.close()
-
-        raw_input('Press <enter>')
-        copy_text_to_clipboard(all_links)
 
 if __name__ == '__main__':
     setup()
-    update_history()
+    check_update()

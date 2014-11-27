@@ -161,6 +161,7 @@ def analyze(files_result):
         content_improvement = ''
         content_change = ''
         for line in fileinput.input(file_result, inplace=1):
+            change = ''
             if not re.search('"time"', line) and not re.search('"device"', line) and not re.search('"module"', line):
                 # get case info
                 case = {}
@@ -209,13 +210,7 @@ def analyze(files_result):
                                 change = '-'
                             else:
                                 change = '+'
-
                         analysis = '%s%s%%' % (change, diff)
-
-                        if change == '-':
-                            content_regression += '%s<br>' % (line)
-                        elif change == '+':
-                            content_improvement += '%s<br>' % (line)
                     else:
                         analysis = '='
 
@@ -223,6 +218,11 @@ def analyze(files_result):
                     line = line.replace(results[-1], analysis) + '\n'
                 else:
                     line = line.rstrip('\n') + ',' + analysis + '\n'
+
+                if change == '-':
+                    content_regression += '%s<br>' % (line)
+                elif change == '+':
+                    content_improvement += '%s<br>' % (line)
 
             sys.stdout.write(line)
             if content_regression or content_improvement:
@@ -234,7 +234,7 @@ def analyze(files_result):
 
 
 def upload(files_result):
-    if  not files_result:
+    if not files_result:
         return
 
     if files_result == 'all':
@@ -249,7 +249,7 @@ def upload(files_result):
         file_result_server = re.sub('-[\d]{14}', lambda p: '', file_result)
         execute('cp %s %s' % (file_result, file_result_server))
         backup_smb(path_server_webmark, 'result', file_result_server)
-        execute('rm %s' %file_result_server)
+        execute('rm %s' % file_result_server)
 
     restore_dir()
 

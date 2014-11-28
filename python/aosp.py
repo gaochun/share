@@ -107,7 +107,7 @@ examples:
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'all'], default='x86_64')
     parser.add_argument('--target-type', dest='target_type', help='target type, can be baytrail for t100, generic, mrd7, mako for nexus4, hammerhead for nexus5, flo for nexus7, manta for nexus 10', default='baytrail')
-    parser.add_argument('--target-module', dest='target_module', help='target module', choices=['libwebviewchromium', 'webview', 'browser', 'cts', 'system', 'all'], default='system')
+    parser.add_argument('--target-module', dest='target_module', help='target module', choices=['libwebviewchromium', 'webview', 'browser', 'perf', 'cts', 'system', 'all'], default='system')
 
     parser.add_argument('--variant', dest='variant', help='variant', choices=['user', 'userdebug', 'eng'], default='userdebug')
     parser.add_argument('--version', dest='version', help='version, KTU84P for 4.4.4, master')
@@ -305,7 +305,7 @@ def build():
                 cmd += 'dist'
             else:
                 cmd += target_module
-        elif target_module == 'browser' or target_module == 'webview' or target_module == 'libwebviewchromium':
+        elif target_module == 'browser' or target_module == 'webview' or target_module == 'libwebviewchromium' or target_module == 'perf':
             cmd = '. build/envsetup.sh && lunch ' + combo + ' && '
             if args.build_no_dep:
                 cmd += 'mmm '
@@ -318,6 +318,8 @@ def build():
                 cmd += 'frameworks/webview'
             elif target_module == 'libwebviewchromium':
                 cmd += 'external/chromium_org'
+            elif target_module == 'perf':
+                cmd += 'external/linux-tools-perf'
 
         if args.build_showcommands:
             cmd += ' showcommands'

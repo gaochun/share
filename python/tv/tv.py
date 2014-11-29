@@ -41,6 +41,8 @@ UPDATE_INDEX_LINK = 1
 
 LINK_INDEX_EPISODE = 0
 LINK_INDEX_LINK = 1
+# multi-processing
+mp = True
 
 host_name = socket.gethostname()
 file_history = ''
@@ -52,6 +54,7 @@ class Parser(HTMLParser):
         self.pattern = pattern
         self.episode = episode
         self.is_a = False
+        self.matched = False
         self.href = ''
         self.links = []
 
@@ -70,7 +73,11 @@ class Parser(HTMLParser):
     def handle_data(self, data):
         if self.is_a:
             match = re.search(self.pattern, data)
+            # all the good links are continuous. Exit using an exception as close() seems not work.
+            if self.matched and not match:
+                raise
             if match:
+                self.matched = True
                 episode_tmp = int(match.group(1))
                 if episode_tmp > self.episode:
                     self.links.append([episode_tmp, self.href])
@@ -108,9 +115,14 @@ def check_update():
     outputs = []
     for movie in movies:
         print 'Checking ' + movie
-        outputs.append(pool.apply_async(check_update_one, (sites, movies, movie,)))
-    pool.close()
-    pool.join()
+        if mp:
+            outputs.append(pool.apply_async(check_update_one, (sites, movies, movie,)))
+        else:
+            check_update_one(sites, movies, movie)
+
+    if mp:
+        pool.close()
+        pool.join()
 
     # set updates
     updates = {}
@@ -170,10 +182,14 @@ def check_update_one(sites, movies, movie):
             except BadStatusLine:
                 print 'Check failed'
                 continue
-            html = u.read().decode('utf-8')
+            # ignore the malformed codec
+            html = u.read().decode('utf-8', 'ignore')
             parser = Parser(resources[site][RESOURCES_INDEX_PATTERN], episode)
-            parser.feed(html)
-
+            # may result in malformed start tag
+            try:
+                parser.feed(html)
+            except:
+                pass
             for link in parser.links:
                 updates_one.append(['S%02dE%02d' % (season, link[LINK_INDEX_EPISODE]), link[LINK_INDEX_LINK]])
     return {movie: updates_one}

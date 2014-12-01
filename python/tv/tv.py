@@ -1,22 +1,6 @@
 ﻿#! N:\Python27\python.exe
 # -*- coding: utf-8 -*-
 
-# todo
-# Extant,S02E00
-# TheNightShift,S02E00
-# Tyrant,S02E00
-# DaVinci,S03E00
-# InsideNo9,S02E00
-# GameOfThrones,S05E00
-# HouseOfCards,S03E00
-# Helix,S02E00
-# Hostages,S01E08
-# Vikings,S01E09
-# Hunted,S02E00
-# BlackMirror,S03E00
-# Sinbad,S02E00
-
-
 # Need to install pywin32: http://sourceforge.net/projects/pywin32
 
 import json
@@ -32,6 +16,7 @@ import multiprocessing
 from multiprocessing import Pool
 import win32clipboard
 import collections
+import codecs
 
 RESOURCES_INDEX_URL = 0
 RESOURCES_INDEX_PATTERN = 1
@@ -159,7 +144,7 @@ def check_update():
 
     # update history
     os.chdir(sys.path[0])
-    f = open(file_history, 'a')
+    f = codecs.open(file_history, 'a', encoding='utf8')
     for line in lines:
         f.write(line + '\n')
     f.close()

@@ -3,88 +3,11 @@
         "BigBang": {
             "state": "active", 
             "season": 8, 
-            "episode": 9, 
-            "resources": {
-                "cn163": [
-                    "3639", 
-                    "(\\d+).*1024.mkv"
-                ]
-            }
-        }, 
-        "DowntonAbbey": {
-            "state": "active", 
-            "season": 5, 
-            "episode": 8, 
-            "resources": {
-                "cn163": [
-                    "390", 
-                    "(\\d+).*1024.mkv"
-                ]
-            }
-        }, 
-        "Flash": {
-            "state": "active", 
-            "season": 1, 
-            "episode": 6, 
-            "resources": {
-                "cn163": [
-                    "3213", 
-                    "(\\d+).*1024.mkv"
-                ]
-            }
-        }, 
-        "Forever": {
-            "state": "active", 
-            "season": 1, 
-            "episode": 9, 
-            "resources": {
-                "cn163": [
-                    "8049", 
-                    "(\\d+).*1024.mkv"
-                ]
-            }
-        }, 
-        "Homeland": {
-            "state": "active", 
-            "season": 4, 
-            "episode": 9, 
-            "resources": {
-                "cn163": [
-                    "3389", 
-                    "(\\d+).*1024.mkv"
-                ]
-            }
-        }, 
-        "Knick": {
-            "state": "active", 
-            "season": 1, 
             "episode": 10, 
             "resources": {
                 "cn163": [
-                    "3404", 
-                    "(\\d+).*1024.mkv"
-                ]
-            }
-        }, 
-        "PersonOfInterest": {
-            "state": "active", 
-            "season": 4, 
-            "episode": 8, 
-            "resources": {
-                "cn163": [
-                    "3197", 
-                    "(\\d+).*1024.mkv"
-                ]
-            }
-        }, 
-        "Revenge": {
-            "state": "active", 
-            "season": 4, 
-            "episode": 7, 
-            "resources": {
-                "cn163": [
-                    "3645", 
-                    "(\\d+).*1024.mkv"
+                    "3639", 
+                    "(\\d+)\u96c6.*1024.mkv"
                 ]
             }
         }
@@ -92,5 +15,59 @@
     "sites": {
         "cn163": "http://cn163.net/archives", 
         "yyets": "http://www.yyets.com/php/resource"
+    }, 
+    "backup": {
+        "Extant": {
+            "season": 2, 
+            "episode": 0
+        }, 
+        "TheNightShift": {
+            "season": 2, 
+            "episode": 0
+        }, 
+        "Tyrant": {
+            "season": 2, 
+            "episode": 0
+        }, 
+        "DaVinci": {
+            "season": 3, 
+            "episode": 0
+        }, 
+        "InsideNo9": {
+            "season": 2, 
+            "episode": 0
+        }, 
+        "GameOfThrones": {
+            "season": 5, 
+            "episode": 0
+        }, 
+        "HouseOfCards": {
+            "season": 3, 
+            "episode": 0
+        }, 
+        "Helix": {
+            "season": 2, 
+            "episode": 0
+        }, 
+        "Hunted": {
+            "season": 2, 
+            "episode": 0
+        }, 
+        "BlackMirror": {
+            "season": 3, 
+            "episode": 0
+        }, 
+        "Sinbad": {
+            "season": 2, 
+            "episode": 0
+        }, 
+        "Hostages": {
+            "season": 1, 
+            "episode": 8
+        }, 
+        "Vikings": {
+            "season": 1, 
+            "episode": 9
+        }
     }
 }

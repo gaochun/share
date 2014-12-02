@@ -838,7 +838,7 @@ def postbuild(force=False):
 
             # replace libchrome(view).so
             ## get the name
-            result = execute('ls %s/libchrome*.so' % dir_chromium_lib, return_output=True)
+            result = execute('ls -r -S %s/libchrome*.so' % dir_chromium_lib, return_output=True)
             file_libchrome = result[1].split('/')[-1].strip('\n')
             backup_dir(dir_out_build_type + '/lib')
             ## backup the one with symbol, which should be done only once

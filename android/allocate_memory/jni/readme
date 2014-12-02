@@ -1,0 +1,9 @@
+It's a small tool can be used to take away a number of memory from your android device.
+The tool was designed to observe what happens when running cases on a low-end devices with a small mount of RAM.
+The oom_adj value is automatically set to prevent lowmemkiller killing the process when it running.
+
+Usage:
+1.Download the ndk package and set the ndk enviroment variable.
+2.Run ndk-build in jni directory.
+3.Choose the binary file to run in your device according to you platform.
+

@@ -52,6 +52,8 @@ commands = [
     ('basic', "sudo hwclock --set --date='09/24/14 15:55'", 'set CMOS clock', TYPE_NULL),
     ('basic', "sudo hwclock --hctosys", 'let sys clock sync with CMOS clock', TYPE_NULL),
     ('basic', "sudo hwclock --systohc", 'let CMOS clock sync with sys clock', TYPE_NULL),
+    ('basic', "echo $(wget http://ipecho.net/plain -q -O -)", 'external ip address', TYPE_RUNNABLE),
+    ('basic', "hold alt+sysrq, input REISUB", 'reboot system when kernel panic', TYPE_NULL),
     ('upgrade', 'do-release-upgrade', 'Upgrade system', TYPE_NULL),
     ('info', 'cat /etc/os-release', 'List distribution info', TYPE_RUNNABLE),
     ('info', 'cat /etc/lsb-release', 'List distribution info', TYPE_RUNNABLE),

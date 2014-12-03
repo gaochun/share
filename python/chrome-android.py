@@ -5,11 +5,12 @@
 # Download:
 #    Install Chrome
 #    Set its download directory as /workspace/server/chromium/android-chrome-todo/download
-#    Open it with google-chrome --user-data-dir=/workspace/tool/arm/chrome-profile
-#    Open it with google-chrome --user-data-dir=/workspace/tool/x86/chrome-profile
+#    Open it with google-chrome --user-data-dir=/workspace/tool/chrome-android/arm/chrome-profile
+#    Open it with google-chrome --user-data-dir=/workspace/tool/chrome-android/x86/chrome-profile
 #    Install extension SwitchySharp
 #    Install extension at share/python/apk-downloader
 #    Login extension with: webperf0@gmail.com and 32761AAE6636D2A3(arm)/376FCD341892D871(x86) as device id.
+# gms: put a folder with any name in buildid, which contains the Chrome.apk and lib
 
 from selenium import webdriver
 import urllib2
@@ -120,7 +121,7 @@ def download(force=False):
     for target_arch in target_arch_chrome_android:
         options = webdriver.ChromeOptions()
         options.add_experimental_option('excludeSwitches', ['user-data-dir', 'ignore-certificate-errors', 'disable-default-apps'])
-        options.add_argument('user-data-dir=%s' % (dir_tool + '/' + target_arch + '/chrome-profile'))
+        options.add_argument('user-data-dir=%s' % (dir_tool + '/chrome-android/' + target_arch + '/chrome-profile'))
         driver = webdriver.Chrome(executable_path=tool_chromedriver, chrome_options=options, service_args=['--verbose', '--log-path=%s/chromedriver-%s.log' % (dir_share_ignore_log, timestamp)])
 
         if args.download_type == 'all' or args.download_type == 'stable':
@@ -146,7 +147,7 @@ def download(force=False):
 
         driver.quit()
 
-    execute('mv %s/* %s' % (dir_download, dir_server_chrome_android_todo), dryrun=False)
+    execute('mv %s/* %s' % (dir_download, dir_server_chrome_android_todo_buildid), dryrun=False)
 
 
 def check(force=False):
@@ -294,11 +295,16 @@ def _get_combos(dirs_check, target_arch):
 
 
 def _handle_todo_file():
-    backup_dir(dir_server_chrome_android_todo)
+    backup_dir(dir_server_chrome_android_todo_buildid)
     todos = os.listdir('.')
     for todo in todos:
-        if os.path.isfile(todo):
-            cmd = cmd_common + ' --dir-root ' + dir_server_chrome_android_todo
+        if os.path.isdir(todo):
+            cmd = cmd_common + ' --dir-root ' + dir_server_chrome_android_todo_buildid + '/' + todo
+            cmd += ' --chrome-android-apk Chrome.apk'
+            cmd += ' --buildid'
+            execute(cmd, interactive=True)
+        elif os.path.isfile(todo):
+            cmd = cmd_common + ' --dir-root ' + dir_server_chrome_android_todo_buildid
             cmd += ' --chrome-android-apk "' + todo + '"'
             cmd += ' --buildid'
             execute(cmd, interactive=True)

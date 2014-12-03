@@ -509,17 +509,40 @@ def buildid(force=False):
     if not args.buildid and not force:
         return
 
+    if os.path.exists('lib'):
+        is_gms = True
+    else:
+        is_gms = False
+
+    # repack gms apk and lib to google play apk
+    if is_gms:
+        dir_chromium = 'Chrome2'
+        name_apk = 'Chrome2'
+        execute('rm -rf %s' % dir_chromium)
+        execute('java -jar %s d Chrome.apk -o %s' % (tool_apktool, dir_chromium), interactive=True, abort=True)
+        execute('cp -rf lib %s' % dir_chromium)
+        execute('java -jar %s b %s -o %s_unaligned.apk' % (tool_apktool, name_apk, name_apk), interactive=True, abort=True)
+        execute('jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s/debug.keystore -storepass android %s_unaligned.apk androiddebugkey' % (dir_linux, name_apk), interactive=True, abort=True)
+        execute('%s/zipalign -f -v 4 %s_unaligned.apk %s.apk' % (dir_linux, name_apk, name_apk), interactive=True, abort=True)
+        execute('rm -f %s_unaligned.apk' % name_apk, abort=True)
+        chrome_android_apk = name_apk + '.apk'
+
     # get the target arch
-    execute('rm -rf temp')
-    execute('unzip "%s" -d temp' % chrome_android_apk, show_cmd=True)
     target_arch_temp = ''
+    if is_gms:
+        path_lib = 'lib'
+    else:
+        execute('rm -rf tmp')
+        execute('unzip "%s" -d tmp' % chrome_android_apk, show_cmd=True)
+        path_lib = 'tmp/lib'
     for key in target_arch_info:
-        if os.path.exists('temp/lib/' + target_arch_info[key][TARGET_ARCH_INFO_INDEX_ABI]):
+        if os.path.exists(path_lib + '/' + target_arch_info[key][TARGET_ARCH_INFO_INDEX_ABI]):
             target_arch_temp = key
             break
+    if not is_gms:
+        execute('rm -rf tmp', show_cmd=False)
     if target_arch_temp == '':
         error('Arch is not supported for ' + todo)
-    execute('rm -rf temp', show_cmd=False)
 
     # emulator would behave abnormally after several services. So we just start a new one for each round.
     (result, ver_temp, ver_type_temp, build_id_temp) = _chrome_android_get_info(target_arch_temp, chrome_android_apk)
@@ -532,12 +555,19 @@ def buildid(force=False):
     ]
     for dir_check in dirs_check:
         if os.path.exists(dir_check):
-            execute('mv "%s" trash' % chrome_android_apk)
+            if is_gms:
+                execute('mv %s ../../trash' % dir_root)
+            else:
+                execute('mv "%s" ../trash' % chrome_android_apk)
             error('The apk %s/%s-%s has been tracked, so will be moved to trash' % (target_arch_temp, ver_temp, ver_type_temp))
 
     os.makedirs(dir_todo)
     execute('chmod +r "%s"' % chrome_android_apk)
-    execute('mv "%s" %s/Chrome.apk' % (chrome_android_apk, dir_todo))
+    if is_gms:
+        execute('mv "%s" %s/gms' % (dir_root, dir_todo))
+        execute('mv %s/gms/%s.apk %s/Chrome.apk' % (dir_todo, name_apk, dir_todo))
+    else:
+        execute('mv "%s" %s/Chrome.apk' % (chrome_android_apk, dir_todo))
     execute('echo "phase=buildid\nbuild-id=%s" >%s/README' % (build_id_temp, dir_todo), show_cmd=False)
 
 
@@ -1662,6 +1692,9 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
     chrome_android_cleanup(device_id)
 
     execute(adb(cmd='install -r "%s"' % file_apk, device_id=device_id), interactive=True, dryrun=False)
+    # used to install gms apk and lib
+    #if os.path.exists('lib'):
+    #    execute(adb(cmd='push %s/lib/%s /data/app-lib/com.android.chrome-1' % (dir_root, target_arch), device_id=device_id))
     chromium_android_type = chrome_android_get_ver_type(device_id)
     if chromium_android_type == '':
         error('Failed to install package')

@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# xp
+# LD_LIBRARY_PATH=/workspace/tool/adt/sdk/tools/lib /workspace/tool/adt/sdk/tools/emulator64-x86 -avd x86 -gpu on -no-audio
+
 # format: import, globals, functions
 # globals: misc, path, chromium
 # functions: misc, file, android, chromium, internal
@@ -163,6 +166,7 @@ dir_server_aosp = dir_server + '/aosp'
 dir_server_chromium = dir_server + '/chromium'
 dir_server_webbench = dir_server + '/webbench'
 dir_server_chrome_android_todo = dir_server_chromium + '/android-chrome-todo'
+dir_server_chrome_android_todo_buildid = dir_server_chrome_android_todo + '/buildid'
 dir_project = dir_workspace + '/project'
 dir_project_chrome_android = dir_project + '/chrome-android'
 dir_project_webcatch = dir_project + '/webcatch'
@@ -1237,14 +1241,14 @@ def android_get_target_arch(device_id=''):
 def android_start_emu(target_arch):
     pid = os.fork()
     if pid == 0:
-        cmd = 'LD_LIBRARY_PATH=%s/adt/sdk/tools/lib %s/adt/sdk/tools/emulator64-%s -avd %s -no-audio' % (dir_tool, dir_tool, target_arch, target_arch)
+        cmd = 'LD_LIBRARY_PATH=%s/adt/sdk/tools/lib %s/adt/sdk/tools/emulator64-%s -gpu on -avd %s -no-audio' % (dir_tool, dir_tool, target_arch, target_arch)
         execute(cmd)
     else:
         info('Starting emulator for ' + target_arch)
         if target_arch == 'x86':
             time.sleep(30)
         else:
-            time.sleep(70)
+            time.sleep(100)
 
 
 def android_kill_emu(target_arch):
@@ -1425,6 +1429,7 @@ def chrome_android_cleanup(device_id='', module_name=''):
         if not module_name or module_name == key:
             execute(adb('uninstall ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device_id=device_id))
 
+    execute(adb('shell rm -rf /data/app-lib/com.android.chrome-1', device_id=device_id))
     #execute(adb('shell rm -rf /data/data/com.example.chromium', device_id=device_id))
     #execute(adb('shell rm -rf /data/dalvik-cache/*', device_id=device_id))
 

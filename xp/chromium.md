@@ -45,10 +45,6 @@ adb shell 'echo "chrome --disable-fre --disable-web-security --enable-remote-deb
 *
 CHROMIUM_OUT_DIR=out-x86/out build/android/adb_gdb_android_webview_shell
 this will pull libs to /tmp/gyagp-adb-gdb-libs
-*
-android_webview/test/shell/
-*
-entry: src/android_webview/test/shell/src/org/chromium/android_webview/shell/AwShellApplication.java
 
 
 src/base/android/java/src/org/chromium/base

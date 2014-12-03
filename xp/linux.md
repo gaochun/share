@@ -56,4 +56,9 @@ alacarte->add new item->search it in applications->add as favorite
 * Change command line for chrome
 modify /opt/google/chrome-unstable/google-chrome-unstable
 
+* disable apport
+gksu gedit /etc/default/apport
+Change value of "enabled" from 1 to 0
+sudo restart apport
+
 </xp>

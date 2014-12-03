@@ -1,6 +1,12 @@
 <todo>
 set up http server on android
 mount /system/gfx directory
+
+--gpu-driver-bug-workarounds=1
+
+/workspace/project/chrome-android/38.0.2125.509/src/out-x86/out/Release/lib
+/workspace/tool/i686-linux-android-strip libchrome_prebuilt.so -o libchrome.2125.509.so
+
 </todo>
 
 <useful>
@@ -13,6 +19,11 @@ adb shell screenrecord /sdcard/fail.mp4
 
 * delete gms chrome
 rm -rf /system/app/Chrome
+
+* self installed chrome
+/data/app/com.android.chrome-1.apk
+/data/app-lib/com.android.chrome-1/
+/data/app-lib/com.android.chrome-1/libchrome.xxx.xxx.so
 
 * install stock browser
 cd /system/app/BrowserProviderProxy && mv BrowserProviderProxy.apk BrowserProviderProxy.apk.bk, restart
@@ -34,6 +45,11 @@ broadcast receiver: 接收信息
 intent: activity之间的通讯，包含动作和数据
 
 task: 逻辑上的应用
+
+*
+adb shell screenrecord --time-limit 10 /cache/reproduce.mp4 or adb shell screenrecord /cache/reproduce.mp4
+
+* netcfg on android
 </useful>
 
 
@@ -161,11 +177,14 @@ Chromium:
 LOG(INFO)
 LOG(ERROR)
 printf 没有作用
+__android_log_print()
 
 Skia:
 GrPrintf
 SkDebugf
 
+*
+CHROMIUM_OUT_DIR=out-x86/out python third_party/android_platform/development/scripts/stack /tmp/tombstone_02 >/workspace/gytemp/stack.txt
 
 <gdb>
 
@@ -219,13 +238,15 @@ To make the webview stop for debug very early, make below changes to content/app
 adb push /workspace/project/aosp-gminl/out/target/product/ecs_e7/system/lib/libwebviewchromium.so /system/lib/
 adb shell stop && adb shell start
 
+<way1>
 *
 adb forward tcp:1234 tcp:1234
 
 *
 adb shell ps |grep <pkg> |awk '{print $2}' |xargs adb shell gdbserver :1234 --attach
 [aosp_browser] com.android.browser
-[awshell] org.chromium.android_webview.shell
+[awshell]
+adb shell ps |grep org.chromium.android_webview.shell |awk '{print $2}' |xargs adb shell gdbserver :1234 --attach
 
 *
 /workspace/project/chromium-android/src/third_party/android_tools/ndk/toolchains/x86-4.8/prebuilt/linux-x86_64/bin/i686-linux-android-gdb
@@ -234,6 +255,13 @@ adb shell ps |grep <pkg> |awk '{print $2}' |xargs adb shell gdbserver :1234 --at
 target remote :1234
 [aosp_browser] set solib-search-path /workspace/project/aosp-gminl/out/target/product/ecs_e7/symbols/system/lib/
 [awshell] set solib-search-path /workspace/project/chromium-android/src/out-x86/out/Release/lib
+
+</way1>
+
+<way2>
+CHROMIUM_OUT_DIR=out-x86/out build/android/adb_gdb_android_webview_shell --start --target-arch=x86
+
+</way2>
 
 *
 b GrGpuGL.cpp:1426
@@ -353,6 +381,7 @@ sudo dhclient br0
 http://forum.xda-developers.com/showthread.php?t=2287494
 http://forum.xda-developers.com/google-nexus-5/general/android-l-usb-tethering-t2801781
 http://forum.xda-developers.com/google-nexus-5/help/android-l-simple-script-fix-wifi-usb-t2826720
+http://redmine.replicant.us/projects/replicant/wiki/ReplicantUSBNetworking
 
 android device shares the connection of desktop
 
@@ -383,6 +412,12 @@ route add default gw 192.168.42.2 dev eth0
 *
 cd /workspace/tool && sudo linux/run.sh
 
+INTERNAL=tun
+EXTERNAL=eth0
+
+sudo iptables -t nat -A POSTROUTING -o $EXTERNAL -j MASQUERADE
+sudo iptables -A FORWARD -i $EXTERNAL -o $INTERNAL -m state --state RELATED,ESTABLISHED -j ACCEPT
+sudo iptables -A FORWARD -i $INTERNAL -o $EXTERNAL -j ACCEPT
 
 
 </reverse_tethering>
@@ -390,3 +425,12 @@ cd /workspace/tool && sudo linux/run.sh
 <bkm>
 
 </bkm>
+
+<memory>
+* /sys/module/lowmemorykiller/parameters/minfree
+*
+https://android.intel.com/#/c/298014/
+ecs_e7/overlay/frameworks/base/core/res/res/values/config.xml
+<integer name="config_lowMemoryKillerMinFreeKbytesAbsolute">77824</integer>
+
+</memory>

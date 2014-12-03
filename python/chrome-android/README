@@ -15,11 +15,17 @@ In each VERSION_COMBO directory,
 Chrome.apk is the one acquired directly from Google Play.
 Chromium.apk and Chromium2.apk are ones repacked by ourselves. Chromium.apk has app name "Chromium" and package name "com.android.chromium" or "com.chromium.beta" (for stable and beta respectively). Chromium2.apk has app name "Chromium2" and package name "com.android.chrome" and "com.chrome.beta" that are same with the ones released by Google so that they can be used well under some circumstance, such as MTBF tests. Providers in AndroidManifest.xml is also changed so that Chrome.apk, Chromium.apk and Chromium2.apk can coexist as much as possible. Note that Chromium2.apk may not coexist with same type (beta or stable) Chrome.apk as they have same package name.
 libchromexxx.so is the one with symbols.
+If you see the directory named "gms", it means the version is from gms, without a counterpart in Google Play. gms version contains an apk without lib inside and a separated directory "lib", which is different with Google Play version that one apk covers all things. Thus, the Chrome.apk is the one we repack to be Google Play format. If you need to install original gms version, just enter directory gms, and:
+adb install Chrome.apk
+adb push lib/x86 /data/app-lib/com.android.chrome-1
 
 If the specific apk is missed (might happen for x86 as we can not get old apks), a simple Null.apk will be placed at the specific directory.
 
 
 history:
+
+20141203:
+Add support of GMS version (Chrome.apk + lib)
 
 20140905:
 Add Chromium2.apk

@@ -32,6 +32,7 @@ pkgs_common = [
     'libpci-dev', 'linux-tools-generic', 'binutils-dev', 'libelf-dev', 'gperf', 'bison', 'python-pip',
     'module-assistant', 'autoconf', 'automake', 'libnss3-dev', 'ant', 'libcups2-dev', 'libasound2-dev', 'libxss-dev', 'libxtst-dev',
     'libpulse-dev', 'libexif-dev', 'libkrb5-dev', 'libcap-dev', 'linux-libc-dev:i386',
+    'libc6-dev-i386', 'g++-multilib',  # clang build
     'zlib1g:i386',  # apk build, used by aapt
     # </chromium>
     'postfix',  # smtp server
@@ -49,7 +50,7 @@ pkgs_common = [
     'openssh-server',
 
     # adb
-    'libc6:i386', 'stdlibc++6:i386'
+    'libc6:i386', 'stdlibc++6:i386', 'libc++-dev',
 ]
 
 

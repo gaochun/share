@@ -121,7 +121,7 @@ def download(force=False):
         options = webdriver.ChromeOptions()
         options.add_experimental_option('excludeSwitches', ['user-data-dir', 'ignore-certificate-errors', 'disable-default-apps'])
         options.add_argument('user-data-dir=%s' % (dir_tool + '/' + target_arch + '/chrome-profile'))
-        driver = webdriver.Chrome(executable_path=dir_tool + '/chromedriver', chrome_options=options, service_args=['--verbose', '--log-path=%s/chromedriver-%s.log' % (dir_share_ignore_log, timestamp)])
+        driver = webdriver.Chrome(executable_path=tool_chromedriver, chrome_options=options, service_args=['--verbose', '--log-path=%s/chromedriver-%s.log' % (dir_share_ignore_log, timestamp)])
 
         if args.download_type == 'all' or args.download_type == 'stable':
             driver.get('https://play.google.com/store/apps/details?id=' + chromium_android_info['chrome_stable'][CHROMIUM_ANDROID_INFO_INDEX_PKG])

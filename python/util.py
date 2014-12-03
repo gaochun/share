@@ -171,6 +171,9 @@ dir_project_webcatch_project = dir_project_webcatch + '/project'
 dir_project_webcatch_log = dir_project_webcatch + '/log'
 dir_tool = dir_workspace + '/tool'
 
+tool_chromedriver = dir_linux + '/chromedriver/chromedriver-2.12'
+tool_apktool = dir_linux + '/apktool/apktool_2.0.0rc3.jar'
+
 path_web_benchmark = 'http://wp-02.sh.intel.com'
 path_web_webbench = path_web_benchmark + '/webbench'
 path_web_webcatch = path_web_benchmark + '/chromium'

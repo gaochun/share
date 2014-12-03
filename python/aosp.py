@@ -274,7 +274,7 @@ def build():
 
     # make
     if repo_type == 'irdakk' or repo_type == 'upstream' and ver_cmp(repo_ver, '5.0') < 0:
-        make = dir_tool + '/make-3.81/make'
+        make = dir_linux + '/make/make-3.81'
     else:
         make = 'make'
 

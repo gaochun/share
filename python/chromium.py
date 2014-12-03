@@ -834,7 +834,7 @@ def postbuild(force=False):
 
             # unpack
             execute('rm -rf %s' % dir_chromium)
-            execute('java -jar %s/apktool.jar d %s/Chrome.apk -o %s' % (dir_tool, dir_server_chrome_android_todo_comb, dir_chromium), interactive=True, abort=True)
+            execute('java -jar %s d %s/Chrome.apk -o %s' % (tool_apktool, dir_server_chrome_android_todo_comb, dir_chromium), interactive=True, abort=True)
 
             # replace libchrome(view).so
             ## get the name
@@ -848,9 +848,9 @@ def postbuild(force=False):
             # backup the file with symbol
             if not is_same_file(file_libchrome_prebuilt, path_file_libchrome):
                 execute('cp -f %s %s' % (file_libchrome_prebuilt, path_file_libchrome), interactive=True, abort=True, dryrun=False)
-                execute(dir_tool + '/' + target_arch_strip[target_arch] + ' ' + file_libchrome_prebuilt + ' -o ' + file_libchrome, abort=True, dryrun=False)
+                execute(dir_linux + '/' + target_arch_strip[target_arch] + ' ' + file_libchrome_prebuilt + ' -o ' + file_libchrome, abort=True, dryrun=False)
             if not os.path.exists(file_libchrome):
-                execute(dir_tool + '/' + target_arch_strip[target_arch] + ' ' + file_libchrome_prebuilt + ' -o ' + file_libchrome, abort=True, dryrun=False)
+                execute(dir_linux + '/' + target_arch_strip[target_arch] + ' ' + file_libchrome_prebuilt + ' -o ' + file_libchrome, abort=True, dryrun=False)
             # replace the file without symbol
             execute('cp -f %s %s/%s' % (file_libchrome, dir_chromium_lib, file_libchrome), interactive=True, abort=True)
             restore_dir()
@@ -876,9 +876,9 @@ def postbuild(force=False):
             # repackage the new apk
             # --zipalign: can be found in SDK
             backup_dir(dir_server_chrome_android_todo_comb)
-            execute('java -jar %s/apktool.jar b %s -o %s_unaligned.apk' % (dir_tool, name_apk, name_apk), interactive=True, abort=True)
-            execute('jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s/debug.keystore -storepass android %s_unaligned.apk androiddebugkey' % (dir_tool, name_apk), interactive=True, abort=True)
-            execute('%s/zipalign -f -v 4 %s_unaligned.apk %s.apk' % (dir_tool, name_apk, name_apk), interactive=True, abort=True)
+            execute('java -jar %s b %s -o %s_unaligned.apk' % (tool_apktool, name_apk, name_apk), interactive=True, abort=True)
+            execute('jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s/debug.keystore -storepass android %s_unaligned.apk androiddebugkey' % (dir_linux, name_apk), interactive=True, abort=True)
+            execute('%s/zipalign -f -v 4 %s_unaligned.apk %s.apk' % (dir_linux, name_apk, name_apk), interactive=True, abort=True)
             execute('rm -f %s_unaligned.apk' % name_apk, abort=True)
             restore_dir()
         _update_phase(get_caller_name())
@@ -1677,7 +1677,7 @@ def _chrome_android_get_info(target_arch, file_apk, bypass=False):
         #adb shell input tap 400 1070
         if has_process('chromedriver'):
             execute('sudo killall chromedriver', show_cmd=False)
-        subprocess.Popen(dir_tool + '/chromedriver', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.Popen(tool_chromedriver, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         time.sleep(1)  # Sleep a bit to make sure driver is ready
         env_http_proxy = getenv('http_proxy')
         unsetenv('http_proxy')

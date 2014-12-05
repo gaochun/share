@@ -506,6 +506,7 @@ def setup():
 
 
 def buildid(force=False):
+    global chrome_android_apk
     if not args.buildid and not force:
         return
 

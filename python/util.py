@@ -123,6 +123,7 @@ device_product_info = {
 }
 device_product_info['asus_t100_64p'] = device_product_info['asus_t100']
 device_product_info['ecs_e7'] = device_product_info['cruise7']
+device_product_info['ecs_e7_64p'] = device_product_info['cruise7']
 device_product_info['cruise8'] = device_product_info['cruise7']
 ## </misc>
 
@@ -236,6 +237,20 @@ CHROMIUM_MAJORVER_INFO_INDEX_REV = 0
 
 # revision range to care about
 chromium_rev_default = [chromium_majorver_info[36][CHROMIUM_MAJORVER_INFO_INDEX_REV], 999999]
+
+# combs used by webmark.py and chromium-perf.py follow below index rule:
+# ['asus_t100_64p', 'x86_64', 'powersave', '400000', 'android', 'x86_64', 'content_shell', ['302000', '999999', 200]]
+PERF_COMBS_INDEX_DEVICE_PRODUCT = 0
+PERF_COMBS_INDEX_DEVICE_ARCH = 1
+PERF_COMBS_INDEX_DEVICE_GOVERNOR = 2
+PERF_COMBS_INDEX_DEVICE_FREQ = 3
+PERF_COMBS_INDEX_MODULE_OS = 4
+PERF_COMBS_INDEX_MODULE_ARCH = 5
+PERF_COMBS_INDEX_MODULE_NAME = 6
+PERF_COMBS_INDEX_MODULE_VERSION = 7
+PERF_COMBS_INDEX_MODULE_VERSION_MIN = 0
+PERF_COMBS_INDEX_MODULE_VERSION_MAX = 1
+PERF_COMBS_INDEX_MODULE_VERSION_INTERVAL = 2
 ## </chromium>
 # </globals>
 

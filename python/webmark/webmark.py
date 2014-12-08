@@ -9,6 +9,9 @@ from selenium import webdriver
 
 logger = ''
 device_arch = ''
+devices_id = []
+devices_arch = []
+devices_product = []
 
 
 def parse_arg():
@@ -71,7 +74,6 @@ def setup():
     unsetenv('http_proxy')
     logger = get_logger(tag='webmark', dir_log=dir_share_ignore_webmark_log, datetime=timestamp)
     dryrun = args.dryrun
-    baseline = Baseline()
     ensure_dir(dir_share_ignore_webmark_download)
     ensure_dir(dir_share_ignore_webmark_result)
 
@@ -105,6 +107,8 @@ def setup():
     (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_id_limit=devices_id_limit)
     if len(devices_id) == 0 and not args.dryrun:
         error('No device is connected')
+
+    baseline = Baseline()
 
 
 def run():
@@ -407,7 +411,16 @@ class Suite:
             android_config_device(device_id=device.id, device_product=device.product, default=False, governor=device.governor, freq=device.freq)
 
         # generate result file
-        file_result = dir_share_ignore_webmark_result + '/%s-%s-%s-%s-%s-%s-%s-%s-%s.txt' % (device.product, device.arch, device.governor, device.freq, module.os, module.arch, module.name, module.version, timestamp)
+        comb = []
+        comb.insert(PERF_COMBS_INDEX_DEVICE_PRODUCT, device.product)
+        comb.insert(PERF_COMBS_INDEX_DEVICE_ARCH, device.arch)
+        comb.insert(PERF_COMBS_INDEX_DEVICE_GOVERNOR, device.governor)
+        comb.insert(PERF_COMBS_INDEX_DEVICE_FREQ, str(device.freq))
+        comb.insert(PERF_COMBS_INDEX_MODULE_OS, module.os)
+        comb.insert(PERF_COMBS_INDEX_MODULE_ARCH, module.arch)
+        comb.insert(PERF_COMBS_INDEX_MODULE_NAME, module.name)
+        comb.insert(PERF_COMBS_INDEX_MODULE_VERSION, module.version)
+        file_result = '%s/%s-%s.txt' % (dir_share_ignore_webmark_result, '-'.join(comb), timestamp)
         logger.info('Use result file ' + file_result)
         fw = open(file_result, 'w')
         ## write config
@@ -469,10 +482,19 @@ class Device:
                 self.product = devices_product[index]
             if not hasvalue(self, 'arch'):
                 error('The designated device %s is not found' % self.id)
-        elif not self.arch and not self.product:
-            self.id = devices_id[0]
-            self.arch = devices_arch[0]
-            self.product = devices_product[0]
+        else:
+            if not self.product:
+                error('The device id or product must be designated')
+            else:
+                device_matched = False
+                for index, device_product in enumerate(devices_product):
+                    if device_product == self.product:
+                        device_matched = True
+                        self.id = devices_id[index]
+                        self.arch = devices_arch[index]
+                        break
+                if not device_matched:
+                    self.id = ''
 
 
 class Module:

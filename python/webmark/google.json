@@ -1,0 +1,44 @@
+{
+  "suites": [
+    {
+      "name": "Chrome for Android Performance Test",
+      "description": "Chrome for Android Performance Test",
+      "device": {
+        "id": "07ACF5A0",
+        "arch": "x86",
+        "product": "ecs_e7"
+      },
+      "module": {
+        "name": "chrome_shell",
+        "os": "android",
+        "arch": "x86"
+      },
+      "cases": [
+        {"name": "octane", "version": "1.0", "times_run": 5},
+        {"name": "fishietank", "version": "raf", "count_fish": 0, "times_run": 5},
+        {"name": "aquarium", "times_run": 5},
+        {"name": "webxprt", "path_type": "external", "times_run": 5}
+      ]
+    },
+    {
+      "name": "Chrome for Android Performance Test",
+      "description": "Chrome for Android Performance Test",
+      "device": {
+        "id": "09ece05a",
+        "arch": "x86",
+        "product": "razor"
+      },
+      "module": {
+        "name": "chrome_shell",
+        "os": "android",
+        "arch": "x86"
+      },
+      "cases": [
+        {"name": "octane", "version": "1.0", "times_run": 5},
+        {"name": "fishietank", "version": "raf", "count_fish": 0, "times_run": 5},
+        {"name": "aquarium", "times_run": 5},
+        {"name": "webxprt", "path_type": "external", "times_run": 5}
+      ]
+    }
+  ]
+}

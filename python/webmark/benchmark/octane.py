@@ -17,6 +17,7 @@ class octane(Benchmark):
                 'internal': 'webbench/js/octane/1.0/index.html',
             }
         },
+        'timeout': 1200,
     }
 
     def __init__(self, driver, case):

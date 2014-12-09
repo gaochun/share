@@ -487,7 +487,10 @@ class Device:
                 error('The designated device %s is not found' % self.id)
         else:
             if not self.product:
-                error('The device id or product must be designated')
+                info('Both device id and product are not designated, use the first connected one')
+                self.id = devices_id[0]
+                self.arch = devices_arch[0]
+                self.product = devices_product[0]
             else:
                 device_matched = False
                 for index, device_product in enumerate(devices_product):

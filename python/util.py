@@ -200,6 +200,7 @@ chromium_android_info = {
     'chrome_beta': ['com.chrome.beta', ''],
     'stock_browser': ['com.android.browser', 'com.android.browser.BrowserActivity'],
     'content_shell': ['org.chromium.content_shell_apk', ''],
+    'chrome_shell': ['org.chromium.chrome.shell', ''],
     #'webview_shell': 'com.android.webview_shell_apk?',
 
     # self defined

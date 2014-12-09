@@ -51,9 +51,9 @@ class sunspider(Benchmark):
             return False
 
     def act0(self, driver):
-        str = self.driver.find_element_by_id('console').text
-        pos = str.find('Total:') + len('Total:')
-        str = str[pos:].strip()
-        pos = str.find('ms')
+        text = self.driver.find_element_by_id('console').text
+        pos = text.find('Total:') + len('Total:')
+        text = text[pos:].strip()
+        pos = text.find('ms')
 
-        self.result.append(str[:pos])
+        self.result.append(text[:pos])

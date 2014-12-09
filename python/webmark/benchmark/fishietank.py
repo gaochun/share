@@ -18,12 +18,12 @@ class fishietank(Benchmark):
             }
         },
         'counts_fish': [1, 10, 20, 50, 100, 250, 500, 1000],
-        'count_fish': 50,
+        'count_fish': 250,
     }
 
     def __init__(self, driver, case):
         if not hasattr(case, 'count_fish'):
-            self.count_fish = 50
+            self.count_fish = 250
         else:
             self.count_fish = case.count_fish
 
@@ -37,16 +37,18 @@ class fishietank(Benchmark):
             return False
 
     def act0(self, driver):
-        index = 0
-        counts_fish = self.CONFIG['counts_fish']
-        for i in range(len(counts_fish)):
-            if str(self.count_fish) == str(counts_fish[i]):
-                index = i * 2 + 2
-        if (index == 0):
-            warning('count_fish in FishIETank is not correct, will use 100 instead')
-            index = 10
+        if self.count_fish:  # 0 for default
+            index = 0
+            counts_fish = self.CONFIG['counts_fish']
+            for i in range(len(counts_fish)):
+                if self.count_fish == counts_fish[i]:
+                    index = (i + 1) * 2
+                    break
+            if (index == 0):
+                warning('count_fish in FishIETank is not correct, will use 250 instead')
+                index = 12
 
-        self.e[index].click()
+            self.e[index].click()
         self.result = self.get_result_periodic(driver)
 
     def get_result_one(self, driver):

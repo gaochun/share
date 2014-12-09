@@ -368,6 +368,9 @@ class Suite:
 
     def run(self):
         device = self.device
+        if device.id not in devices_id:
+            warning('Device %s is not connected' % device.id)
+            return
         module = self.module
 
         # Handle app mode

@@ -89,7 +89,8 @@ class Benchmark(object):
             else:
                 self.__dict__[key] = config[key][self.path_type]
         if self.path_type == 'internal':
-            self.__dict__[key] = path_web_benchmark + '/' + self.__dict__[key]
+            if not re.match('http', self.__dict__[key]):
+                self.__dict__[key] = path_web_benchmark + '/' + self.__dict__[key]
         elif self.path_type == 'local':
             self.__dict__[key] = 'file:///data/local/tmp/' + self.__dict__[key]
 

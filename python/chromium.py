@@ -336,6 +336,7 @@ examples:
     group_basic.add_argument('--build-fail-max', dest='build_fail_max', help='allow n build failures before it stops', type=int, default=1)
     group_basic.add_argument('--build-verbose', dest='build_verbose', help='output verbose info. Find log at out/Release/.ninja_log', action='store_true')
     group_basic.add_argument('--build-profiling', dest='build_profiling', help='enable profiling by adding profiling=1 into GYP_DEFINES', action='store_true')
+    group_basic.add_argument('--build-asan', dest='build_asan', help='enable asan by adding asan=1 into GYP_DEFINES', action='store_true')
     group_basic.add_argument('--postbuild', dest='postbuild', help='postbuild', action='store_true')
     group_basic.add_argument('--verify', dest='verify', help='verify', action='store_true')
     group_basic.add_argument('--backup', dest='backup', help='backup', action='store_true')
@@ -493,6 +494,9 @@ def setup():
 
     if args.build_profiling:
         gyp_defines += ' profiling=1'
+
+    if args.build_asan:
+        gyp_defines += ' asan=1'
 
     setenv('GYP_DEFINES', gyp_defines)
 
@@ -774,6 +778,7 @@ def build(force=False):
     print 'Build type: ' + build_type
     print 'Build system: Ninja'
     print 'Generate makefile: ' + str(need_makefile)
+    print 'GYP_DEFINES: ' + getenv('GYP_DEFINES')
     print 'Host OS: ' + host_os
     print 'Target OS: ' + target_os.capitalize()
     print '======================='

@@ -14,7 +14,7 @@ class fishietank(Benchmark):
             },
             'raf': {
                 'external': '',
-                'internal': 'webbench/canvas2d/fishtank-raf/'
+                'internal': 'webbench/canvas2d/fishtank-raf/test.php'
             }
         },
         'counts_fish': [1, 10, 20, 50, 100, 250, 500, 1000],

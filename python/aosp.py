@@ -185,7 +185,7 @@ def init():
 
     if repo_type == 'upstream':
         file_repo = 'https://storage.googleapis.com/git-repo-downloads/repo'
-    elif repo_type == 'stable' or repo_type == 'gminl' or repo_type == 'gminl64' or repo_type == 'stable-old':
+    elif repo_type in ['gminl', 'gminl64', 'stable', 'stable-old']:
         file_repo = 'http://android.intel.com/repo'
     elif repo_type == 'irdakk' or repo_type == 'irdal':
         file_repo = 'https://buildbot-otc.jf.intel.com/repo.otc'
@@ -305,7 +305,7 @@ def build():
                 cmd += 'dist'
             else:
                 cmd += target_module
-        elif target_module == 'browser' or target_module == 'webview' or target_module == 'libwebviewchromium' or target_module == 'perf':
+        elif target_module in ['browser', 'libwebviewchromium', 'perf', 'webview']:
             cmd = '. build/envsetup.sh && lunch ' + combo + ' && '
             if args.build_no_dep:
                 cmd += 'mmm '
@@ -314,12 +314,12 @@ def build():
 
             if target_module == 'browser':
                 cmd += 'packages/apps/Browser'
-            elif target_module == 'webview':
-                cmd += 'frameworks/webview'
             elif target_module == 'libwebviewchromium':
                 cmd += 'external/chromium_org'
             elif target_module == 'perf':
                 cmd += 'external/linux-tools-perf'
+            elif target_module == 'webview':
+                cmd += 'frameworks/webview'
 
         if args.build_showcommands:
             cmd += ' showcommands'
@@ -461,7 +461,7 @@ def flash_image():
         combo = _get_combo(device_arch, device_type)
         cmd = bashify_cmd('. build/envsetup.sh && lunch ' + combo + ' && fastboot -w flashall')
         execute(cmd, interactive=True, dryrun=False)
-    elif repo_type == 'irdakk' or repo_type == 'gminl' or repo_type == 'gminl64':
+    elif repo_type in ['gminl', 'gminl64', 'irdakk']:
         execute('./flash-base.sh', interactive=True, dryrun=False)
         execute('./flash-all.sh', interactive=True, dryrun=False)
         execute('timeout 10s %s -s %s reboot' % (path_fastboot, device_id))

@@ -351,7 +351,7 @@ class Baseline:
         else:
             if devices_product[0]:
                 device_product = devices_product[0].replace('_64p', '')
-                file_baseline = '%s/baseline-%s.json' % (dir_webmark, device_product)
+                file_baseline = '%s/baseline/%s.json' % (dir_webmark, device_product)
             else:
                 error('Baseline file must be designated')
         if not os.path.isfile(file_baseline):

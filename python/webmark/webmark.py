@@ -230,7 +230,10 @@ def analyze(files_result):
 
             sys.stdout.write(line)
             if content_regression or content_improvement:
-                content_change = '<a href="%s" target="_blank">%s</a><br>%s%s<br>' % (path_web_webmark_result + file_result.split('/')[-1], file_result.split('/')[-1].replace('.txt', ''), content_regression, content_improvement)
+                file_result_server = re.sub('-[\d]{14}', lambda p: '', file_result.split('/')[-1])
+                content_change = '<a href="%s" target="_blank">%s</a><br>%s%s<br>' % (path_web_webmark_result + '/' + file_result_server,
+                                                                                      file_result_server.replace('.txt', ''),
+                                                                                      content_regression, content_improvement)
         contents_change += content_change
     if args.formal and contents_change:
         to = ['zhiqiangx.yu@intel.com', 'guanxian.li@intel.com']

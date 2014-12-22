@@ -101,7 +101,7 @@ def setup():
 
     if not slave_only:
         for server in servers_webcatch:
-            result = execute(remotify_cmd('ls ' + dir_server_chromium, server=server), show_cmd=False)
+            result = execute(remotify_cmd('ls ' + dir_server_chromium, server=server[SERVERS_INDEX_HOSTNAME]), show_cmd=False)
             if result[0]:
                 error('Can not connect to build server')
 
@@ -151,7 +151,7 @@ def setup():
         ensure_dir(dir_comb_slave)
         if not slave_only:
             dir_comb_server = dir_server_chromium + '/' + comb_name
-            ensure_dir(dir_comb_server, server=server_webcatch)
+            ensure_dir(dir_comb_server, server=server_webcatch[SERVERS_INDEX_HOSTNAME])
 
         if not target_os_main:
             target_os_main = target_os
@@ -427,11 +427,11 @@ typedef user_regs_struct regs_struct;
 
 def _move_to_server(file, target_os, target_arch, target_module):
     dir_comb_server = dir_server_chromium + '/' + _get_comb_name(target_os, target_arch, target_module)
-    if re.match('ubuntu', server_webcatch):
+    if re.match('ubuntu', server_webcatch[SERVERS_INDEX_HOSTNAME]):
         username = 'gyagp'
     else:
         username = 'wp'
-    result = execute('scp %s %s@%s:%s' % (file, username, server_webcatch, dir_comb_server))
+    result = execute('scp %s %s@%s:%s' % (file, username, server_webcatch[SERVERS_INDEX_HOSTNAME], dir_comb_server))
     if result[0]:
         return False
     else:
@@ -669,7 +669,7 @@ def _rev_is_built(comb, rand=False):
 # check if rev is built in server
 def _rev_is_built_one(cmd):
     for server in servers_webcatch:
-        cmd_server = remotify_cmd(cmd, server=server)
+        cmd_server = remotify_cmd(cmd, server=server[SERVERS_INDEX_HOSTNAME])
         result = execute(cmd_server, show_cmd=False)
         if result[0] == 0:
             return True
@@ -681,7 +681,7 @@ def _get_comb_name(*subs):
 
 
 def _remotify_cmd(cmd):
-    return remotify_cmd(cmd=cmd, server=server_webcatch)
+    return remotify_cmd(cmd=cmd, server=server_webcatch[SERVERS_INDEX_HOSTNAME])
 
 
 def _roundup(num):

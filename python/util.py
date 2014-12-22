@@ -51,13 +51,28 @@ timer = {}
 webmark_format = ['category', 'name', 'version', 'metric', 'result']
 webmark_result_str = 'Result: '
 
+# servers
+servers = [
+    ['wp-01', 'wp', '', 'sh.intel.com'],
+    ['wp-02', 'wp', '', 'sh.intel.com'],
+    ['wp-03', 'wp', '', 'sh.intel.com'],
+    ['wp-04', 'wp', '', 'sh.intel.com'],
+]
+SERVERS_INDEX_HOSTNAME = 0
+SERVERS_INDEX_USERNAME = 1
+SERVERS_INDEX_PASSWORD = 2
+SERVERS_INDEX_DOMAIN = 3
+
 # servers that webcatch can build on
 servers_webcatch = [
-    'wp-02',
-    'wp-03',
+    servers[1],
+    servers[2],
 ]
 # main server for webcatch
-server_webcatch = servers_webcatch[0]
+server_webcatch = servers[1]
+
+# main server for chromeforandroid
+server_chromeforandroid = servers[2]
 
 target_arch_index = {'x86': 0, 'arm': 1, 'x86_64': 2, 'arm64': 3}
 target_arch_strip = {

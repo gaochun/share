@@ -1,0 +1,178 @@
+{
+  "suites": [
+    {
+      "device": {
+        "arch": "x86_64",
+        "freq": 400000,
+        "governor": "powersave",
+        "product": "asus_t100_64p"
+      },
+      "module": {
+        "arch": "x86",
+        "name": "chrome_stable",
+        "os": "android"
+      },
+      "cases": [
+        {"name": "kraken", "version": "1.1", "result": "38-99:19560"},
+        {"name": "octane", "version": "2.0", "result": "38-99:1603"},
+        {"name": "sunspider", "version": "1.0.2", "result": "38-99:2468"},
+
+        {"name": "canvas2dc10k", "result": "38-39:8.9,39-99:12.8"},
+        {"name": "canvasmark", "version": "2013", "result": "38-99:3732"},
+        {"name": "fishietank", "version": "raf", "result": "38-39:14,39-99:18"},
+        {"name": "fishietank", "version": "setinterval", "result": "38-39:15,39-99:19"},
+        {"name": "galactic", "version": "mobile", "result": "38-39:28,39-99:31"},
+
+        {"name": "aquarium", "result": "38-39:34,39-99:36"},
+        {"name": "cubemap", "result": "38-39:39,39-99:45"},
+        {"name": "toonshading", "result": "38-39:41,39-99:50"},
+
+        {"name": "fallingleaves", "result": "38-39:20,39-99:24.8"},
+        {"name": "postercircle", "result": "38-99:57"},
+
+        {"name": "browsermark", "version": "2.0", "result": "38-99:1744"},
+        {"name": "browsermark", "version": "2.1", "result": "38-99:637"}
+      ]
+    },
+
+    {
+      "device": {
+        "arch": "x86_64",
+        "freq": 400000,
+        "governor": "powersave",
+        "product": "asus_t100_64p"
+      },
+      "module": {
+        "arch": "x86",
+        "name": "chrome_beta",
+        "os": "android"
+      },
+      "cases": [
+        {"name": "kraken", "version": "1.1", "result": "38-99:19524"},
+        {"name": "octane", "version": "2.0", "result": "38-99:1577"},
+        {"name": "sunspider", "version": "1.0.2", "result": "38-99:2474"},
+
+        {"name": "canvas2dc10k", "result": "38-39:8.8,39-99:12.6"},
+        {"name": "canvasmark", "version": "2013", "result": "38-99:3703"},
+        {"name": "fishietank", "version": "raf", "result": "38-39:15,39-99:17.6"},
+        {"name": "fishietank", "version": "setinterval", "result": "38-39:16,39-99:19"},
+        {"name": "galactic", "version": "mobile", "result": "38-39:28,39-99:30"},
+
+        {"name": "aquarium", "result": "38-39:34,39-99:37"},
+        {"name": "cubemap", "result": "38-39:37,39-99:44"},
+        {"name": "toonshading", "result": "38-39:44,39-99:50"},
+
+        {"name": "fallingleaves", "result": "38-39:20,39-99:26"},
+        {"name": "postercircle", "result": "38-99:58"},
+
+        {"name": "browsermark", "version": "2.0", "result": "38-99:1750"},
+        {"name": "browsermark", "version": "2.1", "result": "38-99:643"}
+      ]
+    },
+
+    {
+      "device": {
+        "arch": "x86_64",
+        "freq": 400000,
+        "governor": "powersave",
+        "product": "asus_t100_64p"
+      },
+      "module": {
+        "arch": "x86_64",
+        "name": "content_shell",
+        "os": "android"
+      },
+      "cases": [
+        {"name": "kraken", "version": "1.1", "result": "301000-999999:17691"},
+        {"name": "octane", "version": "2.0", "result": "301000-999999:1567"},
+        {"name": "sunspider", "version": "1.0.2", "result": "301000-999999:2430"},
+
+        {"name": "canvas2dc10k", "result": "301000-999999:17.5"},
+        {"name": "canvasmark", "version": "2013", "result": "301000-999999:3232"},
+        {"name": "fishietank", "version": "raf", "result": "301000-999999:22"},
+        {"name": "fishietank", "version": "setinterval", "result": "301000-999999:23"},
+        {"name": "galactic", "version": "mobile", "result": "301000-999999:37"},
+
+        {"name": "aquarium", "result": "301000-999999:43"},
+        {"name": "cubemap", "result": "301000-999999:52"},
+        {"name": "toonshading", "result": "301000-999999:59"},
+
+        {"name": "fallingleaves", "result": "301000-999999:36"},
+        {"name": "postercircle", "result": "301000-999999:59"},
+
+        {"name": "browsermark", "version": "2.0", "result": "301000-999999:1886"},
+        {"name": "browsermark", "version": "2.1", "result": "301000-999999:753"}
+      ]
+    },
+
+    {
+      "device": {
+        "arch": "x86_64",
+        "freq": 400000,
+        "governor": "powersave",
+        "product": "asus_t100_64p"
+      },
+      "module": {
+        "arch": "x86",
+        "name": "content_shell",
+        "os": "android"
+      },
+      "cases": [
+        {"name": "kraken", "version": "1.1", "result": "301000-999999:19321"},
+        {"name": "octane", "version": "2.0", "result": "301000-999999:1569"},
+        {"name": "sunspider", "version": "1.0.2", "result": "301000-999999:2720"},
+
+        {"name": "canvas2dc10k", "result": "301000-999999:13.1"},
+        {"name": "canvasmark", "version": "2013", "result": "301000-999999:3389"},
+        {"name": "fishietank", "version": "raf", "result": "301000-999999:18"},
+        {"name": "fishietank", "version": "setinterval", "result": "301000-999999:19"},
+        {"name": "galactic", "version": "mobile", "result": "301000-999999:31"},
+
+        {"name": "aquarium", "result": "301000-999999:35"},
+        {"name": "cubemap", "result": "301000-999999:44"},
+        {"name": "toonshading", "result": "301000-999999:52"},
+
+        {"name": "fallingleaves", "result": "301000-999999:30"},
+        {"name": "postercircle", "result": "301000-999999:59"},
+
+        {"name": "browsermark", "version": "2.0", "result": "301000-999999:1811"},
+        {"name": "browsermark", "version": "2.1", "result": "301000-999999:697"}
+      ]
+    },
+
+    {
+      "device": {
+        "arch": "dryrun",
+        "freq": 0,
+        "governor": "dryrun",
+        "product": "dryrun"
+      },
+      "module": {
+        "arch": "dryrun",
+        "name": "dryrun",
+        "os": "dryrun"
+      },
+      "cases": [
+        {"name": "kraken", "version": "1.1", "result": "0-30:1,30-35:60"},
+        {"name": "octane", "version": "2.0", "result": "0-99:30"},
+        {"name": "sunspider", "version": "1.0.2", "result": "1-31:60,34-35:30,0:10"},
+
+        {"name": "canvas2dc10k", "result": "0-99:30"},
+        {"name": "canvasmark", "version": "2013", "result": "0-99:30"},
+        {"name": "fishietank", "version": "raf", "result": "0-99:30"},
+        {"name": "fishietank", "version": "setinterval", "result": "0-99:30"},
+        {"name": "galactic", "version": "mobile", "result": "0-99:30"},
+
+        {"name": "aquarium", "result": "0-99:30"},
+        {"name": "cubemap", "result": "0-99:30"},
+        {"name": "toonshading", "result": "0-99:30"},
+
+        {"name": "fallingleaves", "result": "0-99:30"},
+        {"name": "postercircle", "result": "0-99:30"},
+
+        {"name": "browsermark", "version": "2.0", "result": "0-99:30"},
+        {"name": "browsermark", "version": "2.1", "result": "0-99:30"}
+      ]
+    }
+  ]
+}

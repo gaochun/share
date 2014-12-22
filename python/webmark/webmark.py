@@ -26,6 +26,7 @@ examples:
 ''')
 
     parser.add_argument('--config', dest='config', help='config file to put in all the configurations')
+    parser.add_argument('--baseline', dest='baseline', help='baseline file to put in all the baseline info')
 
     group_device = parser.add_argument_group('device')
     group_device.add_argument('--device-id', dest='device_id', help='device id separated by comma')
@@ -345,7 +346,14 @@ class Baseline:
     ]
 
     def __init__(self):
-        file_baseline = dir_webmark + '/baseline.json'
+        if args.baseline:
+            file_baseline = args.baseline
+        else:
+            if devices_product[0]:
+                device_product = devices_product[0].replace('_64p', '')
+                file_baseline = '%s/baseline-%s.json' % (dir_webmark, device_product)
+            else:
+                error('Baseline file must be designated')
         if not os.path.isfile(file_baseline):
             error(file_baseline + ' is not a valid file.')
         f = file(file_baseline)

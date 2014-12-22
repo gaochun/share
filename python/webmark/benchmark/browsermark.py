@@ -17,7 +17,7 @@ class browsermark(Benchmark):
                 'internal': 'webbench/comprehensive/browsermark',
             }
         },
-        'timeout': 600,
+        'timeout': 1800,
         'test_all': [
             '2D Rendering', '3D Rendering', 'Crunch', 'Resize',
             'Advance Search', 'Create Source', 'Dynamic Create', 'Search',

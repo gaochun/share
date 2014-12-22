@@ -20,6 +20,9 @@ dir_root = ''
 vers = []
 ver_types = []
 target_archs = []
+local_ver = ''
+local_ver_type = ''
+local_target_arch = ''
 run_act = 0
 
 ACT_DOWNLOAD = 1 << 0
@@ -40,6 +43,7 @@ def parse_arg():
                                      epilog='''
 examples:
   python %(prog)s --ver 36.0.1985.81 --ver-type stable --target-arch x86
+  python %(prog)s --ver 39.0.2171.54 --ver-type beta --target-arch x86 --local-setup
 ''')
     parser.add_argument('--run', dest='run', help='run', action='store_true')
     parser.add_argument('--run-act', dest='run_act', help='run act', type=int, default=ACT_ALL)
@@ -48,9 +52,13 @@ examples:
     parser.add_argument('--download_type', dest='download_type', help='version type to download', default='all')
     parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
     parser.add_argument('--backup-ver', dest='backup_ver', help='backup versions less than the designated')
+    parser.add_argument('--local-setup', dest='local_setup', help='setup local environment to build and debug', action='store_true')
+    parser.add_argument('--local-build', dest='local_build', help='build local chromium.apk and library with symbols', action='store_true')
+
     parser.add_argument('--ver', dest='ver', help='version', default='all')
     parser.add_argument('--ver-type', dest='ver_type', help='ver type', default='all')
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', default='all')
+    parser.add_argument('--debug', dest='debug', help='debug chromium with GDB', action='store_true')
     parser.add_argument('--analyze', dest='analyze', help='analyze test tombstone', action='store_true')
     parser.add_argument('--analyze-type', dest='analyze_type', help='type to analyze', choices=['tombstone', 'anr'], default='tombstone')
     add_argument_common(parser)
@@ -246,6 +254,75 @@ def backup_ver():
             backup_smb(path_server_backup, 'chromium', '%s.tar.gz' % dir_ver)
 
 
+def local_setup():
+    if not args.local_setup:
+        return
+
+    _get_local_info()
+
+    ensure_dir(dir_workspace)
+    execute('sudo chown -R %s:%s %s' % (username, username, dir_workspace), interactive=True)
+    ensure_dir(dir_project_chrome_android)
+    dir_server_chrome_android_todo_apk = '%s/%s/%s-%s' % (dir_server_chrome_android_todo, local_target_arch, local_ver, local_ver_type)
+    ensure_dir(dir_server_chrome_android_todo_apk)
+
+    backup_dir(dir_server_chrome_android_todo_apk)
+    execute('scp %s@%s:%s/android-%s-chrome/%s-%s/README ./' % (server_chromeforandroid[SERVERS_INDEX_USERNAME],
+                                                                server_chromeforandroid[SERVERS_INDEX_HOSTNAME],
+                                                                dir_server_chromium,
+                                                                local_target_arch, local_ver, local_ver_type), interactive=True)
+    execute('scp %s@%s:%s/android-%s-chrome/%s-%s/Chrome.apk ./' % (server_chromeforandroid[SERVERS_INDEX_USERNAME],
+                                                                    server_chromeforandroid[SERVERS_INDEX_HOSTNAME],
+                                                                    dir_server_chromium,
+                                                                    local_target_arch, local_ver, local_ver_type), interactive=True)
+    file_readme = '%s/%s/%s-%s/README' % (dir_server_chrome_android_todo, local_target_arch, local_ver, local_ver_type)
+    _set_phase(file_readme, 'patch')
+    restore_dir()
+
+    backup_dir(dir_project_chrome_android)
+    if os.path.exists('%s/%s' % (dir_project_chrome_android, local_ver)):
+        info('The source code of chrome-%s_%s have been downloaded' % (local_ver_type, local_ver))
+    else:
+        execute('ssh %s@%s "cd %s; tar -zcvf - %s" | tar xzf - %s' % (server_chromeforandroid[SERVERS_INDEX_USERNAME],
+                                                                      server_chromeforandroid[SERVERS_INDEX_HOSTNAME],
+                                                                      dir_project_chrome_android,
+                                                                      local_ver,
+                                                                      local_ver), interactive=True)
+    restore_dir()
+
+
+def local_build():
+    if not args.local_build:
+        return
+
+    _get_local_info()
+
+    cmd = cmd_common + ' --dir-root ' + dir_root + '/' + local_ver
+    cmd += ' --target-arch ' + local_target_arch
+    cmd += ' --ver ' + local_ver
+    cmd += ' --ver-type ' + local_ver_type
+    cmd += ' --phase-end postbuild --phase-continue'
+    execute(cmd, interactive=True)
+
+
+def debug():
+    if not args.debug:
+        return
+
+    _setup_device()
+    _get_local_info()
+
+    module_name = 'chromium_' + local_ver_type
+    device_id = devices_id[0]
+    dir_src = '%s/%s/src' % (dir_project_chrome_android, local_ver)
+    dir_out = 'out-%s/out' % local_target_arch
+    dir_symbol = '%s/%s/%s-%s' % (dir_server_chrome_android_todo, local_target_arch, local_ver, local_ver_type)
+
+    android_install_module(device_id, dir_symbol + '/Chromium.apk', module_name)
+    android_run_module(device_id, module_name)
+    android_gdb_module(device_id, module_name, local_target_arch, dir_src, dir_symbol=dir_symbol, dir_out=dir_out)
+
+
 def analyze():
     if not args.analyze:
         return
@@ -337,6 +414,29 @@ def _handle_todo_dir():
     restore_dir()
 
 
+def _get_local_info():
+    global local_ver, local_ver_type, local_target_arch
+
+    if local_ver or local_ver_type or local_target_arch:
+        return
+
+    if args.ver == 'all' or args.ver_type == 'all' or args.target_arch == 'all':
+        error('Please designate chrome ver(--ver), ver_type(--ver_type) and target_arch(--target_arch)')
+    else:
+        local_ver = args.ver
+        local_ver_type = args.ver_type
+        local_target_arch = args.target_arch
+
+
+def _set_phase(file_readme, phase):
+    pattern = re.compile('phase=(.*)')
+    for line in fileinput.input(file_readme, inplace=1):
+        match = pattern.search(line)
+        if match:
+            line = 'phase=' + phase + '\n'
+        sys.stdout.write(line)
+
+
 def _teardown():
     pass
 
@@ -349,4 +449,7 @@ if __name__ == "__main__":
     download()
     backup()
     backup_ver()
+    local_setup()
+    local_build()
+    debug()
     analyze()

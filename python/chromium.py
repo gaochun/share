@@ -312,6 +312,7 @@ examples:
     group_common.add_argument('--ver', dest='ver', help='ver for chrome-android')
     group_common.add_argument('--ver-type', dest='ver_type', help='ver type, stable or beta')
     group_common.add_argument('--chrome-android-apk', dest='chrome_android_apk', help='chrome android apk')
+    group_common.add_argument('--phase-end', dest='phase_end', help='phase which running end with')
     group_common.add_argument('--phase-continue', dest='phase_continue', help='run all left phases', action='store_true')
     group_common.add_argument('--build-type', dest='build_type', help='build type', choices=['release', 'debug'], default='release')
 
@@ -1000,6 +1001,8 @@ def phase_continue():
             info('Begin to run phase ' + phase_next)
             globals()[phase_next](force=True)
             if phase_next == chrome_android_phase_all[-1]:
+                return
+            if args.phase_end and phase_next == args.phase_end:
                 return
             phase_new = _chrome_android_get_phase()
             if phase == phase_new:

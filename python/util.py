@@ -1374,6 +1374,49 @@ def android_ensure_root(device_id):
     else:
         error('Can not connect to device')
 
+
+def android_install_module(device_id, module_path, module_name=''):
+    chrome_android_cleanup(device_id=device_id, module_name=module_name)
+    execute(adb('install -r %s' % module_path, device_id=device_id))
+
+
+def android_run_module(device_id, module_name, url=''):
+    if not module_name:
+        error('Module name must be designated')
+    cmd = 'am start -n %s/%s' % (chromium_android_info[module_name][CHROMIUM_ANDROID_INFO_INDEX_PKG],
+                                 chromium_android_info[module_name][CHROMIUM_ANDROID_INFO_INDEX_ACT])
+    if url:
+        cmd += ' -d %s' % url
+    execute_adb_shell(cmd, device_id=device_id)
+
+
+def android_gdb_module(device_id, module_name, target_arch, dir_src, dir_symbol='', build_type='release', dir_out='', verbose=False):
+    android_ensure_root(device_id)
+    backup_dir(dir_src + '/build/android')
+    cmd = ''
+    if dir_out:
+        cmd += ' CHROMIUM_OUT_DIR=%s' % dir_out
+    if dir_symbol:
+        cmd += ' SYMBOL_DIR=%s' % dir_symbol
+
+    if re.match('chromium', module_name) or re.match('chrome_example', module_name):
+        cmd += ' ./adb_gdb --package-name=%s' % chromium_android_info[module_name][CHROMIUM_ANDROID_INFO_INDEX_PKG]
+    else:
+        if re.match('webview', module_name):
+            cmd += ' ./adb_gdb_android_%s' % module_name
+        else:
+            cmd += ' ./adb_gdb_%s' % module_name
+
+    if target_arch:
+        cmd += ' --target-arch=%s' % target_arch
+
+    if verbose:
+        cmd += ' --verbose'
+
+    cmd += ' --%s' % build_type
+    cmd += ' --force'
+    execute(cmd, interactive=True)
+    restore_dir()
 ## </android>
 
 

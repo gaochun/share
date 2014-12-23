@@ -186,7 +186,7 @@ def init():
     if repo_type == 'upstream':
         file_repo = 'https://storage.googleapis.com/git-repo-downloads/repo'
     elif repo_type in ['gminl', 'gminl64', 'stable', 'stable-old']:
-        file_repo = 'http://android.intel.com/static/repo'
+        file_repo = 'https://android.intel.com/static/repo'
     elif repo_type == 'irdakk' or repo_type == 'irdal':
         file_repo = 'https://buildbot-otc.jf.intel.com/repo.otc'
 

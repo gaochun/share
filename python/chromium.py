@@ -1525,7 +1525,7 @@ def _hack_app_process():
             continue
 
         for file in ['am', 'pm']:
-            execute(adb('pull /system/bin/' + file + ' /tmp/' + file))
+            execute(adb(cmd='pull /system/bin/' + file + ' /tmp/' + file, device_id=device_id))
             need_hack = False
             for line in fileinput.input('/tmp/' + file, inplace=1):
                 if re.search('app_process ', line):
@@ -1535,8 +1535,7 @@ def _hack_app_process():
 
             if need_hack:
                 android_ensure_root(device_id)
-                cmd = adb(cmd='push /tmp/' + file + ' /system/bin/', device_id=device_id)
-                execute(cmd)
+                execute(adb(cmd='push /tmp/' + file + ' /system/bin/', device_id=device_id))
 
 
 def _setup_list(var):

@@ -30,8 +30,8 @@ slave_only = False
 comb_valid = {
     ('android', 'x86', 'content_shell'): ['(.*).apk$', 260368, 301780],
     ('android', 'x86_64', 'content_shell'): ['(.*).apk$', 260368, 301780],
-    ('android', 'x86', 'webview'): ['(.*).apk$', 233137, 252136],
-    ('android', 'x86_64', 'webview'): ['(.*).apk$', 233137, 252136],
+    ('android', 'x86', 'webview_shell'): ['(.*).apk$', 233137, 252136],
+    ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 233137, 252136],
     ('linux', 'x86', 'chrome'): ['(.*).tar.gz$', 233137, 236088],
     #['android', 'arm', 'content_shell'],
 }
@@ -548,7 +548,7 @@ def _build_one(comb_next):
             execute('cp ' + dir_out_build_type + '/apks/ContentShell.apk ' + file_final, dryrun=DRYRUN)
             execute('rm -f ' + file_log)
             result = True
-    elif target_os == 'android' and target_module == 'webview':
+    elif target_os == 'android' and target_module == 'webview_shell':
         if result_build[0] or not os.path.exists(dir_out_build_type + '/apks/AndroidWebView.apk'):
             file_final = dir_comb + '/' + str(rev) + '.FAIL'
             execute('touch ' + file_final)

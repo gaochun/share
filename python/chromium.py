@@ -279,7 +279,7 @@ examples:
   python %(prog)s --runhooks
 
   build:
-  python %(prog)s -b --target-module webview // out/Release/lib/libstandalonelibwebviewchromium.so->Release/android_webview_apk/libs/x86/libstandalonelibwebviewchromium.so
+  python %(prog)s -b --target-module webview_shell // out/Release/lib/libstandalonelibwebviewchromium.so->Release/android_webview_apk/libs/x86/libstandalonelibwebviewchromium.so
   python %(prog)s -b --target-module chrome
 
   run:
@@ -305,7 +305,7 @@ examples:
     #dir: <arch>-<target-os>/out/<build_type>, example: x86-linux/out/Release
     group_common.add_argument('--target-os', dest='target_os', help='target os', choices=['android', 'linux'])
     group_common.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'arm', 'x86_64', 'arm64'], default='x86')
-    group_common.add_argument('--target-module', dest='target_module', help='target module to build', choices=['chrome', 'webview', 'content_shell', 'chrome_shell', 'chromedriver'], default='webview')
+    group_common.add_argument('--target-module', dest='target_module', help='target module to build', choices=['chrome', 'webview_shell', 'content_shell', 'chrome_shell', 'chromedriver'], default='webview_shell')
     group_common.add_argument('--device-id', dest='device_id', help='device id list separated by ","', default='')
     group_common.add_argument('--just-out', dest='just_out', help='stick to out, instead of out-x86_64/out', action='store_true')
     group_common.add_argument('--rev', dest='rev', type=int, help='revision, will override --sync-upstream')
@@ -414,7 +414,7 @@ def setup():
         if target_os == 'linux':
             target_module = 'chrome'
         elif target_os == 'android':
-            target_module = 'webview'
+            target_module = 'webview_shell'
     else:
         target_module = args.target_module
 
@@ -795,7 +795,7 @@ def build(force=False):
         makefile(force=True)
 
     cmd_ninja = 'ninja -k' + str(build_fail_max) + ' -j' + count_cpu + ' -C ' + dir_out_build_type
-    if target_os == 'android' and target_module == 'webview':
+    if target_os == 'android' and target_module == 'webview_shell':
         cmd_ninja += ' android_webview_apk libwebviewchromium'
     elif target_os == 'android' and target_module == 'content_shell':
         cmd_ninja += ' content_shell_apk'

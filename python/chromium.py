@@ -1184,9 +1184,15 @@ def _get_suite_default():
     lines = f.readlines()
     f.close()
     i = 0
+
+    suite_config = {
+        'EXPERIMENTAL_TEST_SUITES': False,
+        'STABLE_TEST_SUITES': True,
+    }
+
     while i < len(lines):
-        for suite in ['EXPERIMENTAL_TEST_SUITES', 'STABLE_TEST_SUITES']:
-            if re.match(suite, lines[i]):
+        for suite, is_enabled in suite_config.iteritems():
+            if is_enabled and re.match(suite, lines[i]):
                 len_old = len(gtest_suite_default)
                 i = i + 1
                 while not re.match(']', lines[i]):

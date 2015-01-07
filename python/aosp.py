@@ -11,6 +11,8 @@
 # Build time:
 # upstream 4.4: 1 hour
 
+# adb is at out/host/linux-x86/bin/adb and out/dist/adb
+
 import sys
 sys.path.append(sys.path[0] + '/..')
 from util import *
@@ -107,7 +109,7 @@ examples:
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'all'], default='x86_64')
     parser.add_argument('--target-type', dest='target_type', help='target type, can be baytrail for t100, generic, mrd7, mako for nexus4, hammerhead for nexus5, flo for nexus7, manta for nexus 10', default='baytrail')
-    parser.add_argument('--target-module', dest='target_module', help='target module', choices=['libwebviewchromium', 'webview', 'browser', 'perf', 'cts', 'system', 'all'], default='system')
+    parser.add_argument('--target-module', dest='target_module', help='target module', choices=['adb', 'libwebviewchromium', 'webview', 'browser', 'perf', 'cts', 'system', 'all'], default='system')
 
     parser.add_argument('--variant', dest='variant', help='variant', choices=['user', 'userdebug', 'eng'], default='userdebug')
     parser.add_argument('--version', dest='version', help='version, KTU84P for 4.4.4, master')
@@ -305,7 +307,7 @@ def build():
                 cmd += 'dist'
             else:
                 cmd += target_module
-        elif target_module in ['browser', 'libwebviewchromium', 'perf', 'webview']:
+        elif target_module in ['browser', 'libwebviewchromium', 'perf', 'webview', 'adb']:
             cmd = '. build/envsetup.sh && lunch ' + combo + ' && '
             if args.build_no_dep:
                 cmd += 'mmm '
@@ -320,6 +322,8 @@ def build():
                 cmd += 'external/linux-tools-perf'
             elif target_module == 'webview':
                 cmd += 'frameworks/webview'
+            elif target_module == 'adb':
+                cmd += 'system/core/adb'
 
         if args.build_showcommands:
             cmd += ' showcommands'

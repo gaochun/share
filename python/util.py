@@ -239,6 +239,7 @@ CHROMIUM_ANDROID_INFO_INDEX_ISKNOWN = 2
 # major -> svn rev, git commit, build. major commit is after build commit.
 # To get this, search 'The atomic number' in 'git log origin master chrome/VERSION'
 chromium_majorver_info = {
+    41: [303373, 'e9c657d834d5946b9cb09a47fd087970a3b1d91a', 2215],
     40: [297098, '86e466451cdca1e32a912df33838d9eec0dadcd7', 2172],
     39: [290085, '292f233e2a09f983aa93134c50ff3eb0cb438c28', 2126],
     38: [278979, '85c11da0bf7aad87c0a563c7093cb52ee58e4666', 2063],

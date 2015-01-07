@@ -1,0 +1,51 @@
+
+* git clone git://viggo.jf.intel.com/~roger/intel-pki.git (obselete)
+* git clone git://git-amr-4.devtools.intel.com/intel_pki-intel-pki.git intel-pki
+
+1. 
+./UserRAWS.py
+./UserRAWS.py wlan
+IDSID: ygu5
+domain: CCR
+Hostname: ygu5-mobl.ccr.corp.intel.com
+FQDN: ygu5-mobl.ccr.corp.intel.com
+
+2. Intel network
+In network manager
+TSNOfficeWLAN
+TLS
+Identity:
+host/ygu5-mobl1.ccr.corp.intel.com
+User Certificate:
+/home/gyagp/.cert/machine-cert.argus.pem
+CA Certificate:
+/home/gyagp/.cert/intel-certchain.crt
+Private Key:
+/home/gyagp/.cert/priv-key-machine.pem
+
+
+
+* vpn
+yum install NetworkManager-openconnect
+add in network-manager
+
+192.55.54.27
+vpn-i-ha01.intel.com
+vpn-i-ha02.intel.com
+
+PEM phrase: Iaob
+username: yang.gu@intel.com
+
+
+* connect China VPN
+@ openconnect -c ./certificate.p12 --script /etc/vpnc/vpnc-script 192.102.204.72 --cafile ./intel-certchain.crt --key-password-from-fsid
+@ via network manager
+username: yang.gu@intel.com
+
+gateway: 192.102.204.72
+CA Certificate: intel-certchain.crt
+User Certificate: certificate.pem
+Private key: priv-key.pem
+Use FSID for key passphrase
+
+

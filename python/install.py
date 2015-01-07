@@ -45,9 +45,7 @@ pkgs_common = [
     'meld',
 
     # Package used at home
-    'openconnect',
-    'python-zsi',
-    'openssh-server',
+    'openconnect', 'python-zsi', 'openssh-server', 'vpnc',
 
     # adb
     'libc6:i386', 'stdlibc++6:i386', 'libc++-dev',

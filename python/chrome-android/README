@@ -2,7 +2,7 @@ Naming Rules for MOUDLE_COMBO (top level):
 MODULE_COMBO: <TARGET_OS>-<TARGET_ARCH>-<MODULE>
 TARGET_OS: android, linux, etc.
 TARGET_ARCH: x86, arm, x86_64, etc.
-MODULE: chrome, content_shell, webview, etc.
+MODULE: chrome, content_shell, webview_shell, etc.
 For example, if you want to find MODULE_COMBO such as "x86 Chrome for Android", you just need to pay a visit at android-x86-chrome.
 
 

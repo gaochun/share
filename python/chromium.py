@@ -900,14 +900,11 @@ def postbuild(force=False):
             # This has to be done before the hack of AndroidManifest.xml
             execute('python %s/prebuilt-%s/change_chromium_package.py -u %s -a %s -p %s' % (dir_src, target_arch, dir_chromium, name_app, name_pkg), interactive=True, abort=True)
 
-            # hack the AndroidManifest.xml to avoid provider conflict
+            # hack the AndroidManifest.xml to avoid provider conflict, permission conflict
             for line in fileinput.input('%s/AndroidManifest.xml' % dir_chromium, inplace=1):
-                if re.search('com.example.chromium', line):
-                    line = line.replace('com.example.chromium', name_pkg)
-                if re.search('android:authorities="com.android.chrome', line):
-                    line = line.replace('android:authorities="com.android.chrome', 'android:authorities="%s' % name_pkg)
-                if re.search('android:authorities="com.chrome.beta', line):
-                    line = line.replace('android:authorities="com.chrome.beta', 'android:authorities="%s' % name_pkg)
+                for name_pkg_old in ['com.example.chromium', 'com.android.chrome', 'com.chrome.beta']:
+                    if re.search(name_pkg_old, line):
+                        line = line.replace(name_pkg_old, name_pkg)
                 sys.stdout.write(line)
 
             # repackage the new apk

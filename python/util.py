@@ -216,7 +216,7 @@ chromium_android_info = {
     'stock_browser': ['com.android.browser', '.BrowserActivity', True],
     'content_shell': ['org.chromium.content_shell_apk', '.ContentShellActivity', True],
     'chrome_shell': ['org.chromium.chrome.shell', '.ChromeShellActivity', True],
-    'webview_shell': ['org.chromium.android_webview.shell', '.AwShellActivity', True],
+    'webview_shell': ['org.chromium.android_webview.shell', '.AwShellActivity', False],
 
     # self defined
     ## after the change of package name and AndroidManifest.xml
@@ -1402,7 +1402,7 @@ def android_gdb_module(device_id, module_name, target_arch, dir_src, dir_symbol=
     if re.match('chromium', module_name) or re.match('chrome_example', module_name):
         cmd += ' ./adb_gdb --package-name=%s' % chromium_android_info[module_name][CHROMIUM_ANDROID_INFO_INDEX_PKG]
     else:
-        if re.match('webview', module_name):
+        if re.match('webview_shell', module_name):
             cmd += ' ./adb_gdb_android_%s' % module_name
         else:
             cmd += ' ./adb_gdb_%s' % module_name

@@ -1267,8 +1267,12 @@ def _test_run_device(index_device, results):
         # Try to unlock the screen if needed
         execute(adb(cmd='shell input keyevent 82', device_id=device_id))
 
-        # Fake /storage/emulated/0
         android_ensure_root(device_id)
+
+        # Set system time to current time
+        execute(adb(cmd='shell date -s %s' % get_datetime(format='%Y%m%d.%H%M%S'), device_id=device_id))
+
+        # Fake /storage/emulated/0
         cmd = adb(cmd='shell "mount -o rw,remount rootfs / && cd /storage/emulated && rm -f 0 && ln -s legacy 0"', device_id=device_id)
         result = execute(cmd)
         if result[0]:

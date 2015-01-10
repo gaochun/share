@@ -91,6 +91,7 @@ examples:
     parser.add_argument('--build-showcommands', dest='build_showcommands', help='build with detailed command', action='store_true')
     parser.add_argument('--build-skip-mk', dest='build_skip_mk', help='skip the generation of makefile', action='store_true')
     parser.add_argument('--build-no-dep', dest='build_no_dep', help='use mmma or mmm', action='store_true')
+    parser.add_argument('--prebuilt-webview', dest='prebuilt_webview', help='use prebuilt webview', action='store_true')
     parser.add_argument('--disable-2nd-arch', dest='disable_2nd_arch', help='disable 2nd arch, only effective for baytrail', action='store_true')
     parser.add_argument('--burn-image', dest='burn_image', help='burn live image')
     parser.add_argument('--flash-image', dest='flash_image', help='flash the boot and system', action='store_true')
@@ -328,6 +329,10 @@ def build():
         if args.build_showcommands:
             cmd += ' showcommands'
         cmd += ' -j16'
+
+        if args.prebuilt_webview:
+            cmd = 'export PRODUCT_PREBUILT_WEBVIEWCHROMIUM=yes && ' + cmd
+
         result = execute(cmd, interactive=True, dryrun=False, file_log=log)
         if result[0]:
             error('Failed to build %s %s %s' % (target_arch, target_type, target_module))

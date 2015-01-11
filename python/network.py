@@ -23,8 +23,8 @@ def connect():
     #child = pexpect.spawn('/bin/bash', ['-c', cmd])
     child = pexpect.spawn(cmd)
     child.logfile = sys.stdout
-    child.expect("Enter .*:")
-    child.sendline('yes')
+    #child.expect("Enter .*:")
+    #child.sendline('yes')
     child.expect('Username:')
     child.sendline('yang.gu@intel.com')
     child.expect('Password:')

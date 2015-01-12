@@ -139,6 +139,8 @@ def check_update():
     # update config
     if len(updates):
         f.seek(0)
+        # Need to cleanup the file
+        f.truncate()
         json.dump(config, f, indent=4)
     f.close()
 

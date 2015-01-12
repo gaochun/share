@@ -1,4 +1,5 @@
 *.pyc
+*.swp
 ignore/
 python/test.py
 python/tv/history.txt

@@ -281,7 +281,7 @@ def info(msg):
 
 
 def warning(msg):
-    _msg(msg)
+    _msg(msg, show_trace=True)
 
 
 def cmd(msg):
@@ -298,7 +298,7 @@ def trace(msg):
 
 
 def error(msg, abort=True, error_code=1):
-    _msg(msg)
+    _msg(msg, show_trace=True)
     if abort:
         quit(error_code)
 
@@ -1598,11 +1598,14 @@ def _chromium_get_rev_hash(rev_min, rev_max=0, force=False):
                 return rev_hash
 
 
-def _msg(msg):
-    msg = '[' + inspect.stack()[1][3].upper() + '] ' + msg
+def _msg(msg, show_trace=False):
+    m = inspect.stack()[1][3].upper()
+    if show_trace:
+        m += ', File "%s", Line: %s, Function %s' % inspect.stack()[2][1:4]
+    m = '[' + m + '] ' + msg
     # This is legal usage of print
-    print msg
-    execute('echo "%s" >>"%s"' % (msg, log), show_cmd=False)
+    print m
+    execute('echo "%s" >>"%s"' % (m, log), show_cmd=False)
 
 
 ## </internal>

@@ -107,6 +107,7 @@ examples:
     parser.add_argument('--hack-app-process', dest='hack_app_process', help='hack app_process', action='store_true')
     parser.add_argument('--cts-run', dest='cts_run', help='package to run with cts, such as android.webkit, com.android.cts.browserbench')
     parser.add_argument('--ready', dest='ready', help='ready the device', action='store_true')
+    parser.add_argument('--verified-boot', dest='verified_boot', help='enbale verified boot', action='store_true')
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'all'], default='x86_64')
     parser.add_argument('--target-type', dest='target_type', help='target type, can be baytrail for t100, generic, mrd7, mako for nexus4, hammerhead for nexus5, flo for nexus7, manta for nexus 10', default='baytrail')
@@ -661,6 +662,27 @@ def ready():
     android_set_display_sleep_30mins(device_id=device_id)
 
 
+def verified_boot():
+    if not args.verified_boot:
+        return
+
+    _setup_device()
+    if len(devices_id) < 1:
+        error('You must have device connected')
+
+    device_id = devices_id[0]
+    device_arch = targets_arch[0]
+    path_fastboot = dir_linux + '/fastboot'
+    efi_file = dir_root + '/hardware/intel/efi_prebuilts/efitools/linux-%s/LockDown.efi' % device_arch
+
+    android_enter_fastboot(device_id=device_id) 
+    execute('%s -s %s oem unlock' % (path_fastboot, device_id), interactive=True, dryrun=False)
+    execute('%s -s %s flash efirun %s' % (path_fastboot, device_id, efi_file), interactive=True, dryrun=False)
+    execute('%s -s %s getvar secureboot' % (path_fastboot, device_id), interactive=True, dryrun=False)
+    execute('%s -s %s oem verified' % (path_fastboot, device_id), interactive=True, dryrun=False)
+    execute('%s -s %s reboot' % (path_fastboot, device_id), interactive=True, dryrun=False)
+
+
 def _sync_repo(dir, cmd):
     backup_dir(dir)
     result = execute(cmd, interactive=True, dryrun=False, file_log=log)
@@ -927,4 +949,5 @@ if __name__ == "__main__":
     cts_run()
     ready()
 
+    verified_boot()
     set_governor()

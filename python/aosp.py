@@ -129,6 +129,7 @@ examples:
 
     if len(sys.argv) <= 1:
         parser.print_help()
+        quit()
 
 
 def setup():

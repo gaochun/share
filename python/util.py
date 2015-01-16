@@ -222,8 +222,8 @@ chromium_android_info = {
     ## after the change of package name and AndroidManifest.xml
     'chromium_stable': ['com.android.chromium', 'com.google.android.apps.chrome.Main', False],
     'chromium_beta': ['com.chromium.beta', 'com.google.android.apps.chrome.Main', False],
-    'chromium2_stable': ['com.android.chrome', '', False],
-    'chromium2_beta': ['com.chrome.beta', '', False],
+    'chromium2_stable': ['com.android.chrome', 'com.google.android.apps.chrome.Main', False],
+    'chromium2_beta': ['com.chrome.beta', 'com.google.android.apps.chrome.Main', False],
     ## before the change of package name and AndroidManifest.xml
     'chrome_example': ['com.example.chromium', 'com.google.android.apps.chrome.Main', False],
     ## old builds before transition, including some M33 builds
@@ -1058,7 +1058,7 @@ def analyze_file(device_id='', type='tombstone'):
 
 
 def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android', device_id='',
-        type='tombstone', repo_type=None, device_type=None, product_brand=None, product_name=None):
+                  type='tombstone', repo_type=None, device_type=None, product_brand=None, product_name=None):
     if device_id == '' or device_id == '192.168.42.1:5555':
         device_type = 'baytrail'
     target_arch = android_get_target_arch(device_id=device_id)

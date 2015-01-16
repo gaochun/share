@@ -395,7 +395,7 @@ def _handle_todo_dir():
     for todo in todos:
         if os.path.isdir(todo):
             target_arch_temp = todo
-            if target_arch_temp not in target_arch_all:
+            if target_arch_temp not in target_archs:
                 continue
 
             dirs_todo = os.listdir(dir_server_chrome_android_todo + '/' + target_arch_temp)

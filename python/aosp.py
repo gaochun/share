@@ -110,14 +110,14 @@ examples:
     parser.add_argument('--verified-boot', dest='verified_boot', help='enbale verified boot', action='store_true')
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'all'], default='x86_64')
-    parser.add_argument('--target-type', dest='target_type', help='target type, can be baytrail for t100, generic, mrd7, mako for nexus4, hammerhead for nexus5, flo for nexus7, manta for nexus 10', default='baytrail')
+    parser.add_argument('--target-type', dest='target_type', help='target type, can be baytrail for t100, generic, mrd7, ecs, mako for nexus4, hammerhead for nexus5, flo for nexus7, manta for nexus 10', default='baytrail')
     parser.add_argument('--target-module', dest='target_module', help='target module', choices=['adb', 'libwebviewchromium', 'webview', 'browser', 'perf', 'cts', 'system', 'all'], default='system')
 
     parser.add_argument('--variant', dest='variant', help='variant', choices=['user', 'userdebug', 'eng'], default='userdebug')
     parser.add_argument('--version', dest='version', help='version, KTU84P for 4.4.4, master')
 
-    parser.add_argument('--product-brand', dest='product_brand', help='product brand', choices=['ecs', 'fxn'], default='ecs')
-    parser.add_argument('--product-name', dest='product_name', help='product name', choices=['e7', 'anchor8'], default='e7')
+    parser.add_argument('--product-brand', dest='product_brand', help='product brand', choices=['asus', 'ecs', 'fxn'], default='ecs')
+    parser.add_argument('--product-name', dest='product_name', help='product name', choices=['t100', 'e7', 'anchor8'], default='e7')
 
     parser.add_argument('--device-id', dest='device_id', help='device id separated by comma')
     parser.add_argument('--device-governor', dest='device_governor', help='device governor')
@@ -289,7 +289,7 @@ def build():
 
         combo = _get_combo(target_arch, target_type)
         if repo_type == 'upstream':
-            dir_driver_upstream = '/workspace/topic/aosp/driver'
+            dir_driver_upstream = dir_share_python + '/aosp/driver'
             # Check proprietary binaries.
             dir_driver_upstream_one = dir_driver_upstream + '/' + target_type + '/' + args.version + '/vendor'
             if not os.path.exists(dir_driver_upstream_one):
@@ -423,26 +423,27 @@ def flash_image():
             else:
                 file_image = args.file_image.split('/')[-1]
         else:
+            product = _get_product(device_arch, device_type)
             if repo_type == 'stable-old':
-                if ver_cmp(repo_ver, '2.0') >= 0:
-                    file_image = dir_root + '/out/dist/%s-om-factory.tgz' % get_product(device_arch, device_type, ver=repo_ver)
-                else:
-                    file_image = dir_root + '/out/dist/aosp_%s-om-factory.tgz' % get_product(device_arch, device_type, ver=repo_ver)
+                file_image = dir_root + '/out/dist/%s-om-factory.tgz' % product
+            elif repo_type == 'stable':
+                file_image = dir_root + '/out/dist/%s-flashfiles-%s.%s.zip' % (product, variant, username)
             elif repo_type == 'irdakk':
                 file_image = dir_root + '/out/target/product/irda/irda-ktu84p-factory.tgz'
-            elif repo_type == 'gminl':
-                file_image = dir_root + '/out/target/product/%s_%s/%s_%s-lrx21n-factory.tgz' % (product_brand, product_name, product_brand, product_name)
-            elif repo_type == 'gminl64':
-                file_image = dir_root + '/out/target/product/%s_%s_64p/%s_%s_64p-lrx21n-factory.tgz' % (product_brand, product_name, product_brand, product_name)
+            elif repo_type in ['irdal', 'gminl', 'gminl64']:
+                file_image = dir_root + '/out/dist/%s' % _get_factory_file(product)
 
         if not os.path.exists(file_image):
             error('File ' + file_image + ' used to flash does not exist, please have a check', abort=False)
             return
 
-        execute('tar xvf ' + file_image, interactive=True, dryrun=False)
+        if file_image[-3:] == 'zip':
+            execute('unzip -o ' + file_image, interactive=True, dryrun=False)
+        elif file_image[-3:] == 'tgz' or file_image[-6:] == 'tar.gz':
+            execute('tar xvf ' + file_image, interactive=True, dryrun=False)
 
     # hack the script
-    if repo_type == 'stable-old' or repo_type == 'gminl':
+    if repo_type == 'stable-old':
         # Hack flash-all.sh to skip sleep and use our own fastboot
         for line in fileinput.input('flash-all.sh', inplace=1):
             if re.search('sleep', line) and repo_type == 'stable-old':
@@ -453,7 +454,6 @@ def flash_image():
             sys.stdout.write(line)
         fileinput.close()
 
-    if repo_type == 'stable-old':
         # Hack gpt.ini for fast userdata erasion
         result = execute('ls *.ini', return_output=True)
         file_gpt = result[1].rstrip('\n')
@@ -465,15 +465,28 @@ def flash_image():
         fileinput.close()
 
     # enter fastboot mode
-    android_enter_fastboot(device_id=device_id)
+    if repo_type == 'stable':
+        dir_workaround = dir_share_python + '/aosp/workaround'
+        if not os.path.exists(dir_workaround):
+            error('Please add {flash.sh, fastboot.img, loader.efi} into %s!' % dir_workaround)
+
+        android_enter_dnx(device_id=device_id)
+        # workaround: for fastboot not ready, use one prebuilt fastboot.img
+        execute(dir_linux + '/fastboot -s %s flash osloader %s/loader.efi' % (device_id, dir_workaround), interactive=True, dryrun=False)
+        execute(dir_linux + '/fastboot -s %s boot %s/fastboot.img' % (device_id, dir_workaround), interactive=True, dryrun=False)
+
+        # sleep until entering fastboot mode
+        info('Sleeping 10 seconds until entering fastboot mode')
+        time.sleep(10)
+    else:
+        android_enter_fastboot(device_id=device_id)
 
     # flash image
     if repo_type == 'upstream':
         combo = _get_combo(device_arch, device_type)
         cmd = bashify_cmd('. build/envsetup.sh && lunch ' + combo + ' && fastboot -w flashall')
         execute(cmd, interactive=True, dryrun=False)
-    elif repo_type in ['gminl', 'gminl64', 'irdakk']:
-        execute('./flash-base.sh', interactive=True, dryrun=False)
+    elif repo_type in ['gminl', 'gminl64', 'irdakk', 'irdal']:
         execute('./flash-all.sh', interactive=True, dryrun=False)
         execute('timeout 10s %s -s %s reboot' % (path_fastboot, device_id))
         execute('rm -rf ' + dir_extract, dryrun=False)
@@ -481,12 +494,17 @@ def flash_image():
         execute('./flash-all.sh -t ' + ip, interactive=True, dryrun=False)
         execute('timeout 10s %s -t %s reboot' % (path_fastboot, ip))
         execute('rm -rf ' + dir_extract, dryrun=False)
+    elif repo_type == 'stable':
+        execute('cp %s/flash.sh . && ./flash.sh' % dir_workaround, interactive=True, dryrun=False)
+        execute('rm -rf ' + dir_extract, dryrun=False)
+    else:
+        execute('rm -rf ' + dir_extract, dryrun=False)
 
     if repo_type != 'upstream':
         restore_dir()
 
     # wait until system boots up
-    if repo_type == 'stable-old':
+    if repo_type == 'stable-old' or repo_type == 'stable':
         is_connected = False
         sleep_sec = 3
         for i in range(0, 60):
@@ -504,14 +522,15 @@ def flash_image():
             info('Sleeping 150 seconds until system fully boots up..')
             time.sleep(150)
 
-        android_keep_screen_on()
-        android_unlock_screen()
+        android_keep_screen_on(device_id=device_id)
+        android_unlock_screen(device_id=device_id)
         # Remove guide screen
-        android_tap(683, 384)
-        android_tap()
+        android_tap(x=683, y=384, device_id=device_id)
+        android_tap(x=1300, y=700, device_id=device_id) # for asus_t100
+        android_tap(x=700, y=1150, device_id=device_id) # for ecs_e7
         # After system boots up, it will show guide screen and never lock or turn off screen.
-        android_set_screen_lock_none()
-        android_set_display_sleep_30mins()
+        android_set_screen_lock_none(device_id=device_id)
+        android_set_display_sleep_30mins(device_id=device_id)
 
 
 def start_emu():
@@ -521,7 +540,7 @@ def start_emu():
     _setup_device()
 
     for device_arch in devices_arch:
-        product = get_product(device_arch, 'generic', ver=repo_ver)
+        product = _get_product(device_arch, 'generic')
         if args.dir_emu:
             dir_backup_emu = args.dir_emu
         else:
@@ -567,6 +586,7 @@ def analyze():
         return
 
     _setup_device()
+    _setup_repo()
 
     if len(devices_arch) > 1:
         error('You need to specify the device arch')
@@ -574,7 +594,8 @@ def analyze():
     if len(devices_type) > 1 or devices_type[0] != 'baytrail':
         error('Only baytrail is supported to analyze')
 
-    analyze_issue(dir_aosp=dir_root, type=args.analyze_type, ver=repo_ver)
+    analyze_issue(dir_aosp=dir_root, type=args.analyze_type, device_id=devices_id[0],
+            repo_type=repo_type, device_type=devices_type[0], product_brand=product_brand, product_name=product_name)
 
 
 def push():
@@ -599,7 +620,7 @@ def push():
         modules = args.target_module.split(',')
 
     android_ensure_root(device_id)
-    cmd = adb(cmd='push out/target/product/%s' % get_product(device_arch, device_type, ver=repo_ver), device_id=device_id)
+    cmd = adb(cmd='push out/target/product/%s' % _get_product(device_arch, device_type), device_id=device_id)
 
     for module in modules:
         if module == 'browser':
@@ -692,56 +713,12 @@ def _sync_repo(dir, cmd):
     restore_dir()
 
 
-def _get_combo(device_arch, device_type):
+def _get_product(device_arch, device_type):
     _setup_repo()
-    if repo_type == 'upstream':
-        combo = 'aosp_' + device_type + '-' + variant
-    elif repo_type == 'irdakk':
-        combo = 'irda-%s' % variant
-    elif repo_type == 'irdal':
-        combo = 'coho-%s' % variant
-    elif repo_type == 'gminl':
-        if not product_brand or not product_name:
-            error('Please designate product brand and name')
-        combo = '%s_%s-%s' % (product_brand, product_name, variant)
-    elif repo_type == 'gminl64':
-        combo = '%s_%s_64p-%s' % (product_brand, product_name, variant)
-    elif repo_type == 'stable':
-        if device_type == 'generic':
-            combo_prefix = 'aosp_'
-            combo_suffix = '-' + variant
-            combo = combo_prefix + device_arch + combo_suffix
-        elif device_type == 'baytrail':
-            combo_prefix = 'ecs_e7'
-            combo_suffix = '-' + variant
+    return get_product(repo_type, device_arch, device_type, product_brand, product_name)
 
-            if device_arch == 'x86_64':
-                combo = combo_prefix + '_64p' + combo_suffix
-            elif device_arch == 'x86':
-                combo = combo_prefix + combo_suffix
-    elif repo_type == 'stable-old':
-        if device_type == 'generic':
-            combo_prefix = 'aosp_'
-            combo_suffix = '-' + variant
-            combo = combo_prefix + device_arch + combo_suffix
-        elif device_type == 'baytrail':
-            if ver_cmp(repo_ver, '2.0') >= 0:
-                combo_prefix = 'asus_t100'
-                combo_suffix = '-' + variant
-
-                if device_arch == 'x86_64':
-                    combo = combo_prefix + '_64p' + combo_suffix
-                elif device_arch == 'x86':
-                    combo = combo_prefix + combo_suffix
-            else:
-                combo_prefix = 'aosp_'
-                combo_suffix = '-' + variant
-                if device_arch == 'x86_64':
-                    combo = combo_prefix + device_type + '_64p' + combo_suffix
-                elif device_arch == 'x86':
-                    combo = combo_prefix + device_type + combo_suffix
-
-    return combo
+def _get_combo(device_arch, device_type):
+    return _get_product(device_arch, device_type) + '-' + variant
 
 
 # All valid combination for stable and stable-old:
@@ -756,6 +733,8 @@ def _get_combo(device_arch, device_type):
 
 def _backup_one(arch, device_type, module):
     _setup_repo()
+    product = _get_product(arch, device_type)
+
     if repo_type == 'upstream':
         pass
         #dest_dir = dir_backup_img + get_datetime() + '-' + device_id + '-' + variant + '/'
@@ -763,13 +742,9 @@ def _backup_one(arch, device_type, module):
         #execute('cp ' + root_dir + 'out/target/product/' + device_code_name + '/*.img ' + dest_dir)
     elif repo_type == 'irdakk':
         files_backup = {'.': 'out/target/product/irda/irda-ktu84p-factory.tgz'}
-    elif repo_type == 'gminl':
-        files_backup = {'.': 'out/target/product/%s_%s/%s_%s-lrx21n-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
-    elif repo_type == 'gminl64':
-        files_backup = {'.': 'out/target/product/%s_%s_64p/%s_%s_64p-lrx21n-factory.tgz' % (product_brand, product_name, product_brand, product_name)}
+    elif repo_type in ['irdal', 'gminl', 'gminl64']:
+        files_backup = {'.': 'out/dist/%s' % _get_factory_file(product)}
     elif repo_type == 'stable' or repo_type == 'stable-old':
-        product = get_product(arch, device_type, ver=repo_ver)
-
         if module == 'webview':
             if arch == 'x86_64':
                 libs = ['lib64', 'lib']
@@ -789,15 +764,12 @@ def _backup_one(arch, device_type, module):
 
         else:  # module == 'system'
             if device_type == 'baytrail':
-                if ver_cmp(repo_ver, '2.0') >= 0:
-                    prefix = ''
-                else:
-                    prefix = 'aosp_'
-                files_backup = {
-                    '.': [
-                        'out/dist/%s%s-om-factory.tgz' % (prefix, get_product(arch, device_type, ver=repo_ver)),
-                    ],
-                }
+                if repo_type == 'stable-old':
+                    file_backup_path = 'out/dist/%s-om-factory.tgz' % product
+                elif repo_type == 'stable':
+                    file_backup_path = 'out/dist/%s-flashfiles-%s.%s.zip' % (product, variant, username)
+
+                files_backup = {'.': file_backup_path}
             elif device_type == 'generic':
                 files_backup = {
                     'platforms': 'development/tools/emulator/skins',
@@ -824,6 +796,15 @@ def _backup_one(arch, device_type, module):
         backup_dir(dir_share_ignore_backup)
         backup_smb('//wp-03.sh.intel.com/aosp', '%s/temp' % repo_type, dir_backup + '.tar.gz', dryrun=False)
         restore_dir()
+
+
+def _get_factory_file(product):
+    dir_dist = dir_root + '/out/dist'
+    for file in os.listdir(dir_dist):
+        if re.match('%s-\w+-factory.tgz' % product, file):
+            return file
+
+    error('File named %s-*-factory.tgz not found' % product)
 
 
 def _ensure_exist(file):
@@ -895,6 +876,8 @@ def _get_repo_info():
                 repo_type = 'gminl64'
             elif merge == 'irda/kitkat/master':
                 repo_type = 'irdakk'
+            elif merge == 'irda/l-dev/master':
+                repo_type = 'irdal'
             else:
                 error('Could not find repo branch')
 

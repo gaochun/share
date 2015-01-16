@@ -976,19 +976,25 @@ def execute_adb_shell(cmd, device_id='', su=False, abort=False, show_cmd=False):
         return True
 
 
-def get_product(arch, device_type, ver):
+def get_product(repo_type, device_arch, device_type, product_brand, product_name):
     if device_type == 'generic':
-        product = device_type + '_' + arch
-    elif device_type == 'baytrail':
-        if ver_cmp(ver, '2.0') >= 0:
-            product_prefix = 'asus_t100'
-        else:
-            product_prefix = device_type
+        return 'aosp_' + device_arch
 
-        if arch == 'x86_64':
-            product = product_prefix + '_64p'
-        elif arch == 'x86':
-            product = product_prefix
+    if repo_type == 'upstream':
+        return 'aosp_' + device_type
+    elif repo_type == 'irdakk':
+        product = 'coho'
+    elif repo_type == 'irdal':
+        product = 'cohol'
+    elif repo_type in ['stable', 'gminl', 'gminl64']:
+        product = '%s_%s' % (product_brand, product_name)
+    elif repo_type == 'stable-old':
+        if device_type == 'baytrail':
+            product = '%s_%s' % (product_brand, product_name)
+
+    if device_arch == 'x86_64':
+        if repo_type != 'irdal':
+            product += '_64p'
 
     return product
 
@@ -1051,11 +1057,12 @@ def analyze_file(device_id='', type='tombstone'):
     return lines
 
 
-def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android', device_id='', type='tombstone', ver='0.0'):
+def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/workspace/project/chromium-android', device_id='',
+        type='tombstone', repo_type=None, device_type=None, product_brand=None, product_name=None):
     if device_id == '' or device_id == '192.168.42.1:5555':
         device_type = 'baytrail'
     target_arch = android_get_target_arch(device_id=device_id)
-    product = get_product(target_arch, device_type, ver)
+    product = get_product(repo_type, target_arch, device_type, product_brand, product_name)
     if target_arch == 'x86_64':
         target_arch_str = '64'
     else:
@@ -1351,8 +1358,16 @@ def android_config_device(device_id, device_product, default, governor='', freq=
         info('Set governor to %s and freq to %s' % (governor, freq))
 
 
+def android_enter_dnx(device_id):
+    execute('timeout 6s ' + adb(cmd='reboot dnx', device_id=device_id))
+    # because dnx mode is basic, assume entering dnx mode will succeed anytime
+    sleep_sec = 5
+    info('Sleeping %s seconds' % str(sleep_sec))
+    time.sleep(sleep_sec)
+
+
 def android_enter_fastboot(device_id):
-    execute('timeout 5s ' + adb(cmd='reboot bootloader', device_id=device_id))
+    execute('timeout 5s ' + adb(cmd='reboot fastboot', device_id=device_id))
     sleep_sec = 3
     is_connected = False
     for i in range(0, 60):

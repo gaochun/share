@@ -1,0 +1,27 @@
+{
+"update_url": "https://clients2.google.com/service/update2/crx",
+
+   "background": {
+      "persistent": false,
+      "scripts": [ "assets/js/jsxcompressor.min.js", "assets/js/browser_support.js", "assets/js/protocol.js", "assets/js/background.js" ]
+   },
+   "content_scripts": [ {
+      "js": [ "assets/js/browser_support.js", "assets/js/content_scripts.js" ],
+      "matches": [ "*://play.google.com/store*" ],
+      "run_at": "document_end"
+   } ],
+   "description": "Download APKs Directly From Google Play To Your Computer",
+   "icons": {
+      "16": "assets/img/icon_16.png",
+      "48": "assets/img/icon_48.png",
+      "128": "assets/img/icon_128.png"
+   },
+   "manifest_version": 2,
+   "content_security_policy": "script-src 'self' https://ssl.google-analytics.com; object-src 'self'",
+   "name": "APK Downloader",
+   "options_page": "options.html",
+   "permissions": [ "cookies", "tabs", "storage", "downloads", "https://www.google.com/accounts/ClientLogin", "*://android.clients.google.com/*", "*://*.android.clients.google.com/*", "*://play.google.com/store*" ],
+   "version": "3.0.0",
+   "web_accessible_resources": [ "assets/img/*" ],
+   "homepage_url": "http://apps.evozi.com/apk-downloader/"
+}

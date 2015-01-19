@@ -500,6 +500,7 @@ def setup():
         gyp_defines += ' asan=1'
 
     setenv('GYP_DEFINES', gyp_defines)
+    setenv('NO_AUTH_BOTO_CONFIG', dir_linux + '/boto.conf')
 
     if args.test_build or args.test_run or args.test_drybuild or args.test_dryrun:
         _get_suite_default()

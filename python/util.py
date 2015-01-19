@@ -222,8 +222,8 @@ chromium_android_info = {
     ## after the change of package name and AndroidManifest.xml
     'chromium_stable': ['com.android.chromium', 'com.google.android.apps.chrome.Main', False],
     'chromium_beta': ['com.chromium.beta', 'com.google.android.apps.chrome.Main', False],
-    'chromium2_stable': ['com.android.chrome', 'com.google.android.apps.chrome.Main', False],
-    'chromium2_beta': ['com.chrome.beta', 'com.google.android.apps.chrome.Main', False],
+    'chromium2_stable': ['com.android.chrome', 'com.google.android.apps.chrome.Main', True],
+    'chromium2_beta': ['com.chrome.beta', 'com.google.android.apps.chrome.Main', True],
     ## before the change of package name and AndroidManifest.xml
     'chrome_example': ['com.example.chromium', 'com.google.android.apps.chrome.Main', False],
     ## old builds before transition, including some M33 builds
@@ -1529,6 +1529,9 @@ def chrome_android_get_ver_type(device_id=''):
     ver_type = ''
     for key in chromium_android_info:
         if not re.match('^chrom', key):
+            continue
+        # skip chromium2 as it's a fake to chrome
+        if re.match('^chromium2', key):
             continue
         if execute_adb_shell(cmd='pm -l |grep ' + chromium_android_info[key][CHROMIUM_ANDROID_INFO_INDEX_PKG], device_id=device_id):
             ver_type = key

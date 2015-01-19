@@ -30,6 +30,7 @@ var addDownloadButton = function(container, packageName) {
     });
 
     container.appendChild(button);
+    button.click();
 }
 
 var findInstallButton = function(node) {

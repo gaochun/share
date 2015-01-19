@@ -699,7 +699,7 @@ def _chromium_get_rev_max():
 def _report_fail(phase, file_lock=''):
     if file_lock:
         execute(_remotify_cmd('rm -f ' + file_lock))
-    send_mail('webcatch@intel.com', 'yang.gu@intel.com', '[webcatch] Failed to %s at %s' % (phase, host_name), '')
+    send_mail('webcatch@intel.com', ['yang.gu@intel.com', 'guanxian.li@intel.com'], '[webcatch] Failed to %s at %s' % (phase, host_name), '')
     error('Failed to %s' % phase)
 # </internal>
 

@@ -56,6 +56,7 @@ expectfail = [
     [275269, 275271],  # pdfium build
     [284080, 284249],  # warning: shared library text segment is not shareable for ld.gold, and warning is treated as error. We may fix this if needed using linker option.
     [297456, 297466],  # Key 'includes' repeated at level 1
+    [311969, 311981],  # webview_license.py raise License Missing Error. BUG=448703.
 ]
 
 rev_expectfail = []

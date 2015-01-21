@@ -167,7 +167,7 @@ def check(force=False):
     subject = ''
 
     # get all the combos
-    url = 'http://www.hiapphere.org/app-chrome_beta'
+    url = 'http://www.hiapphere.com/app-chrome_beta'
     try:
         u = urllib2.urlopen(url)
     except BadStatusLine:

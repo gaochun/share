@@ -45,7 +45,7 @@ product_name = ''
 # variable product: out/target/product/asus_t100_64p|baytrail_64p
 # variable combo: lunch asus_t100_64p-userdebug|aosp_baytrail_64p-eng
 # out/dist asus_t100_64p-bootloader-eng.gyagp|aosp_baytrail_64p-bootloader-userdebug.gyagp
-repo_type = ''  # upstream, stable, mcg, gminl, irdakk, gminl64, stable-old
+repo_type = ''  # upstream, stable, mcg, gminl, gminl64, stable-old
 repo_branch = ''
 # stable-old from 20140624, combo changed to asus_t100-userdebug, etc.
 repo_ver = ''
@@ -192,7 +192,7 @@ def init():
         file_repo = 'https://storage.googleapis.com/git-repo-downloads/repo'
     elif repo_type in ['gminl', 'gminl64', 'stable', 'stable-old']:
         file_repo = 'https://android.intel.com/static/repo'
-    elif repo_type == 'irdakk' or repo_type == 'irdal':
+    elif repo_type == 'irdal':
         file_repo = 'https://buildbot-otc.jf.intel.com/repo.otc'
 
     execute('curl -k --noproxy intel.com %s >./repo' % file_repo, interactive=True)
@@ -208,8 +208,6 @@ def init():
         cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/topic/gmin/l-dev/master'
     elif repo_type == 'gminl64':
         cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/topic/gmin/l-dev/aosp/64bit/master'
-    elif repo_type == 'irdakk':
-        cmd = 'repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b irda/kitkat/master'
     elif repo_type == 'irdal':
         cmd = 'repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b irda/l-dev/master'
     execute(cmd, interactive=True)
@@ -271,14 +269,14 @@ def build():
 
     # Set up JDK
     backup_dir(dir_share_python)
-    if repo_type == 'irdakk' or repo_type == 'upstream' and ver_cmp(repo_ver, '5.0') < 0:
+    if repo_type == 'upstream' and ver_cmp(repo_ver, '5.0') < 0:
         execute('python version.py -t java -s jdk1.6.0_45')
     else:
         execute('python version.py -t java -s java-7-openjdk-amd64')
     restore_dir()
 
     # make
-    if repo_type == 'irdakk' or repo_type == 'upstream' and ver_cmp(repo_ver, '5.0') < 0:
+    if repo_type == 'upstream' and ver_cmp(repo_ver, '5.0') < 0:
         make = dir_linux + '/make/make-3.81'
     else:
         make = 'make'
@@ -428,8 +426,6 @@ def flash_image():
                 file_image = dir_root + '/out/dist/%s-om-factory.tgz' % product
             elif repo_type == 'stable':
                 file_image = dir_root + '/out/dist/%s-flashfiles-%s.%s.zip' % (product, variant, username)
-            elif repo_type == 'irdakk':
-                file_image = dir_root + '/out/target/product/irda/irda-ktu84p-factory.tgz'
             elif repo_type in ['irdal', 'gminl', 'gminl64']:
                 file_image = dir_root + '/out/dist/%s' % _get_factory_file(product)
 
@@ -486,7 +482,7 @@ def flash_image():
         combo = _get_combo(device_arch, device_type)
         cmd = bashify_cmd('. build/envsetup.sh && lunch ' + combo + ' && fastboot -w flashall')
         execute(cmd, interactive=True, dryrun=False)
-    elif repo_type in ['gminl', 'gminl64', 'irdakk', 'irdal']:
+    elif repo_type in ['gminl', 'gminl64', 'irdal']:
         execute('./flash-all.sh', interactive=True, dryrun=False)
         execute('timeout 10s %s -s %s reboot' % (path_fastboot, device_id))
         execute('rm -rf ' + dir_extract, dryrun=False)
@@ -740,8 +736,6 @@ def _backup_one(arch, device_type, module):
         #dest_dir = dir_backup_img + get_datetime() + '-' + device_id + '-' + variant + '/'
         #os.mkdir(dest_dir)
         #execute('cp ' + root_dir + 'out/target/product/' + device_code_name + '/*.img ' + dest_dir)
-    elif repo_type == 'irdakk':
-        files_backup = {'.': 'out/target/product/irda/irda-ktu84p-factory.tgz'}
     elif repo_type in ['irdal', 'gminl', 'gminl64']:
         files_backup = {'.': 'out/dist/%s' % _get_factory_file(product)}
     elif repo_type == 'stable' or repo_type == 'stable-old':
@@ -874,8 +868,6 @@ def _get_repo_info():
                 repo_type = 'gminl'
             elif merge == 'abt/topic/gmin/l-dev/aosp/64bit/master':
                 repo_type = 'gminl64'
-            elif merge == 'irda/kitkat/master':
-                repo_type = 'irdakk'
             elif merge == 'irda/l-dev/master':
                 repo_type = 'irdal'
             else:

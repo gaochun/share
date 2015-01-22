@@ -33,7 +33,8 @@ ACT_DOWNLOAD = 1 << 0
 ACT_FILE = 1 << 1
 ACT_DIR = 1 << 2
 ACT_CHECK = 1 << 3
-ACT_ALL = ACT_DOWNLOAD | ACT_FILE | ACT_DIR | ACT_CHECK
+ACT_DISK = 1 << 4
+ACT_ALL = ACT_DOWNLOAD | ACT_FILE | ACT_DIR | ACT_CHECK | ACT_DISK
 
 cmd_common = python_chromium + ' --repo-type chrome-android --target-os android --target-module chrome'
 
@@ -52,6 +53,7 @@ examples:
     parser.add_argument('--run', dest='run', help='run', action='store_true')
     parser.add_argument('--run-act', dest='run_act', help='run act', type=int, default=ACT_ALL)
     parser.add_argument('--check', dest='check', help='check if there is new apk', action='store_true')
+    parser.add_argument('--disk', dest='disk', help='check disk available space', action='store_true')
     parser.add_argument('--download', dest='download', help='download apk from google play', action='store_true')
     parser.add_argument('--download_type', dest='download_type', help='version type to download', default='all')
     parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
@@ -116,6 +118,9 @@ def run(force=False, act=ACT_ALL):
 
     if act & ACT_CHECK:
         check(force=True)
+
+    if act & ACT_DISK:
+        disk(force=True)
 
 
 def download(force=False):
@@ -218,6 +223,18 @@ def check(force=False):
     info(content)
     if host_name == 'wp-03':
         to = ['yang.gu@intel.com', 'zhiqiangx.yu@intel.com']
+        send_mail('webperf@intel.com', to, 'Chrome for Android -' + subject, content, type='html')
+
+
+def disk(force=False):
+    if not args.disk and not force:
+        return
+
+    avail = get_avail_disk() / 1024 / 1024
+    if avail < 200:
+        to = ['yang.gu@intel.com', 'zhiqiangx.yu@intel.com']
+        subject = ' Disk available space is too low (%sG)' % str(avail)
+        content = ''
         send_mail('webperf@intel.com', to, 'Chrome for Android -' + subject, content, type='html')
 
 
@@ -457,3 +474,4 @@ if __name__ == "__main__":
     local_build()
     debug()
     analyze()
+    disk()

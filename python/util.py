@@ -778,6 +778,13 @@ def add_argument_common(parser):
     parser.add_argument('--path-extra', dest='path_extra', help='extra path for execution, such as path for depot_tools')
     parser.add_argument('--time-fixed', dest='time_fixed', help='fix the time for test sake. We may run multiple tests and results are in same dir', action='store_true')
     parser.add_argument('--trace', dest='trace', help='trace', action='store_true')
+
+
+# Get available disk size for a specific path
+def get_avail_disk(path='/workspace'):
+    output = execute('df ' + path, return_output=True)
+    device, size, used, avail, percent, mountpoint = output[1].split('\n')[1].split()
+    return int(avail)
 ## </misc>
 
 

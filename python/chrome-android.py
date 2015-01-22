@@ -12,6 +12,10 @@
 #    Login extension with: webperf0@gmail.com and 32761AAE6636D2A3(arm)/376FCD341892D871(x86) as device id.
 # gms: put a folder with any name in buildid, which contains the Chrome.apk and lib
 
+# backup:
+# 1. Run this script with '--backup-ver xxx', which will backup all the versions <= xxx to the server (path_server_backup).
+# 2. Ensure the backups are created at server, remove backuped folders manually.
+
 from selenium import webdriver
 import urllib2
 from util import *

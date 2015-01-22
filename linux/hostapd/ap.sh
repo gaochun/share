@@ -12,7 +12,7 @@ hostname=$(hostname)
 
 if [ $hostname = "wp-01" ] ; then
     EXTERNAL=eth1
-elif [ $hostname = "wp-03" ] ; then
+elif [ $hostname = "wp-03" -o $hostname = "ubuntu-ygu5-02" ] ; then
     EXTERNAL=eth0
 elif [ $hostname = "ubuntu-ygu5-01" ] ; then
     EXTERNAL=eth2

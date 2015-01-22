@@ -148,7 +148,7 @@ gc is triggered by LowMemoryNotification or IdleNotification
                         ChromeRenderProcessObserver::OnPurgeMemory
                             v8::V8::LowMemoryNotification
                                 CollectAllAvailableGarbage
-									Heap::CollectGarbage
+                                    Heap::CollectGarbage
 
 *IdleNotification*
 

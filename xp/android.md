@@ -321,6 +321,9 @@ adb shell am start -n com.android.chrome/com.android.chrome.Main -d "chrome://ve
 * chrome beta
 adb shell am start -n com.chrome.beta/com.chrome.beta.Main -d "chrome://version"
 
+* chrome shell
+adb shell am start -n org.chromium.chrome.shell/.ChromeShellActivity -d "http://wp-02.sh.intel.com/webbench/webgl/webglsamples/aquarium/aquarium.html"
+
 * content shell
 adb shell am start -n org.chromium.content_shell/.ContentShellApplication -d "about:version"
 
@@ -423,8 +426,20 @@ sudo iptables -A FORWARD -i $INTERNAL -o $EXTERNAL -j ACCEPT
 </reverse_tethering>
 
 <bkm>
+* Android.mk
+print variable: $(warning $(PRODUCT_PREBUILT_WEBVIEWCHROMIUM))
 
+* frameworks/webview/chromium/version.mk
 </bkm>
+
+<aapt>
+aapt list
+aapt dump
+
+* aapt dump badging <apk_name>
+
+</aapt>
+
 
 <memory>
 * /sys/module/lowmemorykiller/parameters/minfree

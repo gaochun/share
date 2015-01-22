@@ -55,10 +55,24 @@ alacarte->add new item->search it in applications->add as favorite
 * desktop file is at /usr/share/applications
 * Change command line for chrome
 modify /opt/google/chrome-unstable/google-chrome-unstable
+--allow-file-access-from-files
 
 * disable apport
 gksu gedit /etc/default/apport
 Change value of "enabled" from 1 to 0
 sudo restart apport
+
+* Qualcomm Atheros AR9462 Wireless Network Adapter
+sudo modprobe -rfv ath9k
+sudo modprobe -vb ath9k nohwcrypt=1 blink=1 btcoex_enable=1 enable_diversity=1
+echo "blacklist acer_wmi" | sudo tee -a /etc/modprobe.d/blacklist.conf
+modinfo ath9k
+echo "options ath9k nohwcrypt=1 blink=1 btcoex_enable=1" | sudo tee -a /etc/modprobe.d/ath9k.conf
+
+lspci -k |grep -A 3 -i "network"
+modinfo ath9k |grep 'depend'
+
+@ no luck with rebuild http://drvbp1.linux-foundation.org/~mcgrof/rel-html/backports/
+
 
 </xp>

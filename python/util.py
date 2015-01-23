@@ -23,6 +23,7 @@ from email.mime.text import MIMEText
 import socket
 import inspect
 import multiprocessing
+from multiprocessing import Pool
 import re
 import commands
 import fileinput
@@ -41,7 +42,8 @@ log = ''
 host_os = platform.system().lower()
 host_name = socket.gethostname()
 username = os.getenv('USER')
-count_cpu = str(multiprocessing.cpu_count() * 2)
+count_cpu = multiprocessing.cpu_count()
+count_cpu_build = count_cpu * 2
 args = argparse.Namespace()
 dir_stack = []
 log_stack = []

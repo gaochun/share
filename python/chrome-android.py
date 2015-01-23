@@ -268,11 +268,20 @@ def backup_ver():
     if not args.backup_ver:
         return
 
+    vers = []
     dirs = os.listdir('.')
     for dir_ver in dirs:
         if re.match('\d+\.\d+\.\d+\.\d+', dir_ver) and ver_cmp(dir_ver, args.backup_ver) <= 0:
-            execute('tar zcf %s.tar.gz %s' % (dir_ver, dir_ver))
-            backup_smb(path_server_backup, 'chromium', '%s.tar.gz' % dir_ver)
+            vers.append(dir_ver)
+
+    vers = sorted(vers, cmp=ver_cmp)
+    count_process = min(count_cpu, len(vers))
+    pool = Pool(processes=count_process)
+    for ver in vers:
+        pool.apply_async(_backup_ver_one, (ver,))
+
+    pool.close()
+    pool.join()
 
 
 def local_setup():
@@ -456,6 +465,17 @@ def _set_phase(file_readme, phase):
         if match:
             line = 'phase=' + phase + '\n'
         sys.stdout.write(line)
+
+
+def _backup_ver_one(ver):
+    # Speed:
+    # plain tar: 37min
+
+    info('Backing up ' + ver)
+    execute('tar zcf %s.tar.gz %s' % (ver, ver), show_cmd=False)
+    #execute('tar cf - %s | pigz -p 32 > %s.tar.gz' % (ver, ver), show_cmd=False, dryrun=False)
+    backup_smb(path_server_backup, 'chromium', '%s.tar.gz' % ver)
+    info('Version %s has been backed up' % ver)
 
 
 def _teardown():

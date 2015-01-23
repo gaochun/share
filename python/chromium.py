@@ -795,7 +795,7 @@ def build(force=False):
     if need_makefile:
         makefile(force=True)
 
-    cmd_ninja = 'ninja -k' + str(build_fail_max) + ' -j' + count_cpu + ' -C ' + dir_out_build_type
+    cmd_ninja = 'ninja -k' + str(build_fail_max) + ' -j' + str(count_cpu_build) + ' -C ' + dir_out_build_type
     if target_os == 'android' and target_module == 'webview_shell':
         cmd_ninja += ' android_webview_apk libwebviewchromium'
     elif target_os == 'android' and target_module == 'content_shell':
@@ -1240,7 +1240,7 @@ def _get_suite_default():
 
 
 def _test_build_name(command, name):
-    cmd = 'ninja -j' + count_cpu + ' -C ' + dir_out_build_type + ' ' + name
+    cmd = 'ninja -j' + str(count_cpu_build) + ' -C ' + dir_out_build_type + ' ' + name
     result = execute(cmd, interactive=True)
     if result[0]:
         return False
@@ -1572,7 +1572,7 @@ def _run_gclient(cmd_type, cmd_extra=''):
         cmd += ' -R'
     if cmd_type == 'sync':
         cmd += ' -f'
-    cmd += ' -j' + count_cpu
+    cmd += ' -j' + str(count_cpu_build)
 
     if repo_type == 'chrome-android' and cmd_type == 'runhooks' and ver_cmp(ver, ver_envsetup) < 0:
         cmd = 'source src/build/android/envsetup.sh --target-arch=' + target_arch + ' && ' + cmd

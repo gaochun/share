@@ -26,6 +26,7 @@ cb_interval = {
     'update_share': 1800,
     'test_x64_all': 24 * 3600 - interval_cron * 60,
     'test_x64_aosp_build': 24 * 3600 - interval_cron * 60,
+    'chromium_perf': 24 * 3600 - interval_cron * 60,
     'chrome_android': 24 * 3600 - interval_cron * 60,
     'daemon': 600,
 }
@@ -93,6 +94,7 @@ def start():
     elif host_name == 'wp-02':
         _run_one('update_share')
         _run_one('update_webbench')
+        _run_one('chromium_perf')
 
     elif host_name == 'wp-03':
         _run_one('update_share')
@@ -116,6 +118,10 @@ def update_webbench():
 
 def test_x64_all():
     return 'test-x64.py --target-arch x86_64,x86'
+
+
+def chromium_perf():
+    return 'chromium-perf.py --run'
 
 
 def chrome_android():

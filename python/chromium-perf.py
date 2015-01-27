@@ -65,8 +65,8 @@ def run():
                 combs_todo.append(comb_available)
 
         # print combs_todo
-        #for c in combs_todo:
-            #print c
+        # for c in combs_todo:
+        #     print c
 
         config_suites = ''
         for comb_todo in combs_todo:
@@ -94,11 +94,11 @@ def run():
         "path": "auto"
       },
       "cases": [
-        {"name": "kraken", "version": "1.1", "timeout": 1200},
-        {"name": "octane", "version": "1.0", "timeout": 1200},
+        {"name": "kraken", "version": "1.1"},
+        {"name": "octane", "version": "1.0"},
         {"name": "sunspider", "version": "1.0.2"},
 
-        {"name": "canvas2dc10k", "timeout": 1200},
+        {"name": "canvas2dc10k"},
         {"name": "canvasmark", "version": "2013"},
         {"name": "fishietank", "version": "raf", "count_fish": 250},
         {"name": "fishietank", "version": "setinterval", "count_fish": 250},
@@ -111,8 +111,8 @@ def run():
         {"name": "fallingleaves"},
         {"name": "postercircle"},
 
-        {"name": "browsermark", "version": "2.0", "timeout": 1200},
-        {"name": "browsermark", "version": "2.1", "timeout": 1200}
+        {"name": "browsermark", "version": "2.0"},
+        {"name": "browsermark", "version": "2.1"}
       ]
     }
   ]

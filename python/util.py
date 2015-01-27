@@ -31,6 +31,13 @@ import random
 import select
 import atexit
 import hashlib
+import collections
+import urllib2
+from HTMLParser import HTMLParser
+import json
+from httplib import BadStatusLine
+import codecs
+
 # </import>
 
 # <globals>

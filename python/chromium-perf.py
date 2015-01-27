@@ -3,6 +3,10 @@
 from util import *
 import urllib2
 
+devices_id = []
+devices_arch = []
+devices_product = []
+
 # [[device.product, device.arch, device.governor, device.freq, module.os, module.arch, module.name, module.version]]
 combs_all = [
     #['asus_t100_64p', 'x86_64', 'powersave', '400000', 'android', 'x86_64', 'content_shell', ['302000', '999999', 200]],
@@ -36,6 +40,14 @@ examples:
         quit()
 
 
+def setup():
+    global devices_id, devices_product, devices_arch
+
+    (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
+    if len(devices_id) == 0:
+        error('No device is connected')
+
+
 def run():
     if not args.run:
         return
@@ -58,6 +70,10 @@ def run():
 
         config_suites = ''
         for comb_todo in combs_todo:
+            # make sure running with sufficient power
+            if android_get_power_percent(device_id=devices_id[0]) < 50:
+                time.sleep(7200)
+
             config_todo = '''
 {
   "suites": [
@@ -176,4 +192,5 @@ def _get_combs_from_server(comb_type, comb):
 
 if __name__ == '__main__':
     parse_arg()
+    setup()
     run()

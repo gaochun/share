@@ -1270,6 +1270,12 @@ def android_get_info(key, device_id=''):
     return result[1].replace(key + '=', '').rstrip('\r\n')
 
 
+def android_get_power_percent(device_id=''):
+    cmd = adb(cmd='shell dumpsys power | grep mBatteryLevel=', device_id=device_id)
+    result = execute(cmd, return_output=True, show_cmd=False)
+    return int(result[1].replace('mBatteryLevel=', '').rstrip('\r\n').strip(' '))
+
+
 def android_get_ver(device_id=''):
     return android_get_info('ro.build.version.release', device_id=device_id)
 

@@ -24,11 +24,10 @@ file_lock = dir_share_ignore_timestamp + '/server'
 
 cb_interval = {
     'update_share': 1800,
-    'test_x64_all': 24 * 3600 - interval_cron * 60,
-    'test_x64_aosp_build': 24 * 3600 - interval_cron * 60,
-    'chromium_perf': 24 * 3600 - interval_cron * 60,
-    'chrome_android': 24 * 3600 - interval_cron * 60,
     'daemon': 600,
+
+    # default value when no interval is designated
+    'default': 24 * 3600 - interval_cron * 60,
 }
 
 
@@ -140,7 +139,12 @@ def test_x64_aosp_build():
 # If callback does not start within interval, start it
 def _run_one(cb):
     file_cb = dir_share_ignore_timestamp + '/' + cb
-    if not os.path.exists(file_cb) or not has_recent_change(file_cb, interval=cb_interval[cb]):
+    if cb in cb_interval:
+        interval = cb_interval[cb]
+    else:
+        interval = cb_interval['default']
+
+    if not os.path.exists(file_cb) or not has_recent_change(file_cb, interval=interval):
         execute('touch ' + file_cb)
         cmd = globals()[cb]()
         if cmd:

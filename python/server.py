@@ -24,7 +24,6 @@ file_lock = dir_share_ignore_timestamp + '/server'
 
 cb_interval = {
     'update_share': 1800,
-    'daemon': 600,
 
     # default value when no interval is designated
     'default': 24 * 3600 - interval_cron * 60,
@@ -56,7 +55,6 @@ def setup():
 
     (timestamp, dir_root, log) = setup_common(args, _teardown)
     args.trace = True
-    _run_one('daemon')
 
     if os.path.exists(file_lock) and has_recent_change(file_lock, interval=24 * 3600):
         info('Server is running')
@@ -88,7 +86,8 @@ def start():
 
     if host_name == 'wp-01':
         _run_one('update_share')
-        _run_one('test_x64_all')
+        #_run_one('test_x64_all')
+        _run_one('test_x64_chromium')
 
     elif host_name == 'wp-02':
         _run_one('update_share')
@@ -106,6 +105,10 @@ def start():
         #_run_one('test_x64_aosp_build')
         pass
 
+    elif host_name == 'lorpheux':
+        #_run_one('test_x64_chromium')
+        pass
+
 
 def update_share():
     _update_repo(dir_share)
@@ -119,21 +122,20 @@ def test_x64_all():
     return 'test-x64.py --target-arch x86_64,x86'
 
 
+def test_x64_chromium():
+    return 'test-x64.py --target-arch x86_64,x86 --phase chromium-x64'
+
+
+def test_x64_aosp_build():
+    return 'test-x64.py --target-arch x86_64,x86 --phase aosp-prebuild,aosp-build --dir-aosp aosp-stable-daily'
+
+
 def chromium_perf():
     return 'chromium-perf.py --run'
 
 
 def chrome_android():
     return 'chrome-android.py --run'
-
-
-def daemon():
-    if device_connected():
-        android_tap()
-
-
-def test_x64_aosp_build():
-    return 'test-x64.py --target-arch x86_64,x86 --phase aosp-prebuild,aosp-build --dir-aosp aosp-stable-daily'
 
 
 # If callback does not start within interval, start it

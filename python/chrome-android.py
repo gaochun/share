@@ -271,8 +271,11 @@ def backup_ver():
     vers = []
     dirs = os.listdir('.')
     for dir_ver in dirs:
-        if re.match('\d+\.\d+\.\d+\.\d+', dir_ver) and ver_cmp(dir_ver, args.backup_ver) <= 0:
+        if re.match('\d+\.\d+\.\d+\.\d+$', dir_ver) and ver_cmp(dir_ver, args.backup_ver) <= 0:
             vers.append(dir_ver)
+
+    if len(vers) < 1:
+        return
 
     vers = sorted(vers, cmp=ver_cmp)
     count_process = min(count_cpu, len(vers))

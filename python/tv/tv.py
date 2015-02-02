@@ -3,20 +3,11 @@
 
 # Need to install pywin32: http://sourceforge.net/projects/pywin32
 
-import json
-from HTMLParser import HTMLParser
-import urllib2
-import re
-import os
-from httplib import BadStatusLine
-import time
 import sys
-import socket
-import multiprocessing
-from multiprocessing import Pool
+sys.path.append(sys.path[0] + '/..')
+from util import *
+
 import win32clipboard
-import collections
-import codecs
 
 RESOURCES_INDEX_URL = 0
 RESOURCES_INDEX_PATTERN = 1

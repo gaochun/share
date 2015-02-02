@@ -46,6 +46,8 @@ def handy():
 <log>
 git log --pretty=short --no-merges |git shortlog -nse  # rank the contribution
 git log --follow -- file  # log with deleted file
+git log <since>..<until>
+git log master..yourbranch --pretty=oneline | wc -l  # commit number
 </log>
 
 <patch>

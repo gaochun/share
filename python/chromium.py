@@ -854,12 +854,18 @@ def postbuild(force=False):
         else:
             target_arch_temp = target_arch
 
-        # hack the script to allow same package name with Google
         for line in fileinput.input('%s/prebuilt-%s/change_chromium_package.py' % (dir_src, target_arch), inplace=1):
+            # hack the script to allow same package name with Google
             if re.search('\'com.android.chrome\'', line) and line.lstrip()[0] != '#':
                 line = line.replace('\'com.android.chrome\'', '#\'com.android.chrome\'')
             elif re.search('\'com.chrome.beta\'', line) and line.lstrip()[0] != '#':
                 line = line.replace('\'com.chrome.beta\'', '#\'com.chrome.beta\'')
+
+            # "snapshot" can not be found in latest AndroidManifest.xml. Just ignore it here.
+            # Note that we rely on later script to change all the authorities in AndroidManifest.xml,
+            # so we don't need to add others here.
+            elif re.search('android:authorities="\%\(package\)s.snapshot', line) and line.lstrip()[0] != '#':
+                line = '#' + line
             sys.stdout.write(line)
 
         for comb in combs:

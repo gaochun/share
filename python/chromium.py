@@ -118,50 +118,39 @@ repo_type_info = {
             ('all', 'x86_64'): {},
             ('all', 'x86'): {},
             ('baytrail', 'all'): {
+                'base_unittests': [
+                    # Child process can not be terminated correctly.
+                    # This seems not due to action_max_timeout() is not enough.
+                    # Root cause is unknown.
+                    'ProcessUtilTest.GetTerminationStatusCrash',
+                ],
+                'gl_tests': [
+                    # Status: TODO - timeout
+                    'GLReadbackTest.ReadPixelsWithPBOAndQuery',
+                ],
                 'media_unittests': [
                     # Status: TODO
-                    'MediaDrmBridgeTest.AddNewKeySystemMapping',
-                    'MediaDrmBridgeTest.ShouldNotOverwriteExistingKeySystem',
                     'YUVConvertTest.YUVAtoARGB_MMX_MatchReference',
                     'MediaDrmBridgeTest.IsKeySystemSupported_Widevine',
                     'MediaDrmBridgeTest.IsSecurityLevelSupported_Widevine',
                     # regression
-                    # This case will pass if run alone. But it causes timeout in the whole tests.
-                    # irdakk also has the problem, while gminl is ok.
-                    'MediaSourcePlayerTest.A_FirstAccessUnitAfterSeekIsEOS',
+                    'MediaSourcePlayerTest.A_StarvationDuringEOSDecode', # message_loop_.Run();
+                    'MediaSourcePlayerTest.DemuxerConfigRequestedIfInPrefetchUnit0',
+                    'MediaSourcePlayerTest.DemuxerConfigRequestedIfInPrefetchUnit1', # decoder not request new data.
+                    'MediaSourcePlayerTest.DemuxerConfigRequestedIfInUnit0AfterPrefetch',
+                    'MediaSourcePlayerTest.DemuxerConfigRequestedIfInUnit1AfterPrefetch', # decoder not request new data.
+                    'MediaSourcePlayerTest.PrerollContinuesAcrossReleaseAndStart', # 419122. disable in upstream.
                 ],
-                'sandbox_linux_unittests': [
-                    # Status: Verified with stable image
-                    'BaselinePolicy.CreateThread',
-                    'BaselinePolicy.DisallowedCloneFlagCrashes',
-                    'BaselinePolicy.PrctlSigsys',
-                    'BrokerProcess.RecvMsgDescriptorLeak',
-
-                    # The following cases are due to https://codereview.chromium.org/290143006
-                    # These are false positive cases and test infrastructure needs to improve to support them.
-                    'BaselinePolicy.DisallowedKillCrashes',
-                    'BaselinePolicy.SIGSYS___NR_acct',
-                    'BaselinePolicy.SIGSYS___NR_chroot',
-                    'BaselinePolicy.SIGSYS___NR_eventfd',
-                    'BaselinePolicy.SIGSYS___NR_fanotify_init',
-                    'BaselinePolicy.SIGSYS___NR_fgetxattr',
-                    'BaselinePolicy.SIGSYS___NR_getcpu',
-                    'BaselinePolicy.SIGSYS___NR_getitimer',
-                    'BaselinePolicy.SIGSYS___NR_init_module',
-                    'BaselinePolicy.SIGSYS___NR_inotify_init',
-                    'BaselinePolicy.SIGSYS___NR_io_cancel',
-                    'BaselinePolicy.SIGSYS___NR_keyctl',
-                    'BaselinePolicy.SIGSYS___NR_mq_open',
-                    'BaselinePolicy.SIGSYS___NR_ptrace',
-                    'BaselinePolicy.SIGSYS___NR_sched_setaffinity',
-                    'BaselinePolicy.SIGSYS___NR_setpgid',
-                    'BaselinePolicy.SIGSYS___NR_swapon',
-                    'BaselinePolicy.SIGSYS___NR_sysinfo',
-                    'BaselinePolicy.SIGSYS___NR_syslog',
-                    'BaselinePolicy.SIGSYS___NR_timer_create',
-                    'BaselinePolicy.SIGSYS___NR_vserver',
-                    'BaselinePolicy.SocketpairWrongDomain',
+                'unit_tests': [
+                    # call failed at gmock but pass to call directly
+                    'GoogleSearchCounterAndroidTest.BadOmniboxSearch',
+                    'GoogleSearchCounterAndroidTest.BadOtherSearch',
+                    'GoogleSearchCounterAndroidTest.GoodOmniboxSearch',
+                    'GoogleSearchCounterAndroidTest.GoodOtherSearch',
+                    'GoogleSearchCounterAndroidTest.SearchAppStart',
+                    'GoogleSearchCounterAndroidTest.SearchAppSearch',
                 ],
+                # content_gl_tests is disabled in upstream
                 'content_gl_tests': [
                     # Intel gfx bug related to glReadPixels with format BGRA
                     'GLHelperTest.BGRASyncReadbackTest',
@@ -170,34 +159,23 @@ repo_type_info = {
                 ],
                 'ContentShellTest': [
                     # Status: TODO
-                    'JavaBridgeCoercionTest#testPassJavaObject',
-                    'ContentViewScrollingTest#testFling',
-                    # regression
-                    'ScreenOrientationListenerTest#testFlipLandscape',
-                    'ScreenOrientationListenerTest#testFlipPortrait',
-                    'ScreenOrientationListenerTest#testVariousOrientationChanges',
-                    'ScreenOrientationProviderTest#testBasicValues',
-                    'ScreenOrientationProviderTest#testLandscape',
-                    'ScreenOrientationProviderTest#testPortrait',
-                    'CleanupReferenceTest#testCreateMany',
-                    'CleanupReferenceTest#testCreateSingle',
+                    'TransitionTest#testTransitionElementsFetched',
                 ],
                 'AndroidWebViewTest': [
                     # Status: TODO
-                    'AndroidScrollIntegrationTest#testUiScrollReflectedInJs',
-                    'AwContentsTest#testCreateAndGcManyTimes',
-                    'AwSettingsTest#testAllowMixedMode',
-                    'AwSettingsTest#testLoadWithOverviewModeViewportTagWithTwoViews',
-                    'AwSettingsTest#testLoadWithOverviewModeWithTwoViews',
-                    'AwSettingsTest#testUserAgentStringDefault',
-
-                    # Crash
-                    'AndroidScrollIntegrationTest#testFlingScroll',
-                    'AndroidScrollIntegrationTest#testJsScrollCanBeAlteredByUi',
+                    'AwSettingsTest#testZeroLayoutHeightDisablesViewportQuirkWithTwoViews',
+                    'KeySystemTest#testSupportPlatformKeySystem',
+                    'KeySystemTest#testSupportWidevineKeySystem',
                     'AndroidScrollIntegrationTest#testJsScrollFromBody',
                     'AndroidScrollIntegrationTest#testJsScrollReflectedInUi',
-                    'AndroidScrollIntegrationTest#testTouchScrollCanBeAlteredByUi',
-                    'ClientOnPageFinishedTest#testOnPageFinishedCalledAfterError',
+                    'AndroidScrollIntegrationTest#testPinchZoomUpdatesScrollRangeSynchronously',
+                    'AwQuotaManagerBridgeTest#testDeleteOriginWithAppCache', # pass if run alone
+                ],
+                'ChromeShellTest': [
+                    # Status: TODO
+                    'ExternalPrerenderRequestTest#testAddPrerenderAndCancel',
+                    'ExternalPrerenderRequestTest#testAddingPrerendersInaRow',
+                    'ExternalPrerenderRequestTest#testCancelPrerender',
                 ],
                 'MojoTest': [
                     # TODO
@@ -206,23 +184,18 @@ repo_type_info = {
                 ]
             },
             ('baytrail', 'x86_64'): {
-                'base_unittests': [
-                    # Child process can not be terminated correctly.
-                    # This seems not due to action_max_timeout() is not enough.
-                    # Root cause is unknown.
-                    'ProcessUtilTest.GetTerminationStatusCrash',
-                ],
             },
             ('baytrail', 'x86'): {
-                # status Done
-                'base_unittests': [
-                    # This case is only needed for x86. x64 doesn't have this problem.
-                    'ThreadTest.StartWithOptions_StackSize',
-                ],
-                'gl_tests': [
+                'AndroidWebViewTest': [
                     # Status: TODO
-                    'TextureStorageTest.CorrectPixels',
+                    'CommandLineTest#testSetupCommandLine',
                 ],
+                'ChromeShellTest': [
+                    # Status: TODO
+                    'InstallerDelegateTest#testRunnableRaceCondition',
+                    'DistilledPagePrefsTest#testSingleObserverTheme',
+                    'ContextMenuTest#testCopyImageURL',
+                ]
             },
             ('generic', 'all'): {},
             ('generic', 'x86_64'): {},

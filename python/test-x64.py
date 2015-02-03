@@ -12,6 +12,8 @@ phases = []
 dir_aosp = ''
 dir_chromium = ''
 
+devices_info = {}
+
 
 def handle_option():
     global args, args_dict
@@ -45,8 +47,8 @@ examples:
 
 def setup():
     global target_archs, targets_type, phases
-    global dir_aosp, dir_chromium
-    global dir_root, log, timestamp
+    global dir_aosp, dir_chromium, dir_root
+    global log, timestamp, devices_info
 
     (timestamp, dir_root, log) = setup_common(args, _teardown)
 
@@ -80,6 +82,15 @@ def setup():
     else:
         phases = args.phase.split(',')
 
+    (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
+
+    for index, device_id in enumerate(devices_id):
+        if devices_arch[index] in target_archs and devices_arch[index] not in devices_info:
+            devices_info[devices_arch[index]] = device_id
+
+    if len(devices_info) != len(target_archs):
+        error('Please ensure correct devices are connected')
+
 
 def test():
     if 'aosp-prebuild' in phases:
@@ -106,7 +117,7 @@ def test():
             if not os.path.exists(dir_aosp):
                 error(dir_aosp + ' does not exist')
             backup_dir(dir_aosp)
-            cmd = python_aosp + ' --target-arch %s --target-type %s --flash-image ' % (arch, args.target_type)
+            cmd = python_aosp + ' --target-arch %s --target-type %s --device-id %s --flash-image ' % (arch, args.target_type, devices_info[arch])
             cmd = suffix_cmd(cmd, args, log)
             execute(cmd, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
@@ -115,7 +126,7 @@ def test():
             if not os.path.exists(dir_chromium):
                 error(dir_chromium + ' does not exist')
             backup_dir(dir_chromium)
-            cmd = python_chromium + ' --target-arch %s --repo-type x64 --sync --runhooks --patch --build --test-run --test-formal' % arch
+            cmd = python_chromium + ' --target-arch %s --repo-type x64 --device-id %s --sync --runhooks --patch --build --test-run --test-formal' % (arch, devices_info[arch])
             cmd = suffix_cmd(cmd, args, log)
             execute(cmd, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()

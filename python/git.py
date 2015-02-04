@@ -48,7 +48,15 @@ git log --pretty=short --no-merges |git shortlog -nse  # rank the contribution
 git log --follow -- file  # log with deleted file
 git log <since>..<until>
 git log master..yourbranch --pretty=oneline | wc -l  # commit number
+git log --summary 223286b.. | grep "Author:" | wc -l  # Count git commits since specific commit
+git format-patch -1 hash  # Generate patch for a specific hash
+git log --grep="Something in the message"
 </log>
+
+<remote>
+git remote -v
+git remote show <name>
+</remote>
 
 <patch>
 git am <patch>
@@ -70,6 +78,7 @@ git stash clear
 
 <misc>
 git reset HEAD -- path/to/file  # remove from stage
+git branch | grep -v "master" | sed 's/^[ *]*//' | sed 's/^/git branch -D /' | bash  # Remove all branches other than master
 </misc>
 
     '''

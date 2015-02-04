@@ -92,6 +92,7 @@ def start():
     elif host_name == 'wp-02':
         _run_one('update_share')
         _run_one('update_webbench')
+        _run_one('webcatch_build')
 
     elif host_name == 'wp-03':
         _run_one('update_share')
@@ -139,6 +140,10 @@ def chromium_perf():
 
 def chrome_android():
     return 'chrome-android.py --run'
+
+
+def webcatch_build():
+    return 'webcatch/build.py --target-os android --target-arch x86,x86_64 --target-module chrome_shell,webview_shell --rev 303373-999999 --build'
 
 
 # If callback does not start within interval, start it

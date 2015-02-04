@@ -84,6 +84,7 @@ examples:
     parser.add_argument('--build-every', dest='build_every', help='build every number', type=int, default=10)
     parser.add_argument('--build-fail-max', dest='build_fail_max', help='maximum failure number of build', type=int, default=1)
     parser.add_argument('--build-skip-mark', dest='build_skip_mark', help='build regardless of comb_valid', action='store_true')
+    parser.add_argument('--build-auto-checkout', dest='build_auto_checkout', help='auto checkout if waiting for future commit', action='store_true')
     parser.add_argument('--keep-out', dest='keep_out', help='do not remove out dir after failure', action='store_true')
     parser.add_argument('--slave-only', dest='slave_only', help='only do things at slave machine, for sake of test', action='store_true')
     parser.add_argument('--clean-lock', dest='clean_lock', help='clean all lock files', action='store_true')
@@ -181,26 +182,25 @@ def build():
     interval_git = 300
     rev_git_max = _chromium_get_rev_max()
     time_git = get_epoch_second()
+    comb_next = _get_comb_next()
+    rev_next = comb_next[COMB_INDEX_REV]
     while True:
-        comb_next = _get_comb_next()
-        rev_next = comb_next[COMB_INDEX_REV]
-
         if rev_next > rev_max:
             return
         elif rev_next <= rev_git_max:
             _build(comb_next)
+            comb_next = _get_comb_next()
+            rev_next = comb_next[COMB_INDEX_REV]
+        elif args.build_auto_checkout:
+            return
         else:
-            while True:
-                time_diff = get_epoch_second() - time_git
-                if time_diff > interval_git:
-                    rev_git_max = _chromium_get_rev_max()
-                    time_git = get_epoch_second()
-                    if rev_next <= rev_git_max:
-                        _build(comb_next)
-                        break
-
+            time_diff = get_epoch_second() - time_git
+            if time_diff < interval_git:
                 info('Sleeping ' + str(interval_git) + ' seconds...')
                 time.sleep(interval_git)
+
+            rev_git_max = _chromium_get_rev_max()
+            time_git = get_epoch_second()
 
 
 def clean_lock():
@@ -657,7 +657,7 @@ def _rev_is_built(comb, rand=False):
 
         if rand:
             second = random.randint(1, 10)
-            info('sleep ' + str(second) + ' seconds and check again')
+            info('sleep ' + str(second) + ' seconds and check again to ensure it is not built yet')
             time.sleep(second)
 
         cmd = 'ls ' + dir_server_chromium + '/' + comb_name + '/' + str(rev) + '*'

@@ -134,12 +134,12 @@ repo_type_info = {
                     'MediaDrmBridgeTest.IsKeySystemSupported_Widevine',
                     'MediaDrmBridgeTest.IsSecurityLevelSupported_Widevine',
                     # regression
-                    'MediaSourcePlayerTest.A_StarvationDuringEOSDecode', # message_loop_.Run();
+                    'MediaSourcePlayerTest.A_StarvationDuringEOSDecode',  # message_loop_.Run();
                     'MediaSourcePlayerTest.DemuxerConfigRequestedIfInPrefetchUnit0',
-                    'MediaSourcePlayerTest.DemuxerConfigRequestedIfInPrefetchUnit1', # decoder not request new data.
+                    'MediaSourcePlayerTest.DemuxerConfigRequestedIfInPrefetchUnit1',  # decoder not request new data.
                     'MediaSourcePlayerTest.DemuxerConfigRequestedIfInUnit0AfterPrefetch',
-                    'MediaSourcePlayerTest.DemuxerConfigRequestedIfInUnit1AfterPrefetch', # decoder not request new data.
-                    'MediaSourcePlayerTest.PrerollContinuesAcrossReleaseAndStart', # 419122. disable in upstream.
+                    'MediaSourcePlayerTest.DemuxerConfigRequestedIfInUnit1AfterPrefetch',  # decoder not request new data.
+                    'MediaSourcePlayerTest.PrerollContinuesAcrossReleaseAndStart',  # 419122. disable in upstream.
                 ],
                 'unit_tests': [
                     # call failed at gmock but pass to call directly
@@ -169,7 +169,7 @@ repo_type_info = {
                     'AndroidScrollIntegrationTest#testJsScrollFromBody',
                     'AndroidScrollIntegrationTest#testJsScrollReflectedInUi',
                     'AndroidScrollIntegrationTest#testPinchZoomUpdatesScrollRangeSynchronously',
-                    'AwQuotaManagerBridgeTest#testDeleteOriginWithAppCache', # pass if run alone
+                    'AwQuotaManagerBridgeTest#testDeleteOriginWithAppCache',  # pass if run alone
                 ],
                 'ChromeShellTest': [
                     # Status: TODO
@@ -1368,6 +1368,7 @@ def _test_gen_report(index_device, results):
           <h2 id="Environment">Environment</h2>
           <ul>
             <li>Chromium Revision: ''' + str(rev) + '''</li>
+            <li>Host Device: ''' + host_name + '''</li>
             <li>Target Device: ''' + device_product + '''</li>
             <li>Target Image: ''' + android_get_info(key='ro.build.display.id', device_id=device_id) + '''</li>
             <li>Build Duration: ''' + timer_diff('build') + '''</li>

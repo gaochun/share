@@ -998,8 +998,6 @@ def get_product(repo_type, device_arch, device_type, product_brand, product_name
 
     if repo_type == 'upstream':
         return 'aosp_' + device_type
-    elif repo_type == 'irdakk':
-        product = 'coho'
     elif repo_type == 'irdal':
         product = 'cohol'
     elif repo_type in ['stable', 'gminl', 'gminl64']:

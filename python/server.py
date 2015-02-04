@@ -92,11 +92,14 @@ def start():
     elif host_name == 'wp-02':
         _run_one('update_share')
         _run_one('update_webbench')
-        _run_one('chromium_perf')
 
     elif host_name == 'wp-03':
         _run_one('update_share')
         _run_one('chrome_android')
+
+    elif host_name == 'wp-04':
+        _run_one('update_share')
+        _run_one('chromium_perf')
 
     elif host_name == 'ubuntu-ygu5-01':
         pass

@@ -2,7 +2,7 @@
 
 # Server definition:
 # wp-01
-# build: x64 daily test, webcatch
+# build: x64 daily test
 # backup: chrome-android, webcatch archive
 # web server (8000): webcatch archive
 
@@ -11,8 +11,12 @@
 # web server (80): webcatch (android-x86-content_shell, linux_x86_chrome), benchmark
 
 # wp-03
-# build: chrome-android, webcatch
+# build: chrome-android
 # web server (80): aosp-stable, chrome-android
+
+# wp-04
+# build: chromium perf
+# web server (80): NA
 
 from util import *
 
@@ -22,8 +26,10 @@ from util import *
 interval_cron = 20  # minutes
 file_lock = dir_share_ignore_timestamp + '/server'
 
+# unit is second
 cb_interval = {
     'update_share': 1800,
+    'webcatch_build': 600,
 
     # default value when no interval is designated
     'default': 24 * 3600 - interval_cron * 60,
@@ -143,7 +149,7 @@ def chrome_android():
 
 
 def webcatch_build():
-    return 'webcatch/build.py --target-os android --target-arch x86,x86_64 --target-module chrome_shell,webview_shell --rev 303373-999999 --build'
+    return 'webcatch/build.py --target-os android --target-arch x86,x86_64 --target-module chrome_shell,webview_shell --rev 297098-999999 --build'
 
 
 # If callback does not start within interval, start it

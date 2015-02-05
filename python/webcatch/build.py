@@ -88,6 +88,8 @@ examples:
     parser.add_argument('--keep-out', dest='keep_out', help='do not remove out dir after failure', action='store_true')
     parser.add_argument('--slave-only', dest='slave_only', help='only do things at slave machine, for sake of test', action='store_true')
     parser.add_argument('--clean-lock', dest='clean_lock', help='clean all lock files', action='store_true')
+
+    add_argument_common(parser)
     args = parser.parse_args()
 
     if len(sys.argv) <= 1:

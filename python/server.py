@@ -11,7 +11,7 @@
 # web server (80): webcatch (android-x86-content_shell, linux_x86_chrome), benchmark
 
 # wp-03
-# build: chrome-android
+# build: chrome-android, webcatch
 # web server (80): aosp-stable, chrome-android
 
 # wp-04

@@ -22,7 +22,7 @@ def parse_arg():
 examples:
   python %(prog)s --config config.json
   python %(prog)s --analyze all
-  python %(prog)s --module-os android --module-arch x86 --module-name content_shell --case fishietank --case-config '"count_fish": 10, "path": "internal"'
+  python %(prog)s --module-os android --module-arch x86 --module-name content_shell --case-name fishietank --case-config '"count_fish": 10, "path": "internal"'
 ''')
 
     parser.add_argument('--config', dest='config', help='config file to put in all the configurations')
@@ -109,7 +109,7 @@ def setup():
     if len(devices_id) == 0 and not args.dryrun:
         error('No device is connected')
 
-    baseline = Baseline()
+    #baseline = Baseline()
 
 
 def run():
@@ -162,8 +162,8 @@ def analyze(files_result):
         baseline_suite = baseline.suites[index]
 
         # analyze
-        content_regression = ''
-        content_improvement = ''
+        content_reg = ''
+        content_imp = ''
         content_change = ''
         for line in fileinput.input(file_result, inplace=1):
             change = ''
@@ -204,7 +204,7 @@ def analyze(files_result):
                     analysis = '?'
                 else:
                     diff = round(abs(case['result'] - baseline_result) / baseline_result, 2) * 100
-                    if diff > 5:
+                    if diff > PERF_CHANGE_PERCENT:
                         if re.search('\+', case['metric']):
                             if case['result'] < baseline_result:
                                 change = '-'
@@ -225,16 +225,16 @@ def analyze(files_result):
                     line = line.rstrip('\n') + ',' + analysis + '\n'
 
                 if change == '-':
-                    content_regression += '%s<br>' % (line)
+                    content_reg += '%s<br>' % (line)
                 elif change == '+':
-                    content_improvement += '%s<br>' % (line)
+                    content_imp += '%s<br>' % (line)
 
             sys.stdout.write(line)
-            if content_regression or content_improvement:
+            if content_reg or content_imp:
                 file_result_server = re.sub('-[\d]{14}', lambda p: '', file_result.split('/')[-1])
                 content_change = '<a href="%s" target="_blank">%s</a><br>%s%s<br>' % (path_web_webmark_result + '/' + file_result_server,
                                                                                       file_result_server.replace('.txt', ''),
-                                                                                      content_regression, content_improvement)
+                                                                                      content_reg, content_imp)
         contents_change += content_change
     if args.formal and contents_change:
         to = ['zhiqiangx.yu@intel.com', 'guanxian.li@intel.com']
@@ -337,7 +337,7 @@ class Webmark:
 
     def __del__(self):
         timer_stop(self.__class__.__name__)
-        logger.info('Total elapsed time for execution: ' + timer_diff(self.__class__.__name__))
+        logger.info('Total elapsed time for execution: ' + str(timer_diff(self.__class__.__name__)))
 
 
 class Baseline:
@@ -462,7 +462,7 @@ class Suite:
             if not dryrun:
                 driver.quit()
         fw.close()
-        analyze(file_result)
+        #analyze(file_result)
         if args.formal:
             upload(file_result)
 

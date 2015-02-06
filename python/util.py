@@ -37,6 +37,7 @@ from HTMLParser import HTMLParser
 import json
 from httplib import BadStatusLine
 import codecs
+import operator
 
 # </import>
 
@@ -279,6 +280,8 @@ PERF_COMBS_INDEX_MODULE_VERSION = 7
 PERF_COMBS_INDEX_MODULE_VERSION_MIN = 0
 PERF_COMBS_INDEX_MODULE_VERSION_MAX = 1
 PERF_COMBS_INDEX_MODULE_VERSION_INTERVAL = 2
+
+PERF_CHANGE_PERCENT = 5  # means regression or improvement
 ## </chromium>
 # </globals>
 
@@ -616,21 +619,27 @@ def stop_prixoxy():
         execute('sudo killall privoxy')
 
 
-def timer_start(tag):
+def timer_start(tag, microsecond=False):
     if tag not in timer:
         timer[tag] = [0, 0]
-    timer[tag][0] = datetime.datetime.now().replace(microsecond=0)
+    if microsecond:
+        timer[tag][0] = datetime.datetime.now()
+    else:
+        timer[tag][0] = datetime.datetime.now().replace(microsecond=0)
 
 
-def timer_stop(tag):
-    timer[tag][1] = datetime.datetime.now().replace(microsecond=0)
+def timer_stop(tag, microsecond=False):
+    if microsecond:
+        timer[tag][1] = datetime.datetime.now()
+    else:
+        timer[tag][1] = datetime.datetime.now().replace(microsecond=0)
 
 
 def timer_diff(tag):
     if tag in timer:
-        return str(timer[tag][1] - timer[tag][0])
+        return timer[tag][1] - timer[tag][0]
     else:
-        return '0:00:00'
+        return datetime.timedelta(0)
 
 
 def get_caller_name():

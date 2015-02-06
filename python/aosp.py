@@ -344,7 +344,7 @@ def build():
                 error('Failed to build %s emulator' % target_arch)
 
         timer_stop(name_build)
-        info('Time for ' + name_build + ': ' + timer_diff(name_build))
+        info('Time for ' + name_build + ': ' + str(timer_diff(name_build)))
 
 
 def backup():
@@ -522,8 +522,8 @@ def flash_image():
         android_unlock_screen(device_id=device_id)
         # Remove guide screen
         android_tap(x=683, y=384, device_id=device_id)
-        android_tap(x=1300, y=700, device_id=device_id) # for asus_t100
-        android_tap(x=700, y=1150, device_id=device_id) # for ecs_e7
+        android_tap(x=1300, y=700, device_id=device_id)  # for asus_t100
+        android_tap(x=700, y=1150, device_id=device_id)  # for ecs_e7
         # After system boots up, it will show guide screen and never lock or turn off screen.
         android_set_screen_lock_none(device_id=device_id)
         android_set_display_sleep_30mins(device_id=device_id)
@@ -591,7 +591,7 @@ def analyze():
         error('Only baytrail is supported to analyze')
 
     analyze_issue(dir_aosp=dir_root, type=args.analyze_type, device_id=devices_id[0],
-            repo_type=repo_type, device_type=devices_type[0], product_brand=product_brand, product_name=product_name)
+                  repo_type=repo_type, device_type=devices_type[0], product_brand=product_brand, product_name=product_name)
 
 
 def push():
@@ -693,7 +693,7 @@ def verified_boot():
     path_fastboot = dir_linux + '/fastboot'
     efi_file = dir_root + '/hardware/intel/efi_prebuilts/efitools/linux-%s/LockDown.efi' % device_arch
 
-    android_enter_fastboot(device_id=device_id) 
+    android_enter_fastboot(device_id=device_id)
     execute('%s -s %s oem unlock' % (path_fastboot, device_id), interactive=True, dryrun=False)
     execute('%s -s %s flash efirun %s' % (path_fastboot, device_id, efi_file), interactive=True, dryrun=False)
     execute('%s -s %s getvar secureboot' % (path_fastboot, device_id), interactive=True, dryrun=False)
@@ -712,6 +712,7 @@ def _sync_repo(dir, cmd):
 def _get_product(device_arch, device_type):
     _setup_repo()
     return get_product(repo_type, device_arch, device_type, product_brand, product_name)
+
 
 def _get_combo(device_arch, device_type):
     return _get_product(device_arch, device_type) + '-' + variant

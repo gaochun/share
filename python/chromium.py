@@ -106,7 +106,6 @@ repo_type_info = {
         'test_filter': {},
     },
     'x64': {
-        'rev': 309665,
         'dir_patches': dir_share_python + '/chromium-patches/x64',
         'patches': {
             'src': [
@@ -345,6 +344,15 @@ def setup():
 
     (timestamp, dir_root, log) = setup_common(args, _teardown)
 
+    dir_src = dir_root + '/src'
+    build_type = args.build_type
+    if args.just_out:
+        dir_out_build_type = dir_src + '/out/' + build_type.capitalize()
+    else:
+        dir_out_build_type = dir_src + '/out-' + target_arch + '/out/' + build_type.capitalize()
+    dir_test = dir_root + '/test'
+    dir_test_timestamp = dir_test + '/' + timestamp
+
     repo_type = args.repo_type
 
     # set repo_type related global variables
@@ -354,8 +362,8 @@ def setup():
         else:
             globals()[key] = repo_type_info[repo_type][key]
 
-    if args.sync_upstream:
-        rev = chromium_rev_max
+    if args.sync_upstream or repo_type == 'x64':
+        rev = chromium_get_rev_max(dir_src)
 
     if args.rev:
         rev = args.rev
@@ -373,15 +381,6 @@ def setup():
             target_module = 'webview_shell'
     else:
         target_module = args.target_module
-
-    dir_src = dir_root + '/src'
-    build_type = args.build_type
-    if args.just_out:
-        dir_out_build_type = dir_src + '/out/' + build_type.capitalize()
-    else:
-        dir_out_build_type = dir_src + '/out-' + target_arch + '/out/' + build_type.capitalize()
-    dir_test = dir_root + '/test'
-    dir_test_timestamp = dir_test + '/' + timestamp
 
     setenv('GYP_GENERATORS', 'ninja')
 

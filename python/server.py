@@ -103,6 +103,7 @@ def start():
     elif host_name == 'wp-03':
         _run_one('update_share')
         _run_one('chrome_android')
+        _run_one('webcatch_build')
 
     elif host_name == 'wp-04':
         _run_one('update_share')

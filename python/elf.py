@@ -36,7 +36,7 @@ def size():
         return
 
     name_size = {}
-    lines = _get_lines(cmd='readelf -S ' + elf)
+    lines = _get_lines(cmd='readelf -S --wide ' + elf)
     for line in lines:
         match = re.search('\[\s*(\d+)\]', line)
         if match:

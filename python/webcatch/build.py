@@ -30,6 +30,8 @@ slave_only = False
 comb_valid = {
     ('android', 'x86', 'content_shell'): ['(.*).apk$', 260368, 301780],
     ('android', 'x86_64', 'content_shell'): ['(.*).apk$', 260368, 301780],
+    ('android', 'x86', 'chrome_shell'): ['(.*).apk$', 260368, 297098],
+    ('android', 'x86_64', 'chrome_shell'): ['(.*).apk$', 260368, 297098],
     ('android', 'x86', 'webview_shell'): ['(.*).apk$', 233137, 252136],
     ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 233137, 252136],
     ('linux', 'x86', 'chrome'): ['(.*).tar.gz$', 233137, 236088],

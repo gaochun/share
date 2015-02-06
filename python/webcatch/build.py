@@ -543,24 +543,15 @@ def _build_one(comb_next):
             result_build = execute(cmd_build, dryrun=DRYRUN)
 
     ## handle result, either success or failure. TODO: Need to handle other comb.
-    if target_os == 'android' and target_module == 'content_shell':
-        if result_build[0] or not os.path.exists(dir_out_build_type + '/apks/ContentShell.apk'):
+    if target_os == 'android' and target_module in ['content_shell', 'chrome_shell', 'webview_shell']:
+        name_apk = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_APK]
+        if result_build[0] or not os.path.exists(dir_out_build_type + '/apks/%s.apk' % name_apk):
             file_final = dir_comb + '/' + str(rev) + '.FAIL'
             execute('touch ' + file_final)
             result = False
         else:
             file_final = dir_comb + '/' + str(rev) + '.apk'
-            execute('cp ' + dir_out_build_type + '/apks/ContentShell.apk ' + file_final, dryrun=DRYRUN)
-            execute('rm -f ' + file_log)
-            result = True
-    elif target_os == 'android' and target_module == 'webview_shell':
-        if result_build[0] or not os.path.exists(dir_out_build_type + '/apks/AndroidWebView.apk'):
-            file_final = dir_comb + '/' + str(rev) + '.FAIL'
-            execute('touch ' + file_final)
-            result = False
-        else:
-            file_final = dir_comb + '/' + str(rev) + '.apk'
-            execute('cp ' + dir_out_build_type + '/apks/AndroidWebView.apk ' + file_final, dryrun=DRYRUN)
+            execute('cp ' + dir_out_build_type + '/apks/%s.apk ' % name_apk + file_final, dryrun=DRYRUN)
             execute('rm -f ' + file_log)
             result = True
     elif target_os == 'linux' and target_module == 'chrome':

@@ -221,29 +221,29 @@ chromium_rev_max = 9999999
 
 # src/build/android/pylib/constants.py
 chromium_android_info = {
-    'chrome_stable': ['com.android.chrome', '.Main', True],
-    'chrome_beta': ['com.chrome.beta', '.Main', True],
-    'stock_browser': ['com.android.browser', '.BrowserActivity', True],
-    'content_shell': ['org.chromium.content_shell_apk', '.ContentShellActivity', True],
-    'chrome_shell': ['org.chromium.chrome.shell', '.ChromeShellActivity', True],
-    'webview_shell': ['org.chromium.android_webview.shell', '.AwShellActivity', False],
+    'chrome_stable': ['', 'com.android.chrome', '.Main', True],
+    'chrome_beta': ['', 'com.chrome.beta', '.Main', True],
+    'stock_browser': ['', 'com.android.browser', '.BrowserActivity', True],
+    'content_shell': ['ContentShell', 'org.chromium.content_shell_apk', '.ContentShellActivity', True],
+    'chrome_shell': ['ChromeShell', 'org.chromium.chrome.shell', '.ChromeShellActivity', True],
+    'webview_shell': ['AndroidWebView', 'org.chromium.android_webview.shell', '.AwShellActivity', False],
 
     # self defined
     ## after the change of package name and AndroidManifest.xml
-    'chromium_stable': ['com.android.chromium', 'com.google.android.apps.chrome.Main', False],
-    'chromium_beta': ['com.chromium.beta', 'com.google.android.apps.chrome.Main', False],
-    'chromium2_stable': ['com.android.chrome', 'com.google.android.apps.chrome.Main', True],
-    'chromium2_beta': ['com.chrome.beta', 'com.google.android.apps.chrome.Main', True],
+    'chromium_stable': ['', 'com.android.chromium', 'com.google.android.apps.chrome.Main', False],
+    'chromium_beta': ['', 'com.chromium.beta', 'com.google.android.apps.chrome.Main', False],
+    'chromium2_stable': ['', 'com.android.chrome', 'com.google.android.apps.chrome.Main', True],
+    'chromium2_beta': ['', 'com.chrome.beta', 'com.google.android.apps.chrome.Main', True],
     ## before the change of package name and AndroidManifest.xml
-    'chrome_example': ['com.example.chromium', 'com.google.android.apps.chrome.Main', False],
+    'chrome_example': ['', 'com.example.chromium', 'com.google.android.apps.chrome.Main', False],
     ## old builds before transition, including some M33 builds
-    'chrome_example_stable': ['com.chromium.stable', 'com.google.android.apps.chrome.Main', False],
-    'chrome_example_beta': ['com.chromium.beta', 'com.google.android.apps.chrome.Main', False],
+    'chrome_example_stable': ['', 'com.chromium.stable', 'com.google.android.apps.chrome.Main', False],
+    'chrome_example_beta': ['', 'com.chromium.beta', 'com.google.android.apps.chrome.Main', False],
 }
-CHROMIUM_ANDROID_INFO_INDEX_PKG = 0
-CHROMIUM_ANDROID_INFO_INDEX_ACT = 1
-CHROMIUM_ANDROID_INFO_INDEX_ISKNOWN = 2
-
+CHROMIUM_ANDROID_INFO_INDEX_APK = 0
+CHROMIUM_ANDROID_INFO_INDEX_PKG = 1
+CHROMIUM_ANDROID_INFO_INDEX_ACT = 2
+CHROMIUM_ANDROID_INFO_INDEX_ISKNOWN = 3
 
 # Each chromium version is: major.minor.build.patch
 # major -> svn rev, git commit, build. major commit is after build commit.

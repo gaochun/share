@@ -87,16 +87,19 @@ server_chromeforandroid = servers[2]
 target_arch_index = {'x86': 0, 'arm': 1, 'x86_64': 2, 'arm64': 3}
 target_arch_strip = {
     'x86': 'i686-linux-android-strip',
+    'x86_64': 'i686-linux-android-strip',
     'arm': 'arm-linux-androideabi-strip',
+    'arm64': 'aarch64-linux-android-strip',
 }
 
 target_os_all = ['android', 'linux']
-target_arch_all = ['x86', 'arm', 'x86_64']
+target_arch_all = ['x86', 'arm', 'x86_64', 'arm64']
 target_arch_chrome_android = target_arch_all[0:2]
 target_arch_info = {
     'x86': ['x86'],
     'arm': ['armeabi-v7a'],
     'x86_64': ['x86_64'],
+    'arm64': ['arm64'],
 }
 TARGET_ARCH_INFO_INDEX_ABI = 0
 

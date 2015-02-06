@@ -344,6 +344,15 @@ def setup():
 
     (timestamp, dir_root, log) = setup_common(args, _teardown)
 
+    target_arch = args.target_arch
+    if not args.target_module:
+        if target_os == 'linux':
+            target_module = 'chrome'
+        elif target_os == 'android':
+            target_module = 'webview_shell'
+    else:
+        target_module = args.target_module
+
     dir_src = dir_root + '/src'
     build_type = args.build_type
     if args.just_out:
@@ -372,15 +381,6 @@ def setup():
         result = execute('which ' + cmd, show_cmd=False)
         if result[0]:
             error('Could not find ' + cmd + ', and you may use --path-extra to designate it')
-
-    target_arch = args.target_arch
-    if not args.target_module:
-        if target_os == 'linux':
-            target_module = 'chrome'
-        elif target_os == 'android':
-            target_module = 'webview_shell'
-    else:
-        target_module = args.target_module
 
     setenv('GYP_GENERATORS', 'ninja')
 

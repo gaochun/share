@@ -545,7 +545,10 @@ def _build_one(comb_next):
     ## retry here
     if result_build[0]:
         if target_os == 'android':
-            execute('sudo ' + dir_repo + '/src/build/install-build-deps-android.sh', interactive=True, dryrun=DRYRUN)
+            cmd = 'sudo ' + dir_repo + '/src/build/install-build-deps-android.sh'
+            if target_arch[:3] == 'arm':
+                cmd += ' --arm'
+            execute(cmd=cmd, interactive=True, dryrun=DRYRUN)
             result_build = execute(cmd_build, dryrun=DRYRUN, show_progress=True)
         if result_build[0] and not args.keep_out:
             execute('rm -rf ' + dir_repo + '/src/out*', dryrun=DRYRUN)

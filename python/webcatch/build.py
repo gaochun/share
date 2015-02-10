@@ -545,7 +545,7 @@ def _build_one(comb_next):
     ## retry here
     if result_build[0]:
         if target_os == 'android':
-            cmd = 'sudo ' + dir_repo + '/src/build/install-build-deps-android.sh'
+            cmd = dir_repo + '/src/build/install-build-deps-android.sh'
             if target_arch[:3] == 'arm':
                 cmd += ' --arm'
             execute(cmd, interactive=True, dryrun=DRYRUN)

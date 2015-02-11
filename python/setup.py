@@ -209,10 +209,7 @@ def config():
     # Change default shell
     execute('sudo chsh -s /bin/zsh ' + username, show_cmd=False)
 
-    if username == 'gyagp':
-        is_sylk = True
-    else:
-        is_sylk = False
+    is_sylk = True
 
     copy_file(dir_linux_config, 'bashrc', dir_home, '.bashrc', is_sylk=is_sylk)
     copy_file(dir_linux_config, 'gdbinit', dir_home, '.gdbinit', is_sylk=is_sylk)

@@ -13,8 +13,10 @@ combs_all = [
     #['asus_t100_64p', 'x86_64', 'powersave', '400000', 'android', 'x86', 'content_shell', ['302000', '999999', 200]],
     #['asus_t100_64p', 'x86_64', 'powersave', '400000', 'android', 'x86', 'chrome_stable', ['38', '99', 1]],
     #['asus_t100_64p', 'x86_64', 'powersave', '400000', 'android', 'x86', 'chrome_beta', ['38', '99', 1]],
-    ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86_64', 'content_shell', ['300000', '999999', 200]],
-    ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'content_shell', ['300000', '999999', 200]],
+    #['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86_64', 'content_shell', ['300000', '999999', 200]],
+    #['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'content_shell', ['300000', '999999', 200]],
+    ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86_64', 'chrome_shell', ['297000', '999999', 200]],
+    ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'chrome_shell', ['297000', '999999', 200]],
     ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'chrome_stable', ['38', '99', 1]],
     ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'chrome_beta', ['38', '99', 1]],
 ]
@@ -146,10 +148,10 @@ def _get_combs_from_server(comb_type, comb):
         str_regular = '%s-(\d+\.\d+\.\d+\.\d+|\d{6})' % ('-'.join(comb[PERF_COMBS_INDEX_DEVICE_PRODUCT:PERF_COMBS_INDEX_MODULE_VERSION]))
         path_server = path_web_webmark_result
     elif comb_type == 'available':
-        if re.match('chrome', module_name):
+        if module_name == 'chrome_stable' or module_name == 'chrome_beta':
             str_regular = '\d+\.\d+\.\d+\.\d+\-(stable|beta)'
             path_server = '%s/%s-%s-%s' % (path_web_chrome_android, module_os, module_arch, 'chrome')
-        elif module_name == 'content_shell':
+        elif module_name == 'content_shell' or module_name == 'webview_shell' or module_name == 'chrome_shell':
             str_regular = '\d{6}.apk'
             path_server = '%s/%s-%s-%s' % (path_web_webcatch, module_os, module_arch, module_name)
 
@@ -168,10 +170,10 @@ def _get_combs_from_server(comb_type, comb):
                 comb_temp = match.group(0).split('-')
                 combs.append(comb_temp)
             elif comb_type == 'available':
-                if re.match('chrome', module_name):
+                if module_name == 'chrome_stable' or module_name == 'chrome_beta':
                     comb_module_name_temp = 'chrome_' + match.group(0).split('-')[1]
                     comb_module_version_temp = match.group(0).split('-')[0]
-                elif module_name == 'content_shell':
+                elif module_name == 'content_shell' or module_name == 'webview_shell' or module_name == 'chrome_shell':
                     comb_module_name_temp = module_name
                     comb_module_version_temp = match.group(0).replace('.apk', '')
 

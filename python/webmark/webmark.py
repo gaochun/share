@@ -398,7 +398,7 @@ class Suite:
             if module.path == 'auto':
                 if module.name == 'chrome_stable' or module.name == 'chrome_beta':
                     module_path = path_web_chrome_android + '/%s-%s-chrome/%s-%s/Chrome.apk' % (module.os, module.arch, module.version, module.name.replace('chrome_', ''))
-                elif module.name == 'content_shell' or module.name == 'webview_shell':
+                elif module.name == 'content_shell' or module.name == 'webview_shell' or module.name == 'chrome_shell':
                     module_path = path_web_webcatch + '/%s-%s-%s/%s.apk' % (module.os, module.arch, module.name, module.version)
                 else:
                     error('module path is not correct')

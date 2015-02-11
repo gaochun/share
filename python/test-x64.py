@@ -85,8 +85,9 @@ def setup():
     (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
 
     for index, device_id in enumerate(devices_id):
-        if devices_arch[index] in target_archs and devices_arch[index] not in devices_info:
-            devices_info[devices_arch[index]] = device_id
+        device_arch = devices_arch[index]
+        if device_arch in target_archs and device_arch not in devices_info:
+            devices_info[device_arch] = device_id
 
     if len(devices_info) != len(target_archs):
         error('Please ensure correct devices are connected')
@@ -112,24 +113,39 @@ def test():
             execute(cmd, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
 
-    for arch in target_archs:
-        if 'aosp-flash' in phases:
-            if not os.path.exists(dir_aosp):
-                error(dir_aosp + ' does not exist')
-            backup_dir(dir_aosp)
+    if 'aosp-flash' in phases:
+        if not os.path.exists(dir_aosp):
+            error(dir_aosp + ' does not exist')
+        backup_dir(dir_aosp)
+
+        pool = Pool(processes=len(target_archs))
+        for arch in target_archs:
             cmd = python_aosp + ' --target-arch %s --target-type %s --device-id %s --flash-image ' % (arch, args.target_type, devices_info[arch])
             cmd = suffix_cmd(cmd, args, log)
-            execute(cmd, abort=True, interactive=True, dryrun=dryrun)
-            restore_dir()
+            pool.apply_async(execute, args=(cmd,), kwds=dict(abort=True, interactive=True, dryrun=dryrun))
+        pool.close()
+        pool.join()
 
-        if 'chromium-x64' in phases:
-            if not os.path.exists(dir_chromium):
-                error(dir_chromium + ' does not exist')
-            backup_dir(dir_chromium)
-            cmd = python_chromium + ' --target-arch %s --repo-type x64 --device-id %s --sync --runhooks --patch --build --test-run --test-formal' % (arch, devices_info[arch])
+        restore_dir()
+
+    if 'chromium-x64' in phases:
+        if not os.path.exists(dir_chromium):
+            error(dir_chromium + ' does not exist')
+        backup_dir(dir_chromium)
+
+        cmd = python_chromium + ' --repo-type x64 --sync --runhooks --patch'
+        cmd = suffix_cmd(cmd, args, log)
+        execute(cmd, abort=True, interactive=True, dryrun=dryrun)
+
+        pool = Pool(processes=len(target_archs))
+        for arch in target_archs:
+            cmd = python_chromium + ' --target-arch %s --repo-type x64 --device-id %s --build --test-run --test-formal' % (arch, devices_info[arch])
             cmd = suffix_cmd(cmd, args, log)
-            execute(cmd, abort=True, interactive=True, dryrun=dryrun)
-            restore_dir()
+            pool.apply_async(execute, args=(cmd,), kwds=dict(abort=True, interactive=True, dryrun=dryrun))
+        pool.close()
+        pool.join()
+
+        restore_dir()
 
 
 def _teardown():

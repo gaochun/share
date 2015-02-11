@@ -189,6 +189,9 @@ def config():
     copy_file(dir_linux_config, 'privoxy-config', '/etc/privoxy', 'config', is_sylk=is_sylk)
     copy_file(dir_linux_config, 'subversion-servers', '/etc/subversion', 'servers', is_sylk=is_sylk)
     copy_file(dir_linux_config, 'ssh-config', dir_home + '/.ssh', 'config', is_sylk=is_sylk)
+    copy_file(dir_linux_config, 'tsocks.conf', '/etc', is_sylk=is_sylk)
+    copy_file(dir_linux_config, 'proxychains.conf', '/etc', is_sylk=is_sylk)
+    copy_file(dir_linux_config, '51-android.rules', '/etc/udev/rules.d', is_sylk=is_sylk)
 
     copy_file(dir_linux_config, 'dnsmasq.conf', '/etc', is_sylk=is_sylk)
     copy_file(dir_linux_config, 'androidtool.cfg', dir_home + '/.android', is_sylk=is_sylk)

@@ -1495,12 +1495,14 @@ def android_gdb_module(device_id, module_name, target_arch, dir_src, dir_symbol=
 
 
 ## <chromium>
-def chromium_get_rev_max(dir_src):
+# need_fetch: True to get latest rev from upstream. False to get local latest rev.
+def chromium_get_rev_max(dir_src, need_fetch=True):
     if not os.path.exists(dir_src):
         error('Chromium src dir does not exist')
 
     backup_dir(dir_src)
-    execute('git fetch', dryrun=False)
+    if need_fetch:
+        execute('git fetch', dryrun=False)
     rev_hash = _chromium_get_rev_hash(chromium_rev_max)
     restore_dir()
     return rev_hash.keys()[0]

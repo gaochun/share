@@ -133,7 +133,7 @@ def test():
             error(dir_chromium + ' does not exist')
         backup_dir(dir_chromium)
 
-        cmd = python_chromium + ' --repo-type x64 --sync --runhooks --patch'
+        cmd = python_chromium + ' --repo-type x64 --sync --sync-upstream --runhooks --patch'
         cmd = suffix_cmd(cmd, args, log)
         execute(cmd, abort=True, interactive=True, dryrun=dryrun)
 

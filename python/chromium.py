@@ -371,11 +371,12 @@ def setup():
         else:
             globals()[key] = repo_type_info[repo_type][key]
 
-    if args.sync_upstream or repo_type == 'x64':
-        rev = chromium_get_rev_max(dir_src)
-
     if args.rev:
         rev = args.rev
+    elif args.sync_upstream:
+        rev = chromium_get_rev_max(dir_src)
+    else:
+        rev = chromium_get_rev_max(dir_src, need_fetch=False)
 
     for cmd in ['adb', 'git', 'gclient']:
         result = execute('which ' + cmd, show_cmd=False)

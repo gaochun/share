@@ -887,7 +887,6 @@ def restore_dir(verbose=False):
 # path_xxx means full path of file
 def copy_file(dir_src, name_src, dir_dest, name_dest='', is_sylk=False):
     if not os.path.exists(dir_dest):
-        warning(dir_dest + ' does not exist')
         return
 
     if not name_dest:
@@ -900,6 +899,7 @@ def copy_file(dir_src, name_src, dir_dest, name_dest='', is_sylk=False):
         name_src = host_name + '-' + name_src
     path_src = dir_src + '/' + name_src
     if not os.path.exists(path_src):
+        warning(path_src + ' does not exist')
         return
 
     if is_sylk and os.path.islink(path_dest) and os.readlink(path_dest) == path_src:

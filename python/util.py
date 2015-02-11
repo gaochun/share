@@ -900,7 +900,6 @@ def copy_file(dir_src, name_src, dir_dest, name_dest='', is_sylk=False):
         name_src = host_name + '-' + name_src
     path_src = dir_src + '/' + name_src
     if not os.path.exists(path_src):
-        warning(path_src + ' does not exist')
         return
 
     if is_sylk and os.path.islink(path_dest) and os.readlink(path_dest) == path_src:

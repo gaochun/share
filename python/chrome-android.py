@@ -300,12 +300,12 @@ def local_setup():
     ensure_dir(dir_server_chrome_android_todo_apk)
 
     backup_dir(dir_server_chrome_android_todo_apk)
-    execute('scp %s@%s:%s/android-%s-chrome/%s-%s/README ./' % (server_chromeforandroid[SERVERS_INDEX_USERNAME],
-                                                                server_chromeforandroid[SERVERS_INDEX_HOSTNAME],
+    execute('scp %s@%s:%s/android-%s-chrome/%s-%s/README ./' % (server_chromeforandroid[MACHINES_INDEX_USERNAME],
+                                                                server_chromeforandroid[MACHINES_INDEX_HOSTNAME],
                                                                 dir_server_chromium,
                                                                 local_target_arch, local_ver, local_ver_type), interactive=True)
-    execute('scp %s@%s:%s/android-%s-chrome/%s-%s/Chrome.apk ./' % (server_chromeforandroid[SERVERS_INDEX_USERNAME],
-                                                                    server_chromeforandroid[SERVERS_INDEX_HOSTNAME],
+    execute('scp %s@%s:%s/android-%s-chrome/%s-%s/Chrome.apk ./' % (server_chromeforandroid[MACHINES_INDEX_USERNAME],
+                                                                    server_chromeforandroid[MACHINES_INDEX_HOSTNAME],
                                                                     dir_server_chromium,
                                                                     local_target_arch, local_ver, local_ver_type), interactive=True)
     file_readme = '%s/%s/%s-%s/README' % (dir_server_chrome_android_todo, local_target_arch, local_ver, local_ver_type)
@@ -316,8 +316,8 @@ def local_setup():
     if os.path.exists('%s/%s' % (dir_project_chrome_android, local_ver)):
         info('The source code of chrome-%s_%s have been downloaded' % (local_ver_type, local_ver))
     else:
-        execute('ssh %s@%s "cd %s; tar -zcvf - %s" | tar xzf - %s' % (server_chromeforandroid[SERVERS_INDEX_USERNAME],
-                                                                      server_chromeforandroid[SERVERS_INDEX_HOSTNAME],
+        execute('ssh %s@%s "cd %s; tar -zcvf - %s" | tar xzf - %s' % (server_chromeforandroid[MACHINES_INDEX_USERNAME],
+                                                                      server_chromeforandroid[MACHINES_INDEX_HOSTNAME],
                                                                       dir_project_chrome_android,
                                                                       local_ver,
                                                                       local_ver), interactive=True)

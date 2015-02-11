@@ -61,28 +61,29 @@ timer = {}
 webmark_format = ['category', 'name', 'version', 'metric', 'result']
 webmark_result_str = 'Result: '
 
-# servers
-servers = [
+machines = [
     ['wp-01', 'wp', '', 'sh.intel.com'],
     ['wp-02', 'wp', '', 'sh.intel.com'],
     ['wp-03', 'wp', '', 'sh.intel.com'],
     ['wp-04', 'wp', '', 'sh.intel.com'],
+    ['ubuntu-ygu5-01', 'gyagp', '', 'sh.intel.com'],
+    ['ubuntu-ygu5-02', 'gyagp', '', 'sh.intel.com'],
 ]
-SERVERS_INDEX_HOSTNAME = 0
-SERVERS_INDEX_USERNAME = 1
-SERVERS_INDEX_PASSWORD = 2
-SERVERS_INDEX_DOMAIN = 3
+MACHINES_INDEX_HOSTNAME = 0
+MACHINES_INDEX_USERNAME = 1
+MACHINES_INDEX_PASSWORD = 2
+MACHINES_INDEX_DOMAIN = 3
 
-# servers that webcatch can build on
+# machines that webcatch can build on
 servers_webcatch = [
-    servers[1],
-    servers[2],
+    machines[1],
+    machines[2],
 ]
 # main server for webcatch
-server_webcatch = servers[1]
+server_webcatch = machines[1]
 
 # main server for chromeforandroid
-server_chromeforandroid = servers[2]
+server_chromeforandroid = machines[2]
 
 target_arch_index = {'x86': 0, 'arm': 1, 'x86_64': 2, 'arm64': 3}
 target_arch_strip = {
@@ -175,12 +176,15 @@ dir_share_ignore_webcatch = dir_share_ignore + '/webcatch'
 dir_share_ignore_webcatch_download = dir_share_ignore_webcatch + '/download'
 dir_share_ignore_webcatch_log = dir_share_ignore_webcatch + '/log'
 dir_share_ignore_webcatch_pause = dir_share_ignore_webcatch + '/pause'
+dir_share_ignore_chromium = dir_share_ignore + '/chromium'
+file_share_ignore_chromium_perf = dir_share_ignore_chromium + '/perf'
 dir_share_python = dir_share + '/python'
 
 dir_webcatch = dir_share_python + '/webcatch'
 dir_webcatch_log = dir_webcatch + '/log'
 dir_webmark = dir_share_python + '/webmark'
 dir_linux = dir_share + '/linux'
+dir_linux_config = dir_linux + '/config'
 dir_common = dir_share + '/common'
 file_chromium = dir_share_python + '/chromium.py'
 file_aosp = dir_share_python + '/aosp.py'
@@ -806,6 +810,15 @@ def get_avail_disk(path='/workspace'):
     output = execute('df ' + path, return_output=True)
     device, size, used, avail, percent, mountpoint = output[1].split('\n')[1].split()
     return int(avail)
+
+
+def confirm(msg):
+    sys.stdout.write(msg + ' [yes/no]: ')
+    choice = raw_input().lower()
+    if choice in ['yes', 'y']:
+        return True
+    else:
+        return False
 ## </misc>
 
 
@@ -867,14 +880,28 @@ def restore_dir(verbose=False):
 
 
 # is_sylk: If true, just copy as a symbolic link
-def copy_file(file_src, dir_dest, is_sylk=False):
-    if not os.path.exists(file_src):
-        warning(file_src + ' does not exist')
+# dir_xxx means directory
+# name_xxx means file name
+# path_xxx means full path of file
+def copy_file(dir_src, name_src, dir_dest, name_dest='', is_sylk=False):
+    if not os.path.exists(dir_dest):
+        warning(dir_dest + ' does not exist')
         return
 
-    file_name = file_src.split('/')[-1]
-    file_dest = dir_dest + '/' + file_name
-    if os.path.islink(file_dest) and os.readlink(file_dest) == file_src:
+    if not name_dest:
+        name_dest = name_src
+    path_dest = dir_dest + '/' + name_dest
+
+    # hack the name_src to support machine specific config
+    # For example, wp-01-hostapd.conf
+    if os.path.exists(dir_src + '/' + host_name + '-' + name_src):
+        name_src = host_name + '-' + name_src
+    path_src = dir_src + '/' + name_src
+    if not os.path.exists(path_src):
+        warning(path_src + ' does not exist')
+        return
+
+    if is_sylk and os.path.islink(path_dest) and os.readlink(path_dest) == path_src:
         return
 
     if re.search(dir_home, dir_dest) or re.search(dir_workspace, dir_dest):
@@ -882,26 +909,24 @@ def copy_file(file_src, dir_dest, is_sylk=False):
     else:
         need_sudo = True
 
-    file_dest_bk = file_dest + '.bk'
-    if os.path.exists(file_dest) and not os.path.exists(file_dest_bk):
-        cmd = 'mv ' + file_dest + ' ' + file_dest_bk
+    if os.path.islink(path_dest) or os.path.exists(path_dest):
+        path_dest_bk = path_dest + '.bk'
+        if not os.path.exists(path_dest_bk) and not os.path.islink(path_dest_bk):
+            cmd = 'mv ' + path_dest + ' ' + path_dest_bk
+        else:
+            cmd = 'rm ' + path_dest
         if need_sudo:
             cmd = 'sudo ' + cmd
-        execute(cmd)
+        execute(cmd, show_cmd=True)
 
-    if not os.path.exists(dir_dest):
-        execute('mkdir -p ' + dir_dest)
-
-    backup_dir(dir_dest)
     if is_sylk:
-        cmd = 'ln -s ' + file_src + ' .'
+        cmd = 'ln -s ' + path_src + ' ' + path_dest
     else:
-        cmd = 'cp -f ' + file_src + ' ' + dir_dest
+        cmd = 'cp -f ' + path_src + ' ' + path_dest
 
     if need_sudo:
         cmd = 'sudo ' + cmd
-    execute(cmd)
-    restore_dir()
+    execute(cmd, show_cmd=True)
 
 
 def get_md5(path_file):

@@ -655,21 +655,14 @@ PROMPT='%F{blue}%M%F{green}%/
 ########## End of git support ##########
 
 
-
+hostname=$(hostname)
 DIR_PROJECT=/workspace/project
 DIR_SHARE=$DIR_PROJECT/share
-DIR_PYTHON=$DIR_SHARE/python
 DIR_LINUX=$DIR_SHARE/linux
 DIR_APACHE2=$DIR_LINUX/apache2
-DIR_COMMON=$DIR_SHARE/common
-DIR_SUBLIME2=$DIR_COMMON/sublime/2
-DIR_SUBLIME3=$DIR_COMMON/sublime/3
 DIR_HOME=~
 
 DIR_ETC=/etc
-DIR_ETC_APACHE2=$DIR_ETC/apache2
-
-# ln -s $DIR_SHARE/linux/.zshrc ~/.zshrc
 
 # Parameters: src_dir, src_file, dest_dir[, dest_file]
 function symbolic_link() {
@@ -696,21 +689,7 @@ function symbolic_link() {
   fi
 }
 
-# symbolic link
-symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp
-symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-cr
-symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-gmin
-symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-mcg
-symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-stable
-symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-stable-daily
-symbolic_link $DIR_PYTHON aosp.py $DIR_PROJECT/aosp-stable-cr
-
-symbolic_link $DIR_PYTHON chromium.py $DIR_PROJECT/chromium-linux
 export CHROME_DEVEL_SANDBOX=/usr/local/sbin/chrome-devel-sandbox
-symbolic_link $DIR_PYTHON chromium.py $DIR_PROJECT/chromium-android
-symbolic_link $DIR_PYTHON chromium.py $DIR_PROJECT/chromium-android-x64
-
-symbolic_link $DIR_PYTHON skia.py $DIR_PROJECT/skia
 
 # sublime
 export PATH=$PATH:/workspace/software/sublime
@@ -718,10 +697,6 @@ function sublime_text() {
     bash -c "LD_PRELOAD=/workspace/project/share/linux/libsublime-imfix.so sublime_text $1"
 }
 alias st='sublime_text'
-symbolic_link $DIR_SUBLIME2 Preferences.sublime-settings ~/.config/sublime-text-2/Packages/User
-symbolic_link $DIR_SUBLIME2 SublimeLinter.sublime-settings ~/.config/sublime-text-2/Packages/User
-symbolic_link $DIR_SUBLIME3 Preferences.sublime-settings ~/.config/sublime-text-3/Packages/User
-symbolic_link $DIR_SUBLIME3 SublimeLinter.sublime-settings ~/.config/sublime-text-3/Packages/User
 
 complete () {
         emulate -L zsh
@@ -742,35 +717,6 @@ complete () {
         fi
 }
 
-# machine specific configuration
-hostname=$(hostname)
-
-# <apache2>
-if [ $hostname == "ubuntu-ygu5-01" -o $hostname == "ubuntu-ygu5-02" -o $hostname == "wp-01" -o $hostname == "wp-02" -o $hostname == "wp-03" ] ; then
-    symbolic_link $DIR_APACHE2 apache2.conf $DIR_ETC_APACHE2
-    symbolic_link $DIR_APACHE2 .htaccess /workspace/server
-    symbolic_link $DIR_APACHE2/conf-available fqdn.conf $DIR_ETC_APACHE2/conf-available
-    symbolic_link $DIR_ETC_APACHE2/conf-available fqdn.conf $DIR_ETC_APACHE2/conf-enabled
-    symbolic_link $DIR_ETC_APACHE2/sites-available 000-default.conf $DIR_ETC_APACHE2/sites-enabled
-
-    if [ $hostname == "ubuntu-ygu5-01" -o $hostname == "ubuntu-ygu5-02" -o $hostname == "wp-01" ] ; then
-        symbolic_link $DIR_APACHE2 ports-8000.conf $DIR_ETC_APACHE2 ports.conf
-    else
-        symbolic_link $DIR_APACHE2 ports-80.conf $DIR_ETC_APACHE2 ports.conf
-    fi
-
-    if [ $hostname == "wp-02" ] ; then
-        symbolic_link $DIR_APACHE2/sites-available 000-benchmark.conf $DIR_ETC_APACHE2/sites-available 000-default.conf
-        symbolic_link $DIR_APACHE2/sites-available 001-browsermark.conf $DIR_ETC_APACHE2/sites-available
-        symbolic_link $DIR_ETC_APACHE2/sites-available 001-browsermark.conf $DIR_ETC_APACHE2/sites-enabled
-    elif [ $hostname == "ubuntu-ygu5-01" -o $hostname == "ubuntu-ygu5-02" -o $hostname == "wp-01" ] ; then
-        symbolic_link $DIR_APACHE2/sites-available 000-default-8000.conf $DIR_ETC_APACHE2/sites-available 000-default.conf
-    else
-        symbolic_link $DIR_APACHE2/sites-available 000-default-80.conf $DIR_ETC_APACHE2/sites-available 000-default.conf
-    fi
-fi
-# </apache2>
-
 # <dir_default>
 DIR_DEFAULT=$DIR_PROJECT
 if [ $hostname == "ubuntu-y560d" ] ; then
@@ -781,10 +727,3 @@ if [ ! -d $DIR_DEFAULT ] ; then
 fi
 cd $DIR_DEFAULT
 # </dir_default>
-
-# <other>
-if [ $hostname == "ubuntu-ygu5-01" -o $hostname == "ubuntu-ygu5-02" ] ; then
-    symbolic_link $DIR_LINUX .gitconfig ~
-    symbolic_link $DIR_LINUX/ssh config ~/.ssh
-fi
-# </other>

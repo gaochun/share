@@ -54,8 +54,8 @@ def setup():
 
     dir_aosp = dir_project + '/' + args.dir_aosp
     dir_chromium = dir_project + '/' + args.dir_chromium
-    copy_file(file_aosp, dir_aosp, is_sylk=True)
-    copy_file(file_chromium, dir_chromium, is_sylk=True)
+    copy_file(dir_share_python, 'aosp.py', dir_aosp, is_sylk=True)
+    copy_file(dir_share_python, 'chromium.py', dir_chromium, is_sylk=True)
 
     pkgs = ['android-tools-adb']
     for pkg in pkgs:

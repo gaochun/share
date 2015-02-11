@@ -185,6 +185,8 @@ dir_webcatch_log = dir_webcatch + '/log'
 dir_webmark = dir_share_python + '/webmark'
 dir_linux = dir_share + '/linux'
 dir_linux_config = dir_linux + '/config'
+dir_linux_tool = dir_linux + '/tool'
+path_tool_fastboot = dir_linux_tool + '/fastboot'
 dir_common = dir_share + '/common'
 file_chromium = dir_share_python + '/chromium.py'
 file_aosp = dir_share_python + '/aosp.py'
@@ -208,8 +210,8 @@ dir_project_webcatch_project = dir_project_webcatch + '/project'
 dir_project_webcatch_log = dir_project_webcatch + '/log'
 dir_tool = dir_workspace + '/tool'
 
-tool_chromedriver = dir_linux + '/chromedriver/chromedriver-2.12'
-tool_apktool = dir_linux + '/apktool/apktool_2.0.0rc3.jar'
+tool_chromedriver = dir_linux_tool + '/chromedriver/chromedriver-2.12'
+tool_apktool = dir_linux_tool + '/apktool/apktool_2.0.0rc3.jar'
 
 path_web_benchmark = 'http://wp-02.sh.intel.com'
 path_web_webbench = path_web_benchmark + '/webbench'
@@ -1062,7 +1064,7 @@ def device_connected(device_id='', mode='system'):
             option = '-t'
         else:
             option = '-s'
-        path_fastboot = dir_linux + '/fastboot'
+        path_fastboot = path_tool_fastboot
         result = execute('timeout 1s %s %s %s getvar all' % (path_fastboot, option, device_id))
 
     if result[0]:
@@ -1148,7 +1150,7 @@ def get_symbol(lines, dirs_symbol):
                 path = dir_symbol + '/libchrome%s.so' % name
                 if not os.path.exists(path):
                     continue
-                cmd = dir_linux + '/x86_64-linux-android-addr2line -C -e %s -f %s' % (path, match.group(1))
+                cmd = dir_linux_tool + '/x86_64-linux-android-addr2line -C -e %s -f %s' % (path, match.group(1))
                 result = execute(cmd, return_output=True, show_cmd=False)
                 print line
                 print result[1]

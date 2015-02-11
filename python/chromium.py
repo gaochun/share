@@ -484,8 +484,8 @@ def buildid(force=False):
         execute('java -jar %s d Chrome.apk -o %s' % (tool_apktool, dir_chromium), interactive=True, abort=True)
         execute('cp -rf lib %s' % dir_chromium)
         execute('java -jar %s b %s -o %s_unaligned.apk' % (tool_apktool, name_apk, name_apk), interactive=True, abort=True)
-        execute('jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s/debug.keystore -storepass android %s_unaligned.apk androiddebugkey' % (dir_linux, name_apk), interactive=True, abort=True)
-        execute('%s/zipalign -f -v 4 %s_unaligned.apk %s.apk' % (dir_linux, name_apk, name_apk), interactive=True, abort=True)
+        execute('jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s/debug.keystore -storepass android %s_unaligned.apk androiddebugkey' % (dir_linux_tool, name_apk), interactive=True, abort=True)
+        execute('%s/zipalign -f -v 4 %s_unaligned.apk %s.apk' % (dir_linux_tool, name_apk, name_apk), interactive=True, abort=True)
         execute('rm -f %s_unaligned.apk' % name_apk, abort=True)
         chrome_android_apk = name_apk + '.apk'
 
@@ -847,9 +847,9 @@ def postbuild(force=False):
             # backup the file with symbol
             if not is_same_file(file_libchrome_prebuilt, path_file_libchrome):
                 execute('cp -f %s %s' % (file_libchrome_prebuilt, path_file_libchrome), interactive=True, abort=True, dryrun=False)
-                execute(dir_linux + '/' + target_arch_strip[target_arch] + ' ' + file_libchrome_prebuilt + ' -o ' + file_libchrome, abort=True, dryrun=False)
+                execute(dir_linux_tool + '/' + target_arch_strip[target_arch] + ' ' + file_libchrome_prebuilt + ' -o ' + file_libchrome, abort=True, dryrun=False)
             if not os.path.exists(file_libchrome):
-                execute(dir_linux + '/' + target_arch_strip[target_arch] + ' ' + file_libchrome_prebuilt + ' -o ' + file_libchrome, abort=True, dryrun=False)
+                execute(dir_linux_tool + '/' + target_arch_strip[target_arch] + ' ' + file_libchrome_prebuilt + ' -o ' + file_libchrome, abort=True, dryrun=False)
             # replace the file without symbol
             execute('cp -f %s %s/%s' % (file_libchrome, dir_chromium_lib, file_libchrome), interactive=True, abort=True)
             restore_dir()
@@ -873,8 +873,8 @@ def postbuild(force=False):
             # --zipalign: can be found in SDK
             backup_dir(dir_server_chrome_android_todo_comb)
             execute('java -jar %s b %s -o %s_unaligned.apk' % (tool_apktool, name_apk, name_apk), interactive=True, abort=True)
-            execute('jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s/debug.keystore -storepass android %s_unaligned.apk androiddebugkey' % (dir_linux, name_apk), interactive=True, abort=True)
-            execute('%s/zipalign -f -v 4 %s_unaligned.apk %s.apk' % (dir_linux, name_apk, name_apk), interactive=True, abort=True)
+            execute('jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore %s/debug.keystore -storepass android %s_unaligned.apk androiddebugkey' % (dir_linux_tool, name_apk), interactive=True, abort=True)
+            execute('%s/zipalign -f -v 4 %s_unaligned.apk %s.apk' % (dir_linux_tool, name_apk, name_apk), interactive=True, abort=True)
             execute('rm -f %s_unaligned.apk' % name_apk, abort=True)
             restore_dir()
         _update_phase(get_caller_name())

@@ -1,8 +1,0 @@
-#!/bin/bash
-# Use this config to enable the bash completion
-# complete -o filenames -F _root_command notify
-# 如果命令行是 a && b形式，写的时候需要 notify "./bootstrap-configure && make"
-
-eval $* && \
-notify-send "Cool~ \"$*\" finished!" -i 'emblem-cool' || \
-notify-send "Oh No! \"$*\" failed!" -i 'emblem-ohno'

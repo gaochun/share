@@ -277,7 +277,7 @@ def build():
 
     # make
     if repo_type == 'upstream' and ver_cmp(repo_ver, '5.0') < 0:
-        make = dir_linux + '/make/make-3.81'
+        make = dir_linux_tool + '/make-3.81'
     else:
         make = 'make'
 
@@ -398,7 +398,7 @@ def flash_image():
     if os.path.exists(dir_root + '/out/dist/fastboot'):
         path_fastboot = dir_root + '/out/dist/fastboot'
     else:
-        path_fastboot = dir_linux + '/fastboot'
+        path_fastboot = path_tool_fastboot
 
     if repo_type != 'upstream':
         dir_extract = '/tmp/' + timestamp
@@ -468,8 +468,8 @@ def flash_image():
 
         android_enter_dnx(device_id=device_id)
         # workaround: for fastboot not ready, use one prebuilt fastboot.img
-        execute(dir_linux + '/fastboot -s %s flash osloader %s/loader.efi' % (device_id, dir_workaround), interactive=True, dryrun=False)
-        execute(dir_linux + '/fastboot -s %s boot %s/fastboot.img' % (device_id, dir_workaround), interactive=True, dryrun=False)
+        execute(path_tool_fastboot + ' -s %s flash osloader %s/loader.efi' % (device_id, dir_workaround), interactive=True, dryrun=False)
+        execute(path_tool_fastboot + ' -s %s boot %s/fastboot.img' % (device_id, dir_workaround), interactive=True, dryrun=False)
 
         # sleep until entering fastboot mode
         info('Sleeping 10 seconds until entering fastboot mode')
@@ -690,7 +690,7 @@ def verified_boot():
 
     device_id = devices_id[0]
     device_arch = targets_arch[0]
-    path_fastboot = dir_linux + '/fastboot'
+    path_fastboot = path_tool_fastboot
     efi_file = dir_root + '/hardware/intel/efi_prebuilts/efitools/linux-%s/LockDown.efi' % device_arch
 
     android_enter_fastboot(device_id=device_id)

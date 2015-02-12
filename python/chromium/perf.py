@@ -134,7 +134,7 @@ def run():
             fw.close()
 
             if os.path.exists(file_config_todo):
-                cmd = '%s --config %s --formal' % (python_webmark, file_config_todo)
+                cmd = '%s --config %s --formal' % (python_share_webmark, file_config_todo)
                 execute(cmd, interactive=True)
 
 

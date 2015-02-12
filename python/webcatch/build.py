@@ -19,7 +19,7 @@ sys.path.append(sys.path[0] + '/..')
 from util import *
 
 DRYRUN = False
-dir_patch = dir_webcatch + '/patch'
+dir_patch = dir_share_python_webcatch + '/patch'
 
 rev_min = 0
 rev_max = 0
@@ -508,10 +508,10 @@ def _build_one(comb_next):
         execute(_remotify_cmd('touch ' + file_lock))
 
     # sync
-    cmd_sync = python_chromium + ' --sync --sync-reset --dir-root ' + dir_repo + ' --rev ' + str(rev)
+    cmd_sync = python_share_chromium + ' --sync --sync-reset --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_sync, dryrun=DRYRUN, interactive=True)
     if result[0]:
-        cmd = python_chromium + ' --revert --dir-root ' + dir_repo
+        cmd = python_share_chromium + ' --revert --dir-root ' + dir_repo
         result = execute(cmd, dryrun=DRYRUN, interactive=True)
         if result[0]:
             _report_fail('revert', file_lock)
@@ -522,7 +522,7 @@ def _build_one(comb_next):
     _patch_after_sync(target_os, target_arch, target_module, rev)
 
     # makefile
-    cmd_makefile = python_chromium + ' --makefile --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
+    cmd_makefile = python_share_chromium + ' --makefile --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_makefile, dryrun=DRYRUN, show_progress=True)
     if result[0]:
         # Run hook to retry. E.g., for revision >=252065, we have to run with hook to update gn tool.
@@ -539,7 +539,7 @@ def _build_one(comb_next):
     ## remove apks first as sometimes ninja build error doesn't actually return error.
     execute('rm -f %s/apks/*' % dir_out_build_type)
     execute('rm -f %s/apks/chrome' % dir_out_build_type)
-    cmd_build = python_chromium + ' --build --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
+    cmd_build = python_share_chromium + ' --build --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result_build = execute(cmd_build, dryrun=DRYRUN, show_progress=True)
 
     ## retry here

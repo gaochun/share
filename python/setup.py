@@ -211,22 +211,22 @@ def config():
 
     is_sylk = True
 
-    copy_file(dir_linux_config, 'bashrc', dir_home, '.bashrc', is_sylk=is_sylk)
-    copy_file(dir_linux_config, 'gdbinit', dir_home, '.gdbinit', is_sylk=is_sylk)
-    copy_file(dir_linux_config, 'gitconfig', dir_home, '.gitconfig', is_sylk=is_sylk)
-    copy_file(dir_linux_config, 'vimrc', dir_home, '.vimrc', is_sylk=is_sylk)
-    copy_file(dir_linux_config, 'zshrc', dir_home, '.zshrc', is_sylk=is_sylk)
-    copy_file(dir_linux_config, 'privoxy-config', '/etc/privoxy', 'config', is_sylk=is_sylk)
-    copy_file(dir_linux_config, 'subversion-servers', '/etc/subversion', 'servers', is_sylk=is_sylk)
-    copy_file(dir_linux_config, 'ssh-config', dir_home + '/.ssh', 'config', is_sylk=is_sylk)
-    copy_file(dir_linux_config, 'tsocks.conf', '/etc', is_sylk=is_sylk)
-    copy_file(dir_linux_config, 'proxychains.conf', '/etc', is_sylk=is_sylk)
-    copy_file(dir_linux_config, '51-android.rules', '/etc/udev/rules.d', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config, 'bashrc', dir_home, '.bashrc', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config, 'gdbinit', dir_home, '.gdbinit', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config, 'gitconfig', dir_home, '.gitconfig', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config, 'vimrc', dir_home, '.vimrc', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config, 'zshrc', dir_home, '.zshrc', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config, 'privoxy-config', '/etc/privoxy', 'config', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config, 'subversion-servers', '/etc/subversion', 'servers', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config, 'ssh-config', dir_home + '/.ssh', 'config', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config, 'tsocks.conf', '/etc', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config, 'proxychains.conf', '/etc', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config, '51-android.rules', '/etc/udev/rules.d', is_sylk=is_sylk)
 
-    copy_file(dir_linux_config, 'dnsmasq.conf', '/etc', is_sylk=is_sylk)
-    copy_file(dir_linux_config, 'androidtool.cfg', dir_home + '/.android', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config, 'dnsmasq.conf', '/etc', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config, 'androidtool.cfg', dir_home + '/.android', is_sylk=is_sylk)
 
-    copy_file(dir_linux_config + '/hostapd', 'hostapd.conf', '/etc/hostapd', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config + '/hostapd', 'hostapd.conf', '/etc/hostapd', is_sylk=is_sylk)
 
     copy_file(dir_share_python, 'aosp.py', dir_project + '/aosp', is_sylk=is_sylk)
     copy_file(dir_share_python, 'aosp.py', dir_project + '/aosp-gminl', is_sylk=is_sylk)
@@ -239,34 +239,34 @@ def config():
 
     # sublime
     for version in ['2', '3']:
-        copy_file(dir_common + '/sublime/%s' % version, 'Preferences.sublime-settings', dir_home + '/.config/sublime-text-%s/Packages/User' % version, is_sylk=is_sylk)
-        copy_file(dir_common + '/sublime/%s' % version, 'SublimeLinter.sublime-settings', dir_home + '/.config/sublime-text-%s/Packages/User' % version, is_sylk=is_sylk)
+        copy_file(dir_share_common + '/sublime/%s' % version, 'Preferences.sublime-settings', dir_home + '/.config/sublime-text-%s/Packages/User' % version, is_sylk=is_sylk)
+        copy_file(dir_share_common + '/sublime/%s' % version, 'SublimeLinter.sublime-settings', dir_home + '/.config/sublime-text-%s/Packages/User' % version, is_sylk=is_sylk)
 
     # Chromium build
     copy_file('/usr/include/x86_64-linux-gnu', 'asm', '/usr/include', is_sylk=True)
 
     # apache2
-    dir_linux_config_apache2 = dir_linux_config + '/apache2'
+    dir_share_linux_config_apache2 = dir_share_linux_config + '/apache2'
     dir_etc_apache2 = '/etc/apache2'
-    copy_file(dir_linux_config_apache2, 'apache2.conf', dir_etc_apache2, is_sylk=is_sylk)
-    copy_file(dir_linux_config_apache2, '.htaccess', '/workspace/server', is_sylk=is_sylk)
-    copy_file(dir_linux_config_apache2 + '/conf-available', 'fqdn.conf', dir_etc_apache2 + '/conf-available', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config_apache2, 'apache2.conf', dir_etc_apache2, is_sylk=is_sylk)
+    copy_file(dir_share_linux_config_apache2, '.htaccess', '/workspace/server', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config_apache2 + '/conf-available', 'fqdn.conf', dir_etc_apache2 + '/conf-available', is_sylk=is_sylk)
     copy_file(dir_etc_apache2 + '/conf-available', 'fqdn.conf', dir_etc_apache2 + '/conf-enabled', is_sylk=is_sylk)
     copy_file(dir_etc_apache2 + '/sites-available', '000-default.conf', dir_etc_apache2 + '/sites-enabled', is_sylk=is_sylk)
 
     if host_name in ['ubuntu-ygu5-01', 'ubuntu-ygu5-02', 'wp-01']:
-        copy_file(dir_linux_config_apache2, 'ports-8000.conf', dir_etc_apache2, 'ports.conf', is_sylk=is_sylk)
+        copy_file(dir_share_linux_config_apache2, 'ports-8000.conf', dir_etc_apache2, 'ports.conf', is_sylk=is_sylk)
     else:
-        copy_file(dir_linux_config_apache2, 'ports-80.conf', dir_etc_apache2, 'ports.conf', is_sylk=is_sylk)
+        copy_file(dir_share_linux_config_apache2, 'ports-80.conf', dir_etc_apache2, 'ports.conf', is_sylk=is_sylk)
 
     if host_name == 'wp-02':
-        copy_file(dir_linux_config_apache2 + '/sites-available', '000-benchmark.conf', dir_etc_apache2 + '/sites-available', '000-default.conf', is_sylk=is_sylk)
-        copy_file(dir_linux_config_apache2 + '/sites-available', '001-browsermark.conf', dir_etc_apache2 + '/sites-available', is_sylk=is_sylk)
+        copy_file(dir_share_linux_config_apache2 + '/sites-available', '000-benchmark.conf', dir_etc_apache2 + '/sites-available', '000-default.conf', is_sylk=is_sylk)
+        copy_file(dir_share_linux_config_apache2 + '/sites-available', '001-browsermark.conf', dir_etc_apache2 + '/sites-available', is_sylk=is_sylk)
         copy_file(dir_etc_apache2 + '/sites-available', '001-browsermark.conf', dir_etc_apache2 + '/sites-enabled', is_sylk=is_sylk)
     elif host_name in ['ubuntu-ygu5-01', 'ubuntu-ygu5-02', 'wp-01']:
-        copy_file(dir_linux_config_apache2 + '/sites-available', '000-default-8000.conf', dir_etc_apache2 + '/sites-available', '000-default.conf', is_sylk=is_sylk)
+        copy_file(dir_share_linux_config_apache2 + '/sites-available', '000-default-8000.conf', dir_etc_apache2 + '/sites-available', '000-default.conf', is_sylk=is_sylk)
     else:
-        copy_file(dir_linux_config_apache2 + '/sites-available', '000-default-80.conf', dir_etc_apache2 + '/sites-available', '000-default.conf', is_sylk=is_sylk)
+        copy_file(dir_share_linux_config_apache2 + '/sites-available', '000-default-80.conf', dir_etc_apache2 + '/sites-available', '000-default.conf', is_sylk=is_sylk)
 
 
 def cleanup():

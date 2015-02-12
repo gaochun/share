@@ -36,7 +36,7 @@ ACT_CHECK = 1 << 3
 ACT_DISK = 1 << 4
 ACT_ALL = ACT_DOWNLOAD | ACT_FILE | ACT_DIR | ACT_CHECK | ACT_DISK
 
-cmd_common = python_chromium + ' --repo-type chrome-android --target-os android --target-module chrome'
+cmd_common = python_share_chromium + ' --repo-type chrome-android --target-os android --target-module chrome'
 
 devices_id = []
 
@@ -139,7 +139,7 @@ def download(force=False):
         options = webdriver.ChromeOptions()
         options.add_experimental_option('excludeSwitches', ['user-data-dir', 'ignore-certificate-errors', 'disable-default-apps'])
         options.add_argument('user-data-dir=%s' % (dir_tool + '/chrome-android/' + target_arch + '/chrome-profile'))
-        driver = webdriver.Chrome(executable_path=tool_chromedriver, chrome_options=options, service_args=['--verbose', '--log-path=%s/chromedriver-%s.log' % (dir_share_ignore_log, timestamp)])
+        driver = webdriver.Chrome(executable_path=path_share_chromedriver, chrome_options=options, service_args=['--verbose', '--log-path=%s/chromedriver-%s.log' % (dir_share_ignore_log, timestamp)])
 
         if args.download_type == 'all' or args.download_type == 'stable':
             driver.get('https://play.google.com/store/apps/details?id=' + chromium_android_info['chrome_stable'][CHROMIUM_ANDROID_INFO_INDEX_PKG])

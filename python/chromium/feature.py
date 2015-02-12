@@ -98,7 +98,7 @@ def test():
         if not os.path.exists(dir_aosp):
             error(dir_aosp + ' does not exist')
         backup_dir(dir_aosp)
-        cmd = python_aosp + ' --sync --patch --remove-out'
+        cmd = python_share_aosp + ' --sync --patch --remove-out'
         cmd = suffix_cmd(cmd, args, log)
         execute(cmd, interactive=True, abort=True, dryrun=dryrun)
         restore_dir()
@@ -108,7 +108,7 @@ def test():
             error(dir_aosp + ' does not exist')
         for arch in target_archs:
             backup_dir(dir_aosp)
-            cmd = python_aosp + ' --target-arch %s --target-type %s --build --backup' % (arch, args.target_type)
+            cmd = python_share_aosp + ' --target-arch %s --target-type %s --build --backup' % (arch, args.target_type)
             cmd = suffix_cmd(cmd, args, log)
             execute(cmd, abort=True, interactive=True, dryrun=dryrun)
             restore_dir()
@@ -120,7 +120,7 @@ def test():
 
         pool = Pool(processes=len(target_archs))
         for arch in target_archs:
-            cmd = python_aosp + ' --target-arch %s --target-type %s --device-id %s --flash-image ' % (arch, args.target_type, devices_info[arch])
+            cmd = python_share_aosp + ' --target-arch %s --target-type %s --device-id %s --flash-image ' % (arch, args.target_type, devices_info[arch])
             cmd = suffix_cmd(cmd, args, log)
             pool.apply_async(execute, args=(cmd,), kwds=dict(abort=True, interactive=True, dryrun=dryrun))
         pool.close()
@@ -133,13 +133,13 @@ def test():
             error(dir_chromium + ' does not exist')
         backup_dir(dir_chromium)
 
-        cmd = python_chromium + ' --repo-type feature --sync --sync-upstream --runhooks --patch'
+        cmd = python_share_chromium + ' --repo-type feature --sync --sync-upstream --runhooks --patch'
         cmd = suffix_cmd(cmd, args, log)
         execute(cmd, abort=True, interactive=True, dryrun=dryrun)
 
         pool = Pool(processes=len(target_archs))
         for arch in target_archs:
-            cmd = python_chromium + ' --target-arch %s --repo-type feature --device-id %s --build --test-run --test-formal' % (arch, devices_info[arch])
+            cmd = python_share_chromium + ' --target-arch %s --repo-type feature --device-id %s --build --test-run --test-formal' % (arch, devices_info[arch])
             cmd = suffix_cmd(cmd, args, log)
             pool.apply_async(execute, args=(cmd,), kwds=dict(abort=True, interactive=True, dryrun=dryrun))
         pool.close()

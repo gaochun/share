@@ -87,7 +87,7 @@ def setup():
     if has_process(chrome_driver):
         execute('sudo killall %s' % chrome_driver, show_cmd=False)
 
-    args_tmp = [dir_webmark + '/driver/' + chrome_driver]
+    args_tmp = [dir_share_python_webmark + '/driver/' + chrome_driver]
     if args.driver_log:
         log_tmp = dir_share_ignore_webmark_log + '/chromedriver-' + timestamp + '.log'
         args_tmp.append('--log-path=' + log_tmp)
@@ -351,7 +351,7 @@ class Baseline:
         else:
             if devices_product[0]:
                 device_product = devices_product[0].replace('_64p', '')
-                file_baseline = '%s/baseline/%s.json' % (dir_webmark, device_product)
+                file_baseline = '%s/baseline/%s.json' % (dir_share_python_webmark, device_product)
             else:
                 error('Baseline file must be designated')
         if not os.path.isfile(file_baseline):

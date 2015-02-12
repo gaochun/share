@@ -158,12 +158,54 @@ device_product_info['cruise8'] = device_product_info['cruise7']
 
 
 ## <path>
+dir_home = os.getenv('HOME')
+dir_workspace = '/workspace'
+
+# <server>
+path_server_backup = '//wp-01.sh.intel.com/backup'
+path_server_webmark = '//wp-02.sh.intel.com/webmark'
+# </server>
+
+# <web>
+path_web_benchmark = 'http://wp-02.sh.intel.com'
+path_web_webbench = path_web_benchmark + '/webbench'
+path_web_webcatch = path_web_benchmark + '/chromium'
+path_web_webmark = path_web_benchmark + '/webmark'
+path_web_webmark_result = path_web_webmark + '/result'
+path_web_chrome_android = 'http://wp-03.sh.intel.com/chromium'
+# </web>
+
+# <project> dir_project_xxx
+dir_project = dir_workspace + '/project'
+dir_project_chrome_android = dir_project + '/chrome-android'
+dir_project_webcatch = dir_project + '/webcatch'
+dir_project_webcatch_out = dir_project_webcatch + '/out'
+dir_project_webcatch_project = dir_project_webcatch + '/project'
+dir_project_webcatch_log = dir_project_webcatch + '/log'
+# </project>
+
+# <server> dir_server_xxx
+dir_server = dir_workspace + '/server'
+dir_server_aosp = dir_server + '/aosp'
+dir_server_chromium = dir_server + '/chromium'
+dir_server_webbench = dir_server + '/webbench'
+dir_server_chrome_android_todo = dir_server_chromium + '/android-chrome-todo'
+dir_server_chrome_android_todo_buildid = dir_server_chrome_android_todo + '/buildid'
+# </server>
+
+# <tool> dir_tool_xxx
+dir_tool = dir_workspace + '/tool'
+# </tool>
+
+
+# <share> dir_share_xxx
 def _get_real_dir(path):
     return os.path.split(os.path.realpath(path))[0]
 dir_temp = _get_real_dir(__file__)
 while not os.path.exists(dir_temp + '/.git'):
     dir_temp = _get_real_dir(dir_temp)
 dir_share = dir_temp
+
 dir_share_ignore = dir_share + '/ignore'
 dir_share_ignore_log = dir_share_ignore + '/log'
 dir_share_ignore_timestamp = dir_share_ignore + '/timestamp'
@@ -177,52 +219,25 @@ dir_share_ignore_webcatch_download = dir_share_ignore_webcatch + '/download'
 dir_share_ignore_webcatch_log = dir_share_ignore_webcatch + '/log'
 dir_share_ignore_webcatch_pause = dir_share_ignore_webcatch + '/pause'
 dir_share_ignore_chromium = dir_share_ignore + '/chromium'
-file_share_ignore_chromium_perf = dir_share_ignore_chromium + '/perf'
+path_share_ignore_chromium_perf = dir_share_ignore_chromium + '/perf'
+
 dir_share_python = dir_share + '/python'
+dir_share_python_webcatch = dir_share_python + '/webcatch'
+dir_share_python_webcatch_log = dir_share_python_webcatch + '/log'
+dir_share_python_webmark = dir_share_python + '/webmark'
+python_share_webmark = 'python ' + dir_share_python_webmark + '/webmark.py'
+python_share_chromium = 'python ' + dir_share_python + '/chromium.py'
+python_share_aosp = 'python ' + dir_share_python + '/aosp.py'
 
-dir_webcatch = dir_share_python + '/webcatch'
-dir_webcatch_log = dir_webcatch + '/log'
-dir_webmark = dir_share_python + '/webmark'
-dir_linux = dir_share + '/linux'
-dir_linux_config = dir_linux + '/config'
-dir_linux_tool = dir_linux + '/tool'
-path_tool_fastboot = dir_linux_tool + '/fastboot'
-dir_common = dir_share + '/common'
-file_chromium = dir_share_python + '/chromium.py'
-file_aosp = dir_share_python + '/aosp.py'
-file_webmark = dir_webmark + '/webmark.py'
-python_chromium = 'python ' + file_chromium
-python_aosp = 'python ' + file_aosp
-python_webmark = 'python ' + file_webmark
+dir_share_linux = dir_share + '/linux'
+dir_share_linux_config = dir_share_linux + '/config'
+dir_share_linux_tool = dir_share_linux + '/tool'
+path_share_fastboot = dir_share_linux_tool + '/fastboot'
+path_share_chromedriver = dir_share_linux_tool + '/chromedriver/chromedriver-2.12'
+path_share_apktool = dir_share_linux_tool + '/apktool/apktool_2.0.0rc3.jar'
 
-dir_workspace = '/workspace'
-dir_server = dir_workspace + '/server'
-dir_server_aosp = dir_server + '/aosp'
-dir_server_chromium = dir_server + '/chromium'
-dir_server_webbench = dir_server + '/webbench'
-dir_server_chrome_android_todo = dir_server_chromium + '/android-chrome-todo'
-dir_server_chrome_android_todo_buildid = dir_server_chrome_android_todo + '/buildid'
-dir_project = dir_workspace + '/project'
-dir_project_chrome_android = dir_project + '/chrome-android'
-dir_project_webcatch = dir_project + '/webcatch'
-dir_project_webcatch_out = dir_project_webcatch + '/out'
-dir_project_webcatch_project = dir_project_webcatch + '/project'
-dir_project_webcatch_log = dir_project_webcatch + '/log'
-dir_tool = dir_workspace + '/tool'
-
-tool_chromedriver = dir_linux_tool + '/chromedriver/chromedriver-2.12'
-tool_apktool = dir_linux_tool + '/apktool/apktool_2.0.0rc3.jar'
-
-path_web_benchmark = 'http://wp-02.sh.intel.com'
-path_web_webbench = path_web_benchmark + '/webbench'
-path_web_webcatch = path_web_benchmark + '/chromium'
-path_web_webmark = path_web_benchmark + '/webmark'
-path_web_webmark_result = path_web_webmark + '/result'
-path_web_chrome_android = 'http://wp-03.sh.intel.com/chromium'
-path_server_backup = '//wp-01.sh.intel.com/backup'
-path_server_webmark = '//wp-02.sh.intel.com/webmark'
-
-dir_home = os.getenv('HOME')
+dir_share_common = dir_share + '/common'
+# </share>
 ## </path>
 
 ## <chromium>
@@ -1063,7 +1078,7 @@ def device_connected(device_id='', mode='system'):
             option = '-t'
         else:
             option = '-s'
-        path_fastboot = path_tool_fastboot
+        path_fastboot = path_share_fastboot
         result = execute('timeout 1s %s %s %s getvar all' % (path_fastboot, option, device_id))
 
     if result[0]:
@@ -1149,7 +1164,7 @@ def get_symbol(lines, dirs_symbol):
                 path = dir_symbol + '/libchrome%s.so' % name
                 if not os.path.exists(path):
                     continue
-                cmd = dir_linux_tool + '/x86_64-linux-android-addr2line -C -e %s -f %s' % (path, match.group(1))
+                cmd = dir_share_linux_tool + '/x86_64-linux-android-addr2line -C -e %s -f %s' % (path, match.group(1))
                 result = execute(cmd, return_output=True, show_cmd=False)
                 print line
                 print result[1]

@@ -124,7 +124,7 @@ def _run(rev):
             error('Failed to download revision %s' % str(rev))
     restore_dir()
 
-    cmd = python_webmark
+    cmd = python_share_webmark
     for arg in ['device-id', 'device-governor', 'device-freq', 'module-arch', 'module-name', 'module-os', 'case-name']:
         var = arg.replace('-', '_')
         if var in args_dict and args_dict[var]:

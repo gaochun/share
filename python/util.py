@@ -1644,11 +1644,8 @@ def _patch_applied(dir_repo, path_patch, count=30):
 
 # force: True so that rev_hash will return as much as possible
 def _chromium_get_rev_hash(rev_min, rev_max=0, force=False):
-    execute('git log origin master >git_log', show_cmd=False)
-    f = open('git_log')
-    lines = f.readlines()
-    f.close()
-    execute('rm -f git_log', show_cmd=False)
+    result = execute('git log origin master', show_cmd=False, return_output=True)
+    lines = result[1].split('\n')
 
     pattern_hash = re.compile('^commit (.*)')
     pattern_rev = re.compile('^git-svn-id: .*@(.*) (.*)')

@@ -105,8 +105,8 @@ repo_type_info = {
         # device_type can be 'baytrail', 'generic'
         'test_filter': {},
     },
-    'x64': {
-        'dir_patches': dir_share_python + '/chromium-patches/x64',
+    'feature': {
+        'dir_patches': dir_share_python + '/chromium-patches',
         'patches': {
             'src': [
                 #'0001-Enlarge-kThreadLocalStorageSize-to-satisfy-test.patch',
@@ -210,7 +210,7 @@ repo_type_info = {
 
 def parse_arg():
     global args, args_dict
-    parser = argparse.ArgumentParser(description='Script to sync, build upstream x64 Chromium',
+    parser = argparse.ArgumentParser(description='Script about Chromium',
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog='''
 examples:
@@ -229,8 +229,8 @@ examples:
   python %(prog)s --revert
   python %(prog)s --fetch
   python %(prog)s --sync --rev 270000
-  python %(prog)s --sync --repo_type x64
-  python %(prog)s --sync --repo_type x64 --sync-upstream
+  python %(prog)s --sync --repo_type feature
+  python %(prog)s --sync --repo_type feature --sync-upstream
   python %(prog)s --runhooks
 
   build:
@@ -256,7 +256,7 @@ examples:
   0 1 * * * cd /workspace/project/chromium64-android && python %(prog)s -s --extra-path=/workspace/project/depot_tools
 ''')
     group_common = parser.add_argument_group('common')
-    group_common.add_argument('--repo-type', dest='repo_type', help='repo type. default for upstream, x64 for x64 test, chrome-android for "Chrome for Android"', default='default')
+    group_common.add_argument('--repo-type', dest='repo_type', help='repo type. default for upstream, feature for feature test, chrome-android for "Chrome for Android"', default='default')
     #dir: <arch>-<target-os>/out/<build_type>, example: x86-linux/out/Release
     group_common.add_argument('--target-os', dest='target_os', help='target os', choices=['android', 'linux'])
     group_common.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'arm', 'x86_64', 'arm64'], default='x86')
@@ -1320,7 +1320,7 @@ def _test_run_device(index_device, results):
     if args.test_formal:
         # Backup
         backup_dir(dir_test)
-        backup_smb('//wp-03.sh.intel.com/chromium-x64', 'test', timestamp + '-' + device_product)
+        backup_smb('//wp-03.sh.intel.com/chromium-test', 'feature', timestamp + '-' + device_product)
         restore_dir()
 
         # Send mail
@@ -1382,7 +1382,7 @@ def _test_gen_report(index_device, results):
     html_end = '''
           <h2>Log</h2>
           <ul>
-            <li>http://wp-03.sh.intel.com/chromium-x64/test/''' + timestamp + '-' + device_product + '''</li>
+            <li>http://wp-03.sh.intel.com/chromium-test/feature/''' + timestamp + '-' + device_product + '''</li>
           </ul>
         </div>
       </div>

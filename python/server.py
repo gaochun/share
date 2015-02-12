@@ -2,7 +2,7 @@
 
 # Server definition:
 # wp-01
-# build: x64 daily test
+# build: Chromium feature test
 # backup: chrome-android, webcatch archive
 # web server (8000): webcatch archive
 
@@ -92,8 +92,8 @@ def start():
 
     if host_name == 'wp-01':
         _run_one('update_share')
-        #_run_one('test_x64_all')
-        _run_one('test_x64_chromium')
+        #_run_one('chromium_feature_all')
+        _run_one('chromium_feature_chromium')
 
     elif host_name == 'wp-02':
         _run_one('update_share')
@@ -114,11 +114,11 @@ def start():
         pass
 
     elif host_name == 'ubuntu-ygu5-02':
-        #_run_one('test_x64_aosp_build')
+        #_run_one('chromium_feature_aosp_build')
         pass
 
     elif host_name == 'lorpheux':
-        #_run_one('test_x64_chromium')
+        #_run_one('chromium_feature_chromium')
         pass
 
 
@@ -130,24 +130,24 @@ def update_webbench():
     _update_repo(dir_server_webbench)
 
 
-def test_x64_all():
-    return 'test-x64.py --target-arch x86_64,x86'
+def chromium_feature_all():
+    return 'chromium/test-feature.py --target-arch x86_64,x86'
 
 
-def test_x64_chromium():
-    return 'test-x64.py --target-arch x86_64,x86 --phase chromium-x64'
+def chromium_feature_aosp_build():
+    return 'chromium/test-feature.py --target-arch x86_64,x86 --phase aosp-prebuild,aosp-build --dir-aosp aosp-stable-daily'
 
 
-def test_x64_aosp_build():
-    return 'test-x64.py --target-arch x86_64,x86 --phase aosp-prebuild,aosp-build --dir-aosp aosp-stable-daily'
+def chromium_feature_chromium():
+    return 'chromium/test-feature.py --target-arch x86_64,x86 --phase chromium'
 
 
 def chromium_perf():
-    return 'chromium-perf.py --run'
+    return 'chromium/perf.py --run'
 
 
 def chrome_android():
-    return 'chrome-android.py --run'
+    return 'chromium/chrome-android.py --run'
 
 
 def webcatch_build():

@@ -6,7 +6,7 @@ target_archs = ''
 targets_type = ''
 dryrun = False
 
-phases_all = ['aosp-prebuild', 'aosp-build', 'aosp-flash', 'chromium-x64']
+phases_all = ['aosp-prebuild', 'aosp-build', 'aosp-flash', 'chromium']
 phases = []
 
 dir_aosp = ''
@@ -17,7 +17,7 @@ devices_info = {}
 
 def handle_option():
     global args, args_dict
-    parser = argparse.ArgumentParser(description='Script to run daily test',
+    parser = argparse.ArgumentParser(description='Script to run feature test',
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog='''
 examples:
@@ -33,7 +33,7 @@ examples:
     parser.add_argument('--target-arch', dest='target_arch', help='target arch, such as x86, x86_64', default='x86_64')
     parser.add_argument('--target-type', dest='target_type', help='target type, such as baytrail, generic', default='baytrail')
     parser.add_argument('--dir-aosp', dest='dir_aosp', help='dir for aosp', default='aosp-stable')
-    parser.add_argument('--dir-chromium', dest='dir_chromium', help='dir for chromium', default='chromium-android-x64')
+    parser.add_argument('--dir-chromium', dest='dir_chromium', help='dir for chromium', default='chromium-android-feature')
     parser.add_argument('--phase', dest='phase', help='phase, including ' + ','.join(phases_all), default='all')
     add_argument_common(parser)
 
@@ -128,18 +128,18 @@ def test():
 
         restore_dir()
 
-    if 'chromium-x64' in phases:
+    if 'chromium' in phases:
         if not os.path.exists(dir_chromium):
             error(dir_chromium + ' does not exist')
         backup_dir(dir_chromium)
 
-        cmd = python_chromium + ' --repo-type x64 --sync --sync-upstream --runhooks --patch'
+        cmd = python_chromium + ' --repo-type feature --sync --sync-upstream --runhooks --patch'
         cmd = suffix_cmd(cmd, args, log)
         execute(cmd, abort=True, interactive=True, dryrun=dryrun)
 
         pool = Pool(processes=len(target_archs))
         for arch in target_archs:
-            cmd = python_chromium + ' --target-arch %s --repo-type x64 --device-id %s --build --test-run --test-formal' % (arch, devices_info[arch])
+            cmd = python_chromium + ' --target-arch %s --repo-type feature --device-id %s --build --test-run --test-formal' % (arch, devices_info[arch])
             cmd = suffix_cmd(cmd, args, log)
             pool.apply_async(execute, args=(cmd,), kwds=dict(abort=True, interactive=True, dryrun=dryrun))
         pool.close()

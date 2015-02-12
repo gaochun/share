@@ -131,15 +131,15 @@ def update_webbench():
 
 
 def chromium_feature_all():
-    return 'chromium/test-feature.py --target-arch x86_64,x86'
+    return 'chromium/feature.py --target-arch x86_64,x86'
 
 
 def chromium_feature_aosp_build():
-    return 'chromium/test-feature.py --target-arch x86_64,x86 --phase aosp-prebuild,aosp-build --dir-aosp aosp-stable-daily'
+    return 'chromium/feature.py --target-arch x86_64,x86 --phase aosp-prebuild,aosp-build --dir-aosp aosp-stable-daily'
 
 
 def chromium_feature_chromium():
-    return 'chromium/test-feature.py --target-arch x86_64,x86 --phase chromium'
+    return 'chromium/feature.py --target-arch x86_64,x86 --phase chromium'
 
 
 def chromium_perf():

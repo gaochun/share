@@ -16,9 +16,10 @@
 # 1. Run this script with '--backup-ver xxx', which will backup all the versions <= xxx to the server (path_server_backup).
 # 2. Ensure the backups are created at server, remove backuped folders manually.
 
-from selenium import webdriver
-import urllib2
+import sys
+sys.path.append(sys.path[0] + '/..')
 from util import *
+from selenium import webdriver
 
 dir_root = ''
 vers = []

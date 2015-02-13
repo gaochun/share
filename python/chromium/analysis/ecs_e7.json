@@ -1,0 +1,250 @@
+[
+  {
+    "device":{
+      "arch":"x86_64",
+      "freq":600000,
+      "governor":"powersave",
+      "product":"ecs_e7_64p"
+    },
+    "module":{
+      "arch":"x86",
+      "name":"chrome_stable",
+      "os":"android"
+    },
+    "cases":[
+      {"name":"kraken", "version":"1.1", "analysis":{}},
+      {"name":"octane", "version":"1.0", "analysis":{}},
+      {"name":"octane", "version":"2.0", "analysis":{}},
+      {"name":"sunspider", "version":"1.0.2", "analysis":{}},
+
+      {"name":"canvas2dc10k", "analysis":{}},
+      {"name":"canvasmark", "version":"2013", "analysis":{}},
+      {"name":"fishietank", "version":"raf", "analysis":{}},
+      {"name":"fishietank", "version":"setinterval", "analysis":{}},
+      {"name":"galactic", "version":"mobile", "analysis":{}},
+
+      {"name":"aquarium", "analysis":{}},
+      {"name":"cubemap", "analysis":{}},
+      {"name":"toonshading", "analysis":{}},
+
+      {"name":"fallingleaves", "analysis":{}},
+      {"name":"postercircle", "analysis":{}},
+
+      {"name":"browsermark", "version":"2.0", "analysis":{}},
+      {"name":"browsermark", "version":"2.1", "analysis":{}}
+    ]
+  },
+  {
+    "device":{
+      "arch":"x86_64",
+      "freq":600000,
+      "governor":"powersave",
+      "product":"ecs_e7_64p"
+    },
+    "module":{
+      "arch":"x86",
+      "name":"chrome_beta",
+      "os":"android"
+    },
+    "cases":[
+      {"name":"kraken", "version":"1.1", "analysis":{}},
+      {"name":"octane", "version":"1.0", "analysis":{}},
+      {"name":"octane", "version":"2.0", "analysis":{}},
+      {"name":"sunspider", "version":"1.0.2", "analysis":{}},
+
+      {"name":"canvas2dc10k", "analysis":{}},
+      {"name":"canvasmark", "version":"2013", "analysis":{}},
+      {"name":"fishietank", "version":"raf", "analysis":{}},
+      {"name":"fishietank", "version":"setinterval", "analysis":{}},
+      {"name":"galactic", "version":"mobile", "analysis":{}},
+
+      {"name":"aquarium", "analysis":{
+        "38.0.2125.57-40.0.2214.89":"flux",
+        "41.0.2272.34":"branched from r310958, and r309389 disable MSAA"
+      }},
+      {"name":"cubemap", "analysis":{}},
+      {"name":"toonshading", "analysis":{
+        "38.0.2125.57-40.0.2214.89":"flux",
+        "41.0.2272.34":"branched from r310958, and r309389 disable MSAA"
+      }},
+
+      {"name":"fallingleaves", "analysis":{}},
+      {"name":"postercircle", "analysis":{}},
+
+      {"name":"browsermark", "version":"2.0", "analysis":{}},
+      {"name":"browsermark", "version":"2.1", "analysis":{
+        "38.0.2125.57-41.0.2272.45":"flux"
+      }}
+    ]
+  },
+  {
+    "device":{
+      "arch":"x86_64",
+      "freq":600000,
+      "governor":"powersave",
+      "product":"ecs_e7_64p"
+    },
+    "module":{
+      "arch":"x86",
+      "name":"content_shell",
+      "os":"android"
+    },
+    "cases":[
+      {"name":"kraken", "version":"1.1", "analysis":{}},
+      {"name":"octane", "version":"1.0", "analysis":{}},
+      {"name":"octane", "version":"2.0", "analysis":{}},
+      {"name":"sunspider", "version":"1.0.2", "analysis":{}},
+
+      {"name":"canvas2dc10k", "analysis":{}},
+      {"name":"canvasmark", "version":"2013", "analysis":{}},
+      {"name":"fishietank", "version":"raf", "analysis":{}},
+      {"name":"fishietank", "version":"setinterval", "analysis":{}},
+      {"name":"galactic", "version":"mobile", "analysis":{}},
+
+      {"name":"aquarium", "analysis":{
+        "300000-309388":"flux",
+        "309389":"disable MSAA",
+        "309390-313200":"flux"
+      }},
+      {"name":"cubemap", "analysis":{}},
+      {"name":"toonshading", "analysis":{}},
+
+      {"name":"fallingleaves", "analysis":{}},
+      {"name":"postercircle", "analysis":{}},
+
+      {"name":"browsermark", "version":"2.0", "analysis":{}},
+      {"name":"browsermark", "version":"2.1", "analysis":{
+        "0-313200":"flux"
+      }}
+    ]
+  },
+  {
+    "device":{
+      "arch":"x86_64",
+      "freq":600000,
+      "governor":"powersave",
+      "product":"ecs_e7_64p"
+    },
+    "module":{
+      "arch":"x86_64",
+      "name":"content_shell",
+      "os":"android"
+    },
+    "cases":[
+      {"name":"kraken", "version":"1.1", "analysis":{}},
+      {"name":"octane", "version":"1.0", "analysis":{}},
+      {"name":"octane", "version":"2.0", "analysis":{}},
+      {"name":"sunspider", "version":"1.0.2", "analysis":{
+        "312000":"run failed"
+      }},
+
+      {"name":"canvas2dc10k", "analysis":{}},
+      {"name":"canvasmark", "version":"2013", "analysis":{}},
+      {"name":"fishietank", "version":"raf", "analysis":{}},
+      {"name":"fishietank", "version":"setinterval", "analysis":{}},
+      {"name":"galactic", "version":"mobile", "analysis":{}},
+
+      {"name":"aquarium", "analysis":{
+        "300000-309388":"flux",
+        "309389":"disable MSAA",
+        "309390-313200":"flux"
+      }},
+      {"name":"cubemap", "analysis":{}},
+      {"name":"toonshading", "analysis":{
+        "300000-309388":"flux",
+        "309389":"disable MSAA",
+        "309390-313200":"flux"
+      }},
+      {"name":"fallingleaves", "analysis":{
+        "302200": "run failed"
+        }},
+      {"name":"postercircle", "analysis":{}},
+
+      {"name":"browsermark", "version":"2.0", "analysis":{}},
+      {"name":"browsermark", "version":"2.1", "analysis":{
+        "0-999999":"can not run"
+      }}
+    ]
+  },
+  {
+    "device":{
+      "arch":"x86_64",
+      "freq":600000,
+      "governor":"powersave",
+      "product":"ecs_e7_64p"
+    },
+    "module":{
+      "arch":"x86",
+      "name":"chrome_shell",
+      "os":"android"
+    },
+    "cases":[
+      {"name":"kraken", "version":"1.1", "analysis":{}},
+      {"name":"octane", "version":"1.0", "analysis":{}},
+      {"name":"octane", "version":"2.0", "analysis":{}},
+      {"name":"sunspider", "version":"1.0.2", "analysis":{}},
+
+      {"name":"canvas2dc10k", "analysis":{}},
+      {"name":"canvasmark", "version":"2013", "analysis":{}},
+      {"name":"fishietank", "version":"raf", "analysis":{}},
+      {"name":"fishietank", "version":"setinterval", "analysis":{
+        "298000":"flux"
+      }},
+      {"name":"galactic", "version":"mobile", "analysis":{}},
+
+      {"name":"aquarium", "analysis":{}},
+      {"name":"cubemap", "analysis":{}},
+      {"name":"toonshading", "analysis":{}},
+
+      {"name":"fallingleaves", "analysis":{}},
+      {"name":"postercircle", "analysis":{}},
+
+      {"name":"browsermark", "version":"2.0", "analysis":{
+        "304000":"run failed"
+      }},
+      {"name":"browsermark", "version":"2.1", "analysis":{}}
+    ]
+  },
+  {
+    "device":{
+      "arch":"x86_64",
+      "freq":600000,
+      "governor":"powersave",
+      "product":"ecs_e7_64p"
+    },
+    "module":{
+      "arch":"x86_64",
+      "name":"chrome_shell",
+      "os":"android"
+    },
+    "cases":[
+      {"name":"kraken", "version":"1.1", "analysis":{}},
+      {"name":"octane", "version":"1.0", "analysis":{}},
+      {"name":"octane", "version":"2.0", "analysis":{}},
+      {"name":"sunspider", "version":"1.0.2", "analysis":{}},
+
+      {"name":"canvas2dc10k", "analysis":{}},
+      {"name":"canvasmark", "version":"2013", "analysis":{
+        "298400": "run failed"
+      }},
+      {"name":"fishietank", "version":"raf", "analysis":{}},
+      {"name":"fishietank", "version":"setinterval", "analysis":{
+        "297200-304200":"flux"
+      }},
+      {"name":"galactic", "version":"mobile", "analysis":{}},
+
+      {"name":"aquarium", "analysis":{}},
+      {"name":"cubemap", "analysis":{}},
+      {"name":"toonshading", "analysis":{
+        "297200-304200":"flux"
+      }},
+
+      {"name":"fallingleaves", "analysis":{}},
+      {"name":"postercircle", "analysis":{}},
+
+      {"name":"browsermark", "version":"2.0", "analysis":{}},
+      {"name":"browsermark", "version":"2.1", "analysis":{}}
+    ]
+  }
+]
+

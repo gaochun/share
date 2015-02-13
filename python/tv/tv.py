@@ -83,6 +83,7 @@ def check_update():
     # check each movie
     f = file('config.json', 'r+')
     config = json.load(f, object_pairs_hook=collections.OrderedDict)
+    f.close()
     sites = config['sites']
     movies = config['movies']
     count_movie = len(movies)

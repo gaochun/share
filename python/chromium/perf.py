@@ -3,11 +3,37 @@
 import sys
 sys.path.append(sys.path[0] + '/..')
 from util import *
-import urllib2
+
+try:
+    import matplotlib.pyplot as plt
+except:
+    'Please install package python-matplotlib'
+
+dir_root = ''
+log = ''
+timestamp = ''
 
 devices_id = []
-devices_arch = []
 devices_product = []
+devices_type = []
+devices_arch = []
+devices_mode = []
+
+# [('ecs_e7_64p', 'x86_64', 'powersave', 600000, 'android', 'x86_64', 'content_shell')]
+combs_device_module = []
+# index_combs_device_module: [version0, version1,]
+device_module_to_version = {}
+# [('JavaScript', 'kraken', '1.1', 'ms(-)'),]
+combs_case = []
+COMBS_CASE_INDEX_CATEGORY = 0
+COMBS_CASE_INDEX_NAME = 1
+COMBS_CASE_INDEX_VERSION = 2
+COMBS_CASE_INDEX_METRIC = 3
+COMBS_CASE_INDEX_VALUE = 4
+# (index_combs_device_module, index_combs_case): {310000: 1820.3}
+device_module_case_to_perf = {}
+# (index_combs_device_module, index_combs_case): {rev_min, rev_max}
+device_module_case_to_analysis = {}
 
 # [[device.product, device.arch, device.governor, device.freq, module.os, module.arch, module.name, module.version]]
 combs_all = [
@@ -31,9 +57,16 @@ def parse_arg():
                                      epilog='''
 examples:
   python %(prog)s --run
+  python %(prog)s --analyze
+  python %(prog)s --analyze --analyze-serialize
+  python %(prog)s --analyze --analyze-serialize --analyze-filter '{"module":{"name":"content_shell","arch":"x86"},"case":{"name":"octane"}}'
 ''')
 
     parser.add_argument('--run', dest='run', help='run chromium performance test with combs need to run', action='store_true')
+    parser.add_argument('--analyze', dest='analyze', help='analyze the result', action='store_true')
+    parser.add_argument('--analyze-filter', dest='analyze_filter', help='analyze filter')
+    parser.add_argument('--analyze-unknown', dest='analyze_unknown', help='only show the graph with change', choices=['all', 'imp', 'reg'], default='reg')
+    parser.add_argument('--analyze-serialize', dest='analyze_serialize', help='Use serialized result instead of reading from server', action='store_true')
     add_argument_common(parser)
 
     args = parser.parse_args()
@@ -45,16 +78,16 @@ examples:
 
 
 def setup():
-    global devices_id, devices_product, devices_arch
+    global dir_root, log, timestamp
 
-    (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
-    if len(devices_id) == 0:
-        error('No device is connected')
+    (timestamp, dir_root, log) = setup_common(args, _teardown)
 
 
 def run():
     if not args.run:
         return
+
+    _setup_device()
 
     for comb in combs_all:
         combs_done = []
@@ -140,6 +173,272 @@ def run():
                 execute(cmd, interactive=True)
 
 
+def analyze():
+    _get_perf()
+    _get_analysis()
+
+    for index_dmc, dmc in enumerate(device_module_case_to_perf):
+        index_dm = dmc[0]
+        index_c = dmc[1]
+        x = []
+        y = []
+        x_name = []
+        x_imp_known = []
+        y_imp_known = []
+        x_imp_unknown = []
+        y_imp_unknown = []
+        x_reg_known = []
+        y_reg_known = []
+        x_reg_unknown = []
+        y_reg_unknown = []
+        for index_version, version in enumerate(device_module_to_version[index_dm]):
+            x.append(index_version)
+            x_name.append(version)
+            value = device_module_case_to_perf[dmc][version]
+            y.append(value)
+
+            if index_version > 0:
+                version_prev = device_module_to_version[index_dm][index_version - 1]
+                value_prev = device_module_case_to_perf[dmc][version_prev]
+                if value_prev == 0:
+                    diff = 0
+                else:
+                    diff = round(abs(value - value_prev) / value_prev, 2) * 100
+                if diff > PERF_CHANGE_PERCENT:
+
+                    found = False
+                    if dmc in device_module_case_to_analysis:
+                        for analysis in device_module_case_to_analysis[dmc]:
+                            version_min = analysis[0]
+                            version_max = analysis[1]
+                            if ver_cmp(version, version_min) >= 0 and ver_cmp(version, version_max) <= 0:
+                                found = True
+                                break
+
+                    if re.search('\+', combs_case[index_c][3]) and value > value_prev or re.search('\-', combs_case[index_c][3]) and value < value_prev:
+                        if found:
+                            x_imp_known.append(index_version)
+                            y_imp_known.append(value)
+                        else:
+                            x_imp_unknown.append(index_version)
+                            y_imp_unknown.append(value)
+                    else:
+                        if found:
+                            x_reg_known.append(index_version)
+                            y_reg_known.append(value)
+                        else:
+                            x_reg_unknown.append(index_version)
+                            y_reg_unknown.append(value)
+
+        if args.analyze_unknown:
+            if args.analyze_unknown == 'all' and not x_imp_unknown and not x_reg_unknown:
+                continue
+            elif args.analyze_unknown == 'imp' and not x_imp_unknown:
+                continue
+            elif args.analyze_unknown == 'reg' and not x_reg_unknown:
+                continue
+
+        plt.figure(index_dmc)
+        plt.title('-'.join(combs_device_module[index_dm]) + '\n' + '-'.join(combs_case[index_c]))
+        plt.xticks(x, x_name)
+        plt.xlabel('Version')
+        plt.ylabel('Value')
+        plt.grid()
+        plt.plot(x, y)
+        plt.plot(x_reg_unknown, y_reg_unknown, 'ro')  # red
+        plt.plot(x_imp_unknown, y_imp_unknown, 'go')  # green
+        plt.plot(x_reg_known, y_reg_known, 'wo')
+        plt.plot(x_imp_known, y_imp_known, 'wo')
+
+        plt.show()
+
+
+class Parser(HTMLParser):
+    def __init__(self, pattern):
+        HTMLParser.__init__(self)
+        self.pattern = pattern
+        self.is_a = False
+        self.matched = False
+        self.href = ''
+        self.links = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'a':
+            self.is_a = True
+            for (name, value) in attrs:
+                if name == 'href':
+                    self.href = value
+                    break
+
+    def handle_endtag(self, tag):
+        if tag == 'a':
+            self.is_a = False
+
+    def handle_data(self, data):
+        if self.is_a:
+            match = re.search(self.pattern, data)
+            # all the good links are continuous. Exit using an exception as close() seems not work.
+            if self.matched and not match:
+                pass
+            if match:
+                self.matched = True
+                self.links.append(self.href)
+
+
+def _get_perf():
+    global combs_device_module, device_module_to_version, combs_case, device_module_case_to_perf
+
+    if args.analyze_serialize and os.path.exists(path_share_ignore_chromium_perf):
+        f = open(path_share_ignore_chromium_perf)
+        combs_device_module = pickle.load(f)
+        device_module_to_version = pickle.load(f)
+        combs_case = pickle.load(f)
+        device_module_case_to_perf = pickle.load(f)
+        f.close()
+        return
+
+    try:
+        u = urllib2.urlopen(path_web_webmark_result)
+    except:
+        error('Can NOT open %s' % path_web_webmark_result)
+    html = u.read().decode('utf-8')
+    parser = Parser('.txt')
+    parser.feed(html)
+    for link in parser.links:
+        fields = link.replace('.txt', '').split('-')
+        comb = tuple(fields[:PERF_COMBS_INDEX_MODULE_VERSION])
+        if comb not in combs_device_module:
+            combs_device_module.append(comb)
+
+        index = combs_device_module.index(comb)
+        if index in device_module_to_version:
+            device_module_to_version[index].append(fields[-1])
+        else:
+            device_module_to_version[index] = [fields[-1]]
+
+    # sort the version
+    for index_comb in device_module_to_version:
+        device_module_to_version[index_comb] = sorted(device_module_to_version[index_comb], cmp=ver_cmp)
+
+    # parse filter
+    af = json.loads(args.analyze_filter)
+
+    for index_combs_dm in device_module_to_version:
+        vers = device_module_to_version[index_combs_dm]
+        for ver in vers:
+            name_file = path_web_webmark_result + '/' + '-'.join(combs_device_module[index_combs_dm]) + '-' + ver + '.txt'
+            try:
+                u = urllib2.urlopen(name_file)
+            except:
+                error('Can NOT open %s' % name_file)
+            lines = u.read().decode('utf-8').split('\n')
+            for line in lines:
+                if re.match('"', line):
+                    continue
+                if re.match('^$', line):
+                    continue
+                fields = line.split(',')
+                comb = (fields[COMBS_CASE_INDEX_CATEGORY], fields[COMBS_CASE_INDEX_NAME], fields[COMBS_CASE_INDEX_VERSION], fields[COMBS_CASE_INDEX_METRIC])
+                if comb not in combs_case:
+                    combs_case.append(comb)
+
+                index_combs_case = combs_case.index(comb)
+
+                dmc = {}
+                dmc['device'] = {}
+                dmc['module'] = {}
+                dmc['case'] = {}
+                comb_dm = combs_device_module[index_combs_dm]
+                dmc['device']['product'] = comb_dm[PERF_COMBS_INDEX_DEVICE_PRODUCT]
+                dmc['device']['arch'] = comb_dm[PERF_COMBS_INDEX_DEVICE_ARCH]
+                dmc['device']['governor'] = comb_dm[PERF_COMBS_INDEX_DEVICE_GOVERNOR]
+                dmc['device']['freq'] = comb_dm[PERF_COMBS_INDEX_DEVICE_FREQ]
+                dmc['module']['os'] = comb_dm[PERF_COMBS_INDEX_MODULE_OS]
+                dmc['module']['arch'] = comb_dm[PERF_COMBS_INDEX_MODULE_ARCH]
+                dmc['module']['name'] = comb_dm[PERF_COMBS_INDEX_MODULE_NAME]
+                comb_case = combs_case[index_combs_case]
+                dmc['case']['category'] = comb_case[COMBS_CASE_INDEX_CATEGORY]
+                dmc['case']['name'] = comb_case[COMBS_CASE_INDEX_NAME]
+                dmc['case']['version'] = comb_case[COMBS_CASE_INDEX_VERSION]
+                dmc['case']['metric'] = comb_case[COMBS_CASE_INDEX_METRIC]
+
+                # filter
+                need_filter = False
+                for key_l1 in af:
+                    if need_filter:
+                        break
+                    for key_l2 in af[key_l1]:
+                        if af[key_l1][key_l2] != dmc[key_l1][key_l2]:
+                            need_filter = True
+                            break
+                if need_filter:
+                    continue
+
+                if (index_combs_dm, index_combs_case) not in device_module_case_to_perf:
+                    device_module_case_to_perf[(index_combs_dm, index_combs_case)] = {}
+
+                device_module_case_to_perf[(index_combs_dm, index_combs_case)][ver] = float(fields[COMBS_CASE_INDEX_VALUE])
+
+    ensure_dir(dir_share_ignore_chromium)
+    ensure_file(path_share_ignore_chromium_perf)
+    f = open(path_share_ignore_chromium_perf, 'w')
+    f.seek(0)
+    f.truncate()
+    pickle.dump(combs_device_module, f)
+    pickle.dump(device_module_to_version, f)
+    pickle.dump(combs_case, f)
+    pickle.dump(device_module_case_to_perf, f)
+    f.close()
+
+
+def _get_analysis():
+    global analysis
+
+    anals = []
+    backup_dir('analysis')
+    files = os.listdir('.')
+    for f in files:
+        if not f[-5:] == '.json':
+            continue
+
+        fh = open(f)
+        anals += json.load(fh)
+        fh.close()
+    restore_dir()
+
+    tmp_combs_case = []
+    for comb in combs_case:
+        tmp_combs_case.append((comb[COMBS_CASE_INDEX_NAME], comb[COMBS_CASE_INDEX_VERSION]))
+
+    for anal in anals:
+        tmp_comb_device_module = (anal['device']['product'], anal['device']['arch'], anal['device']['governor'], str(anal['device']['freq']),
+                                  anal['module']['os'], anal['module']['arch'], anal['module']['name'])
+        if tmp_comb_device_module not in combs_device_module:
+            continue
+        index_device_module = combs_device_module.index(tmp_comb_device_module)
+
+        for case in anal['cases']:
+            if 'version' not in case:
+                case['version'] = 'NA'
+            tmp_comb_case = (case['name'], case['version'])
+            if tmp_comb_case not in tmp_combs_case:
+                continue
+            index_case = tmp_combs_case.index(tmp_comb_case)
+
+            for key in case['analysis']:
+                if re.search('-', key):
+                    fields = key.split('-')
+                    ver_min = fields[0]
+                    ver_max = fields[1]
+                else:
+                    ver_min = key
+                    ver_max = key
+
+                if (index_device_module, index_case) not in device_module_case_to_analysis:
+                    device_module_case_to_analysis[(index_device_module, index_case)] = []
+                device_module_case_to_analysis[(index_device_module, index_case)].append([ver_min, ver_max])
+
+
 def _get_combs_from_server(comb_type, comb):
     combs = []
     module_name = comb[PERF_COMBS_INDEX_MODULE_NAME]
@@ -194,7 +493,21 @@ def _get_combs_from_server(comb_type, comb):
     return combs
 
 
+def _setup_device():
+    global devices_id, devices_product, devices_type, devices_arch, devices_mode
+
+    if devices_id:
+        return
+
+    (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_id_limit=args.device_id)
+
+
+def _teardown():
+    pass
+
+
 if __name__ == '__main__':
     parse_arg()
     setup()
     run()
+    analyze()

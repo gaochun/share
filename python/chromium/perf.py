@@ -499,7 +499,7 @@ def _setup_device():
     if devices_id:
         return
 
-    (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_id_limit=args.device_id)
+    (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
 
 
 def _teardown():

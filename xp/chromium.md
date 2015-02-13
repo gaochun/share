@@ -1,7 +1,9 @@
-<commit>
-20131119 r236024 Android: Reenable canvas anti-aliasing
+<xp>
+* webcatch build issue
+src/tools/clang/scripts/update.sh  # update llvm
+src/build/install-build-deps-android.sh
 
-</commit>
+</xp>
 
 <tracing>
 *

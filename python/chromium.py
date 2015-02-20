@@ -371,7 +371,9 @@ def setup():
         else:
             globals()[key] = repo_type_info[repo_type][key]
 
-    if args.rev:
+    if repo_type == 'chrome-android':
+        rev = 0
+    elif args.rev:
         rev = args.rev
     elif args.sync_upstream:
         rev = chromium_get_rev_max(dir_src)

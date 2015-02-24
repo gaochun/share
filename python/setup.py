@@ -223,9 +223,9 @@ def config():
     copy_file(dir_share_linux_config, 'proxychains.conf', '/etc', is_sylk=is_sylk)
     copy_file(dir_share_linux_config, '51-android.rules', '/etc/udev/rules.d', is_sylk=is_sylk)
 
-    copy_file(dir_share_linux_config, 'dnsmasq.conf', '/etc', is_sylk=is_sylk)
     copy_file(dir_share_linux_config, 'androidtool.cfg', dir_home + '/.android', is_sylk=is_sylk)
 
+    copy_file(dir_share_linux_config + '/dnsmasq', 'dnsmasq.conf', '/etc', is_sylk=is_sylk)
     copy_file(dir_share_linux_config + '/hostapd', 'hostapd.conf', '/etc/hostapd', is_sylk=is_sylk)
 
     copy_file(dir_share_python, 'aosp.py', dir_project + '/aosp', is_sylk=is_sylk)

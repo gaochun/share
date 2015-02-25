@@ -62,6 +62,7 @@ COMB_INDEX_REV = 3
 expectfail = [
     [311969, 311981],  # webview_license.py raise License Missing Error. BUG=448703.
     [300711, 300726],  # DevToolsTracingHandler
+    [298919, 298922],  # [chrome_shell (not content_shell and webview_shell) as it impacts ui only] no ui::Compositor::ScheduleComposite()
     [298635, 298653],  # [non-arm] openmax_dl typo
     [298158, 298161],  # device/serial/serial_serialization.mojom
     [297456, 297466],  # Key 'includes' repeated at level 1

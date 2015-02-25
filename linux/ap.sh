@@ -12,7 +12,7 @@ hostname=$(hostname)
 
 if [ $hostname = "wp-01" ] ; then
     EXTERNAL=eth1
-elif [ $hostname = "wp-03" -o $hostname = "ubuntu-ygu5-02" ] ; then
+elif [ $hostname = "wp-03" -o $hostname = "wp-04" -o $hostname = "ubuntu-ygu5-02" ] ; then
     EXTERNAL=eth0
 elif [ $hostname = "ubuntu-ygu5-01" ] ; then
     EXTERNAL=eth2
@@ -28,7 +28,13 @@ iptables -t nat -A POSTROUTING -s 192.168.0.0/8 -o $EXTERNAL -j MASQUERADE
 iptables -A FORWARD -s 192.168.0.0/8 -o $EXTERNAL -j ACCEPT
 iptables -A FORWARD -d 192.168.0.0/8 -m conntrack --ctstate ESTABLISHED,RELATED -i $EXTERNAL -j ACCEPT
 
-ifconfig wlan0 192.168.0.1
+WLAN=$(ifconfig | grep -o -m 1 "wlan[0-9]")
+if [ -z $WLAN ] ; then
+    echo "No wlan enabled!"
+    exit 1
+fi
+ifconfig $WLAN 192.168.0.1
+
 hostapd -B /etc/hostapd/hostapd.conf
 /etc/init.d/dnsmasq restart
 # dnsmasq would modify /etc/resolv.conf

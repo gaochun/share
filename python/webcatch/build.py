@@ -197,7 +197,7 @@ def build():
 
     build_fail = 0
     interval_git = 300
-    rev_git_max = _chromium_get_rev_max()
+    rev_git_max = _chromium_get_rev_max(need_fetch=False)
     time_git = get_epoch_second()
     comb_next = _get_comb_next()
     rev_next = comb_next[COMB_INDEX_REV]
@@ -209,7 +209,9 @@ def build():
             comb_next = _get_comb_next()
             rev_next = comb_next[COMB_INDEX_REV]
         elif args.build_auto_checkout:
-            return
+            rev_git_max = _chromium_get_rev_max()
+            if rev_next > rev_git_max:
+                return
         else:
             time_diff = get_epoch_second() - time_git
             if time_diff < interval_git:
@@ -668,7 +670,7 @@ def _rev_is_built(comb, rand=False):
 
         # Be cautious on not built
         second = random.randint(1, 10)
-        info('sleep ' + str(second) + ' seconds and check again to ensure it is not built yet')
+        info('Sleep %s seconds and check again to ensure %s is not built yet' % (str(second), str(comb)))
         time.sleep(second)
 
         if _rev_is_built_one(cmd):
@@ -703,8 +705,8 @@ def _rounddown(num):
     return rounddown(num, build_every)
 
 
-def _chromium_get_rev_max():
-    return chromium_get_rev_max(dir_chromium_src_main)
+def _chromium_get_rev_max(need_fetch=True):
+    return chromium_get_rev_max(dir_chromium_src_main, need_fetch=need_fetch)
 
 
 def _report_fail(phase, file_lock=''):

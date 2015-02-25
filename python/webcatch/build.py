@@ -33,15 +33,15 @@ comb_valid = {
     ('android', 'arm', 'content_shell'): ['(.*).apk$', 260368, 301780],
     ('android', 'arm64', 'content_shell'): ['(.*).apk$', 260368, 301780],
 
-    ('android', 'x86', 'chrome_shell'): ['(.*).apk$', 297098, 300710],
-    ('android', 'x86_64', 'chrome_shell'): ['(.*).apk$', 297098, 300710],
-    ('android', 'arm', 'chrome_shell'): ['(.*).apk$', 297098, 300710],
-    ('android', 'arm64', 'chrome_shell'): ['(.*).apk$', 297098, 300710],
+    ('android', 'x86', 'chrome_shell'): ['(.*).apk$', 297098, 300720],
+    ('android', 'x86_64', 'chrome_shell'): ['(.*).apk$', 297098, 300720],
+    ('android', 'arm', 'chrome_shell'): ['(.*).apk$', 297098, 300720],
+    ('android', 'arm64', 'chrome_shell'): ['(.*).apk$', 297098, 300720],
 
-    ('android', 'x86', 'webview_shell'): ['(.*).apk$', 297098, 300710],
-    ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 297098, 300710],
-    ('android', 'arm', 'webview_shell'): ['(.*).apk$', 297098, 300710],
-    ('android', 'arm64', 'webview_shell'): ['(.*).apk$', 297098, 300710],
+    ('android', 'x86', 'webview_shell'): ['(.*).apk$', 297098, 300720],
+    ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 297098, 300720],
+    ('android', 'arm', 'webview_shell'): ['(.*).apk$', 297098, 300720],
+    ('android', 'arm64', 'webview_shell'): ['(.*).apk$', 297098, 300720],
 
     ('linux', 'x86', 'chrome'): ['(.*).tar.gz$', 233137, 236088],
     #['android', 'arm', 'content_shell'],
@@ -58,8 +58,11 @@ COMB_INDEX_TARGET_MODULE = 2
 COMB_INDEX_REV = 3
 
 # [reva, revb], where reva is bad, and revb is good
+# A failure is by default for all combs expect for some specification, like [arm] in comment
 expectfail = [
     [311969, 311981],  # webview_license.py raise License Missing Error. BUG=448703.
+    [300711, 300726],  # DevToolsTracingHandler
+    [298635, 298653],  # [non-arm] openmax_dl typo
     [298158, 298161],  # device/serial/serial_serialization.mojom
     [297456, 297466],  # Key 'includes' repeated at level 1
     [284080, 284249],  # warning: shared library text segment is not shareable for ld.gold, and warning is treated as error. We may fix this if needed using linker option.

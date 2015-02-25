@@ -33,15 +33,15 @@ comb_valid = {
     ('android', 'arm', 'content_shell'): ['(.*).apk$', 260368, 301780],
     ('android', 'arm64', 'content_shell'): ['(.*).apk$', 260368, 301780],
 
-    ('android', 'x86', 'chrome_shell'): ['(.*).apk$', 260368, 297098],
-    ('android', 'x86_64', 'chrome_shell'): ['(.*).apk$', 260368, 297098],
-    ('android', 'arm', 'chrome_shell'): ['(.*).apk$', 260368, 297098],
-    ('android', 'arm64', 'chrome_shell'): ['(.*).apk$', 260368, 297098],
+    ('android', 'x86', 'chrome_shell'): ['(.*).apk$', 297098, 300710],
+    ('android', 'x86_64', 'chrome_shell'): ['(.*).apk$', 297098, 300710],
+    ('android', 'arm', 'chrome_shell'): ['(.*).apk$', 297098, 300710],
+    ('android', 'arm64', 'chrome_shell'): ['(.*).apk$', 297098, 300710],
 
-    ('android', 'x86', 'webview_shell'): ['(.*).apk$', 233137, 252136],
-    ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 233137, 252136],
-    ('android', 'arm', 'webview_shell'): ['(.*).apk$', 233137, 252136],
-    ('android', 'arm64', 'webview_shell'): ['(.*).apk$', 233137, 252136],
+    ('android', 'x86', 'webview_shell'): ['(.*).apk$', 297098, 300710],
+    ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 297098, 300710],
+    ('android', 'arm', 'webview_shell'): ['(.*).apk$', 297098, 300710],
+    ('android', 'arm64', 'webview_shell'): ['(.*).apk$', 297098, 300710],
 
     ('linux', 'x86', 'chrome'): ['(.*).tar.gz$', 233137, 236088],
     #['android', 'arm', 'content_shell'],
@@ -59,15 +59,15 @@ COMB_INDEX_REV = 3
 
 # [reva, revb], where reva is bad, and revb is good
 expectfail = [
-    233707, 236662, 234213, 234223, 234517, 234689, [235193, 235195], 237586,
-    241661, 241848,
-    [260605, 260606],  # roll angle
-    [262675, 262701],  # v8 error
-    [264517, 264545],  # accidental dartium code push
-    [275269, 275271],  # pdfium build
-    [284080, 284249],  # warning: shared library text segment is not shareable for ld.gold, and warning is treated as error. We may fix this if needed using linker option.
-    [297456, 297466],  # Key 'includes' repeated at level 1
     [311969, 311981],  # webview_license.py raise License Missing Error. BUG=448703.
+    [298158, 298161],  # device/serial/serial_serialization.mojom
+    [297456, 297466],  # Key 'includes' repeated at level 1
+    [284080, 284249],  # warning: shared library text segment is not shareable for ld.gold, and warning is treated as error. We may fix this if needed using linker option.
+    [275269, 275271],  # pdfium build
+    [264517, 264545],  # accidental dartium code push
+    [262675, 262701],  # v8 error
+    [260605, 260606],  # roll angle
+    241661, 241848, 233707, 236662, 234213, 234223, 234517, 234689, [235193, 235195], 237586
 ]
 
 rev_expectfail = []
@@ -621,24 +621,20 @@ def _build_one(comb_next):
 
 # get the smallest rev in combs
 def _get_comb_next():
-    comb_next = []
     while True:
-        for comb in combs:
-            while (comb[COMB_INDEX_REV] <= rev_max and _rev_is_built(comb)):
-                info(str(comb) + ' has been built')
-                comb[COMB_INDEX_REV] += build_every
+        index_min = 0
+        for index in range(1, len(combs)):
+            if combs[index][COMB_INDEX_REV] < combs[index_min][COMB_INDEX_REV]:
+                index_min = index
 
-            if not comb_next:
-                comb_next = comb
-            elif comb[COMB_INDEX_REV] < comb_next[COMB_INDEX_REV]:
-                comb_next = comb
+        if combs[index_min][COMB_INDEX_REV] > rev_max:
+            return combs[index_min]
 
-        if comb_next[COMB_INDEX_REV] > rev_max:
-            return comb_next
-        elif _rev_is_built(comb_next, rand=True):
-            comb_next[COMB_INDEX_REV] += build_every
+        if _rev_is_built(combs[index_min]):
+            info(str(combs[index_min]) + ' has been built')
+            combs[index_min][COMB_INDEX_REV] += build_every
         else:
-            return comb_next
+            return combs[index_min]
 
 
 def _rev_is_built(comb, rand=False):
@@ -662,12 +658,15 @@ def _rev_is_built(comb, rand=False):
             if rev >= comb_valid_rev_min and rev <= comb_valid_rev_max:
                 return True
 
-        if rand:
-            second = random.randint(1, 10)
-            info('sleep ' + str(second) + ' seconds and check again to ensure it is not built yet')
-            time.sleep(second)
-
         cmd = 'ls ' + dir_server_chromium + '/' + comb_name + '/' + str(rev) + '*'
+        if _rev_is_built_one(cmd):
+            return True
+
+        # Be cautious on not built
+        second = random.randint(1, 10)
+        info('sleep ' + str(second) + ' seconds and check again to ensure it is not built yet')
+        time.sleep(second)
+
         if _rev_is_built_one(cmd):
             return True
         else:

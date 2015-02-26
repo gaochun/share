@@ -60,12 +60,12 @@
 
       {"name":"aquarium", "analysis":{
         "38.0.2125.57-40.0.2214.89":"flux",
-        "41.0.2272.34":"branched from r310958, and r309389 disable MSAA"
+        "41.0.2272.34":"[I] branched from r310958, and r309389 disable MSAA"
       }},
       {"name":"cubemap", "analysis":{}},
       {"name":"toonshading", "analysis":{
         "38.0.2125.57-40.0.2214.89":"flux",
-        "41.0.2272.34":"branched from r310958, and r309389 disable MSAA"
+        "41.0.2272.34":"[I] branched from r310958, and r309389 disable MSAA"
       }},
 
       {"name":"fallingleaves", "analysis":{}},
@@ -103,7 +103,7 @@
 
       {"name":"aquarium", "analysis":{
         "300000-309388":"flux",
-        "309389":"disable MSAA",
+        "309389":"[I] disable MSAA",
         "309390-313200":"flux"
       }},
       {"name":"cubemap", "analysis":{}},
@@ -146,18 +146,18 @@
 
       {"name":"aquarium", "analysis":{
         "300000-309388":"flux",
-        "309389":"disable MSAA",
+        "309389":"[I] disable MSAA",
         "309390-313200":"flux"
       }},
       {"name":"cubemap", "analysis":{}},
       {"name":"toonshading", "analysis":{
         "300000-309388":"flux",
-        "309389":"disable MSAA",
+        "309389":"[I] disable MSAA",
         "309390-313200":"flux"
       }},
       {"name":"fallingleaves", "analysis":{
         "302200": "run failed"
-        }},
+      }},
       {"name":"postercircle", "analysis":{}},
 
       {"name":"browsermark", "version":"2.0", "analysis":{}},

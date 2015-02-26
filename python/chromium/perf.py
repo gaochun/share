@@ -321,7 +321,8 @@ def _get_perf():
         device_module_to_version[index_comb] = sorted(device_module_to_version[index_comb], cmp=ver_cmp)
 
     # parse filter
-    af = json.loads(args.analyze_filter)
+    if args.analyze_filter:
+        af = json.loads(args.analyze_filter)
 
     for index_combs_dm in device_module_to_version:
         vers = device_module_to_version[index_combs_dm]
@@ -363,16 +364,17 @@ def _get_perf():
                 dmc['case']['metric'] = comb_case[COMBS_CASE_INDEX_METRIC]
 
                 # filter
-                need_filter = False
-                for key_l1 in af:
-                    if need_filter:
-                        break
-                    for key_l2 in af[key_l1]:
-                        if af[key_l1][key_l2] != dmc[key_l1][key_l2]:
-                            need_filter = True
+                if args.analyze_filter:
+                    need_filter = False
+                    for key_l1 in af:
+                        if need_filter:
                             break
-                if need_filter:
-                    continue
+                        for key_l2 in af[key_l1]:
+                            if af[key_l1][key_l2] != dmc[key_l1][key_l2]:
+                                need_filter = True
+                                break
+                    if need_filter:
+                        continue
 
                 if (index_combs_dm, index_combs_case) not in device_module_case_to_perf:
                     device_module_case_to_perf[(index_combs_dm, index_combs_case)] = {}

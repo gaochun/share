@@ -65,7 +65,7 @@ examples:
     parser.add_argument('--run', dest='run', help='run chromium performance test with combs need to run', action='store_true')
     parser.add_argument('--analyze', dest='analyze', help='analyze the result', action='store_true')
     parser.add_argument('--analyze-filter', dest='analyze_filter', help='analyze filter')
-    parser.add_argument('--analyze-unknown', dest='analyze_unknown', help='only show the graph with change', choices=['all', 'imp', 'reg'], default='reg')
+    parser.add_argument('--analyze-unknown', dest='analyze_unknown', help='only show the graph with change', choices=['all', 'imp', 'reg'])
     parser.add_argument('--analyze-serialize', dest='analyze_serialize', help='Use serialized result instead of reading from server', action='store_true')
     add_argument_common(parser)
 

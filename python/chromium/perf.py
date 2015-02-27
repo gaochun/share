@@ -238,17 +238,21 @@ def analyze():
             elif args.analyze_unknown == 'reg' and not x_reg_unknown:
                 continue
 
-        plt.figure(index_dmc)
-        plt.title('-'.join(combs_device_module[index_dm]) + '\n' + '-'.join(combs_case[index_c]))
-        plt.xticks(x, x_name)
-        plt.xlabel('Version')
-        plt.ylabel('Value')
-        plt.grid()
-        plt.plot(x, y)
-        plt.plot(x_reg_unknown, y_reg_unknown, 'ro')  # red
-        plt.plot(x_imp_unknown, y_imp_unknown, 'go')  # green
-        plt.plot(x_reg_known, y_reg_known, 'wo')
-        plt.plot(x_imp_known, y_imp_known, 'wo')
+        fig, ax = plt.subplots()
+        ax.set_title('-'.join(combs_device_module[index_dm]) + '\n' + '-'.join(combs_case[index_c]))
+        ax.xaxis.grid(True)
+        ax.yaxis.grid(True)
+        ax.set_xlabel('Version')
+        ax.set_ylabel('Value')
+        ax.plot(x, y)
+        ax.set_xticks(x)
+        ax.set_xticklabels(x_name)
+        ax.plot(x_reg_unknown, y_reg_unknown, 'ro')  # red
+        ax.plot(x_imp_unknown, y_imp_unknown, 'go')  # green
+        ax.plot(x_reg_known, y_reg_known, 'wo')
+        ax.plot(x_imp_known, y_imp_known, 'wo')
+        for xl in ax.get_xticklabels():
+            xl.set_rotation(90)
 
         plt.show()
 

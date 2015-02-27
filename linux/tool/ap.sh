@@ -28,7 +28,7 @@ iptables -t nat -A POSTROUTING -s 192.168.0.0/8 -o $EXTERNAL -j MASQUERADE
 iptables -A FORWARD -s 192.168.0.0/8 -o $EXTERNAL -j ACCEPT
 iptables -A FORWARD -d 192.168.0.0/8 -m conntrack --ctstate ESTABLISHED,RELATED -i $EXTERNAL -j ACCEPT
 
-WLAN=$(ifconfig | grep -o -m 1 "wlan[0-9]")
+WLAN=$(ifconfig -a | grep -o -m 1 "wlan[0-9]")
 if [ -z $WLAN ] ; then
     echo "No wlan enabled!"
     exit 1

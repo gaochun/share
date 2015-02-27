@@ -11,6 +11,7 @@ from util import *
 
 pkgs_common = [
     'tsocks', 'privoxy',
+    'apache2',
     'apt-file',
     'zsh',
     'git', 'git-svn', 'subversion',

@@ -177,6 +177,9 @@ def run():
 
 
 def analyze():
+    if not args.analyze:
+        return
+
     _get_perf()
     _get_analysis()
 

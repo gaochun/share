@@ -230,6 +230,38 @@ def analyze():
                             x_reg_unknown.append(index_version)
                             y_reg_unknown.append(value)
 
+        # filter
+        if args.analyze_filter:
+            dmc_info = {}
+            dmc_info['device'] = {}
+            dmc_info['module'] = {}
+            dmc_info['case'] = {}
+            comb_dm = combs_device_module[index_dm]
+            dmc_info['device']['product'] = comb_dm[PERF_COMBS_INDEX_DEVICE_PRODUCT]
+            dmc_info['device']['arch'] = comb_dm[PERF_COMBS_INDEX_DEVICE_ARCH]
+            dmc_info['device']['governor'] = comb_dm[PERF_COMBS_INDEX_DEVICE_GOVERNOR]
+            dmc_info['device']['freq'] = comb_dm[PERF_COMBS_INDEX_DEVICE_FREQ]
+            dmc_info['module']['os'] = comb_dm[PERF_COMBS_INDEX_MODULE_OS]
+            dmc_info['module']['arch'] = comb_dm[PERF_COMBS_INDEX_MODULE_ARCH]
+            dmc_info['module']['name'] = comb_dm[PERF_COMBS_INDEX_MODULE_NAME]
+            comb_case = combs_case[index_c]
+            dmc_info['case']['category'] = comb_case[COMBS_CASE_INDEX_CATEGORY]
+            dmc_info['case']['name'] = comb_case[COMBS_CASE_INDEX_NAME]
+            dmc_info['case']['version'] = comb_case[COMBS_CASE_INDEX_VERSION]
+            dmc_info['case']['metric'] = comb_case[COMBS_CASE_INDEX_METRIC]
+
+            need_filter = False
+            af = json.loads(args.analyze_filter)
+            for key_l1 in af:
+                if need_filter:
+                    break
+                for key_l2 in af[key_l1]:
+                    if af[key_l1][key_l2] != dmc_info[key_l1][key_l2]:
+                        need_filter = True
+                        break
+            if need_filter:
+                continue
+
         if args.analyze_unknown:
             if args.analyze_unknown == 'all' and not x_imp_unknown and not x_reg_unknown:
                 continue
@@ -324,10 +356,6 @@ def _get_perf():
     for index_comb in device_module_to_version:
         device_module_to_version[index_comb] = sorted(device_module_to_version[index_comb], cmp=ver_cmp)
 
-    # parse filter
-    if args.analyze_filter:
-        af = json.loads(args.analyze_filter)
-
     for index_combs_dm in device_module_to_version:
         vers = device_module_to_version[index_combs_dm]
         for ver in vers:
@@ -348,38 +376,6 @@ def _get_perf():
                     combs_case.append(comb)
 
                 index_combs_case = combs_case.index(comb)
-
-                dmc = {}
-                dmc['device'] = {}
-                dmc['module'] = {}
-                dmc['case'] = {}
-                comb_dm = combs_device_module[index_combs_dm]
-                dmc['device']['product'] = comb_dm[PERF_COMBS_INDEX_DEVICE_PRODUCT]
-                dmc['device']['arch'] = comb_dm[PERF_COMBS_INDEX_DEVICE_ARCH]
-                dmc['device']['governor'] = comb_dm[PERF_COMBS_INDEX_DEVICE_GOVERNOR]
-                dmc['device']['freq'] = comb_dm[PERF_COMBS_INDEX_DEVICE_FREQ]
-                dmc['module']['os'] = comb_dm[PERF_COMBS_INDEX_MODULE_OS]
-                dmc['module']['arch'] = comb_dm[PERF_COMBS_INDEX_MODULE_ARCH]
-                dmc['module']['name'] = comb_dm[PERF_COMBS_INDEX_MODULE_NAME]
-                comb_case = combs_case[index_combs_case]
-                dmc['case']['category'] = comb_case[COMBS_CASE_INDEX_CATEGORY]
-                dmc['case']['name'] = comb_case[COMBS_CASE_INDEX_NAME]
-                dmc['case']['version'] = comb_case[COMBS_CASE_INDEX_VERSION]
-                dmc['case']['metric'] = comb_case[COMBS_CASE_INDEX_METRIC]
-
-                # filter
-                if args.analyze_filter:
-                    need_filter = False
-                    for key_l1 in af:
-                        if need_filter:
-                            break
-                        for key_l2 in af[key_l1]:
-                            if af[key_l1][key_l2] != dmc[key_l1][key_l2]:
-                                need_filter = True
-                                break
-                    if need_filter:
-                        continue
-
                 if (index_combs_dm, index_combs_case) not in device_module_case_to_perf:
                     device_module_case_to_perf[(index_combs_dm, index_combs_case)] = {}
 

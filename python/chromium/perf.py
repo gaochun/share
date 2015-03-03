@@ -88,6 +88,7 @@ def run():
         return
 
     _setup_device()
+    device_id = devices_id[0]
 
     for comb in combs_all:
         combs_done = []
@@ -108,8 +109,10 @@ def run():
         config_suites = ''
         for comb_todo in combs_todo:
             # make sure running with sufficient power
-            if android_get_power_percent(device_id=devices_id[0]) < 50:
-                time.sleep(7200)
+            if android_get_power_percent(device_id=device_id) < 50:
+                android_ensure_screen_off(device_id=device_id)
+                time.sleep(3600 * 4)
+            android_ensure_screen_on(device_id=device_id)
 
             config_todo = '''
 {

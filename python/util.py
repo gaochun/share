@@ -1281,8 +1281,16 @@ def setup_device(devices_id_limit=[]):
     return (devices_id, devices_product, devices_type, devices_arch, devices_mode)
 
 
+def android_input_keyevent(key, device_id=''):
+    execute(adb(cmd='shell input keyevent %s' % str(key), device_id=device_id))
+
+
+def android_press_power(device_id=''):
+    android_input_keyevent(26, device_id=device_id)
+
+
 def android_unlock_screen(device_id=''):
-    execute(adb(cmd='shell input keyevent 82', device_id=device_id))
+    android_input_keyevent(82, device_id=device_id)
 
 
 def android_set_screen_lock_none(device_id=''):
@@ -1302,18 +1310,25 @@ def android_set_display_sleep_30mins(device_id=''):
 
 
 def android_is_screen_on(device_id=''):
-    result = execute(adb(cmd='shell dumpsys power', device_id=device_id) + ' |grep mScreenOn=true')
+    ver = android_get_ver(device_id=device_id)
+    if ver_cmp(ver, '5.0') >= 0:
+        result = execute(adb(cmd='shell dumpsys power', device_id=device_id) + ' |grep "Display Power: state=ON"')
+    else:
+        result = execute(adb(cmd='shell dumpsys power', device_id=device_id) + ' |grep "mScreenOn=true"')
     if result[0]:
         return False
     else:
         return True
 
 
-# Just trigger once
-def android_trigger_screen_on(device_id=''):
-    if not android_is_screen_on(device_id):
-        # Bring up screen by pressing power
-        execute(adb('shell input keyevent 26'), device_id=device_id)
+def android_ensure_screen_on(device_id=''):
+    if not android_is_screen_on(device_id=device_id):
+        android_press_power(device_id=device_id)
+
+
+def android_ensure_screen_off(device_id=''):
+    if android_is_screen_on(device_id=device_id):
+        android_press_power(device_id=device_id)
 
 
 # Keep screen on when charging

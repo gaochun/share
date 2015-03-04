@@ -3,7 +3,7 @@
         "BigBang": {
             "state": "active", 
             "season": 8, 
-            "episode": 10, 
+            "episode": 16, 
             "resources": {
                 "cn163": [
                     "3639", 
@@ -25,7 +25,7 @@
         "Flash": {
             "state": "active", 
             "season": 1, 
-            "episode": 7, 
+            "episode": 14, 
             "resources": {
                 "cn163": [
                     "3213", 
@@ -47,7 +47,7 @@
         "Homeland": {
             "state": "active", 
             "season": 4, 
-            "episode": 9, 
+            "episode": 12, 
             "resources": {
                 "cn163": [
                     "3389", 
@@ -69,7 +69,7 @@
         "PersonOfInterest": {
             "state": "active", 
             "season": 4, 
-            "episode": 9, 
+            "episode": 16, 
             "resources": {
                 "cn163": [
                     "3197", 

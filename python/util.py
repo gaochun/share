@@ -1145,7 +1145,7 @@ def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/work
                   type='tombstone', repo_type=None, device_type=None, product_brand=None, product_name=None):
     if device_id == '' or device_id == '192.168.42.1:5555':
         device_type = 'baytrail'
-    target_arch = android_get_target_arch(device_id=device_id)
+    target_arch = android_get_abi(device_id=device_id)
     product = get_product(repo_type, target_arch, device_type, product_brand, product_name)
     if target_arch == 'x86_64':
         target_arch_str = '64'
@@ -1290,7 +1290,7 @@ def setup_device(devices_id_limit=[]):
         if devices_mode[index] == 'fastboot':
             devices_arch.append('')
         else:
-            devices_arch.append(android_get_target_arch(device_id=device_id))
+            devices_arch.append(android_get_abi(device_id=device_id))
 
     return (devices_id, devices_product, devices_type, devices_arch, devices_mode)
 
@@ -1354,43 +1354,6 @@ def android_tap(x=1300, y=700, device_id=''):
     execute(adb(cmd='shell input tap %s %s' % (str(x), str(y)), device_id=device_id))
 
 
-def android_get_info(key, device_id=''):
-    cmd = adb(cmd='shell grep %s= system/build.prop' % key, device_id=device_id)
-    result = execute(cmd, return_output=True, show_cmd=False)
-    return result[1].replace(key + '=', '').rstrip('\r\n')
-
-
-def android_get_power_percent(device_id=''):
-    cmd = adb(cmd='shell dumpsys power | grep mBatteryLevel=', device_id=device_id)
-    result = execute(cmd, return_output=True, show_cmd=False)
-    return int(result[1].replace('mBatteryLevel=', '').rstrip('\r\n').strip(' '))
-
-
-def android_get_ver(device_id=''):
-    return android_get_info('ro.build.version.release', device_id=device_id)
-
-
-def android_get_target_arch(device_id=''):
-    abi = android_get_info(key='ro.product.cpu.abi', device_id=device_id)
-    target_arch = ''
-    for key in target_arch_info:
-        if abi == target_arch_info[key][TARGET_ARCH_INFO_INDEX_ABI]:
-            target_arch = key
-            break
-
-    if target_arch == '':
-        error('Could not get correct target arch for device ' + device_id)
-
-    return target_arch
-
-
-def android_get_free_memory(device_id=''):
-    cmd = adb(cmd='shell cat /proc/meminfo | grep MemAvail', device_id=device_id)
-    result = execute(cmd, return_output=True, show_cmd=False)
-    m = re.search('(\d+)', result[1])
-    return int(m.group(1))
-
-
 def android_start_emu(target_arch):
     pid = os.fork()
     if pid == 0:
@@ -1408,11 +1371,6 @@ def android_kill_emu(target_arch):
     emu = 'emulator64-%s' % target_arch
     if has_process(emu):
         execute('killall %s' % emu)
-
-
-def android_get_memory(pkg):
-    pass
-    #dumpsys meminfo |grep org.chromium.content_shell_apk:sandbo
 
 
 def android_config_device(device_id, device_product, default, governor='', freq=0):
@@ -1545,6 +1503,79 @@ def android_gdb_module(device_id, module_name, target_arch, dir_src, dir_symbol=
     cmd += ' --force'
     execute(cmd, interactive=True)
     restore_dir()
+
+
+def android_get_power_percent(device_id=''):
+    cmd = adb(cmd='shell dumpsys power | grep mBatteryLevel=', device_id=device_id)
+    result = execute(cmd, return_output=True, show_cmd=False)
+    return int(result[1].replace('mBatteryLevel=', '').rstrip('\r\n').strip(' '))
+
+
+def android_get_free_memory(device_id=''):
+    cmd = adb(cmd='shell cat /proc/meminfo | grep MemAvail', device_id=device_id)
+    result = execute(cmd, return_output=True, show_cmd=False)
+    m = re.search('(\d+)', result[1])
+    return int(m.group(1))
+
+
+def android_get_memory(pkg):
+    pass
+    #dumpsys meminfo |grep org.chromium.content_shell_apk:sandbo
+
+
+def android_get_prop(key, device_id=''):
+    cmd = adb(cmd='shell getprop |grep %s' % key, device_id=device_id)
+    result = execute(cmd, return_output=True, show_cmd=False)
+    p = '\[%s\]: \[(.*)\]' % key
+    m = re.search(p, result[1])
+    if m:
+        return m.group(1)
+    else:
+        return 'NA'
+
+
+def android_get_ver(device_id=''):
+    return android_get_prop('ro.build.version.release', device_id=device_id)
+
+
+def android_get_build(device_id=''):
+    return android_get_prop('ro.build.display.id', device_id=device_id)
+
+
+def android_get_debuggable(device_id=''):
+    result = android_get_prop('ro.debuggable', device_id=device_id)
+    if result == '1':
+        return True
+    else:
+        return False
+
+
+def android_get_abi(device_id=''):
+    return android_get_prop(key='ro.product.cpu.abi', device_id=device_id)
+
+
+def android_get_target_arch(device_id=''):
+    abi = android_get_abi(device_id=device_id)
+    target_arch = ''
+    for key in target_arch_info:
+        if abi == target_arch_info[key][TARGET_ARCH_INFO_INDEX_ABI]:
+            target_arch = key
+            break
+
+    if target_arch == '':
+        error('Could not get correct target arch for device ' + device_id)
+
+    return target_arch
+
+
+def android_get_egl_trace(device_id=''):
+    return android_get_prop(key='debug.egl.trace', device_id=device_id)
+
+
+def android_get_egl_debug_proc(device_id=''):
+    return android_get_prop(key='debug.egl.debug_proc', device_id=device_id)
+
+
 ## </android>
 
 

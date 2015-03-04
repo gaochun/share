@@ -121,7 +121,7 @@ examples:
     parser.add_argument('--device-freq', dest='device_freq', type=int, help='device freq')
 
     parser.add_argument('--prepare', dest='prepare', help='prepare the device', action='store_true')
-    parser.add_argument('--info', dest='info', help='show android info', action='store_true')
+    parser.add_argument('--prop', dest='prop', help='show android prop', action='store_true')
     parser.add_argument('--inspect', dest='inspect', help='inspect running info', action='store_true')
     parser.add_argument('--verified-boot', dest='verified_boot', help='enbale verified boot', action='store_true')
     parser.add_argument('--hack-app-process', dest='hack_app_process', help='hack app_process', action='store_true')
@@ -683,9 +683,20 @@ def prepare():
     android_set_display_sleep_30mins(device_id=device_id)
 
 
-def info():
-    if not args.info:
+def prop():
+    if not args.prop:
         return
+
+    _setup_device()
+    device_id = devices_id[0]
+
+    info('Version: ' + android_get_ver(device_id=device_id))
+    info('Build: ' + android_get_build(device_id=device_id))
+    info('Debuggable: ' + str(android_get_debuggable(device_id=device_id)))
+    info('ABI: ' + android_get_abi(device_id=device_id))
+    info('Target arch: ' + android_get_target_arch(device_id=device_id))
+    info('EGL trace: ' + android_get_egl_trace(device_id=device_id))
+    info('EGL debug proc (trace EGL cmd): ' + android_get_egl_debug_proc(device_id=device_id))
 
 
 def inspect():
@@ -950,7 +961,7 @@ if __name__ == "__main__":
     cts_run()
 
     prepare()
-    info()
+    prop()
     inspect()
 
     verified_boot()

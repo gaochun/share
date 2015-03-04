@@ -101,7 +101,7 @@ target_arch_info = {
     'x86': ['x86'],
     'arm': ['armeabi-v7a'],
     'x86_64': ['x86_64'],
-    'arm64': ['arm64'],
+    'arm64': ['arm64-v8a'],
 }
 TARGET_ARCH_INFO_INDEX_ABI = 0
 
@@ -1505,6 +1505,7 @@ def android_gdb_module(device_id, module_name, target_arch, dir_src, dir_symbol=
     restore_dir()
 
 
+# <android_get>
 def android_get_power_percent(device_id=''):
     cmd = adb(cmd='shell dumpsys power | grep mBatteryLevel=', device_id=device_id)
     result = execute(cmd, return_output=True, show_cmd=False)
@@ -1574,7 +1575,24 @@ def android_get_egl_trace(device_id=''):
 
 def android_get_egl_debug_proc(device_id=''):
     return android_get_prop(key='debug.egl.debug_proc', device_id=device_id)
+# </android_get>
 
+
+# <android_set>
+def android_set_prop(key, value, device_id=''):
+    cmd = adb(cmd='shell setprop %s %s' % (key, value), device_id=device_id)
+    result = execute(cmd, return_output=True, show_cmd=False)
+
+
+# value: related to "enable opengl traces in settings".
+# 0 for None, 1 for Logcat, systrace for systrace, error for stack trace for GL errors.
+def android_set_egl_trace(value, device_id=''):
+    android_set_prop(key='debug.egl.trace', value=value, device_id=device_id)
+
+
+def android_set_egl_debug_proc(value, device_id=''):
+    android_set_prop(key='debug.egl.debug_proc', value=value, device_id=device_id)
+# </android_set>
 
 ## </android>
 

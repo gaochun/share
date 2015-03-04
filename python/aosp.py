@@ -689,7 +689,6 @@ def prop():
 
     _setup_device()
     device_id = devices_id[0]
-
     info('Version: ' + android_get_ver(device_id=device_id))
     info('Build: ' + android_get_build(device_id=device_id))
     info('Debuggable: ' + str(android_get_debuggable(device_id=device_id)))

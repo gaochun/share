@@ -37,6 +37,7 @@ import smtplib
 import socket
 import subprocess
 import sys
+import threading
 import time
 import urllib2
 # </import>
@@ -839,6 +840,19 @@ def confirm(msg):
         return True
     else:
         return False
+
+
+def set_interval(interval, function, *args, **kwargs):
+    stop_event = threading.Event()
+
+    def loop():
+        while not stop_event.wait(interval):
+            function(*args, **kwargs)
+
+    t = threading.Thread(target=loop)
+    t.daemon = True
+    t.start()
+    return stop_event
 ## </misc>
 
 
@@ -1368,6 +1382,13 @@ def android_get_target_arch(device_id=''):
         error('Could not get correct target arch for device ' + device_id)
 
     return target_arch
+
+
+def android_get_free_memory(device_id=''):
+    cmd = adb(cmd='shell cat /proc/meminfo | grep MemAvail', device_id=device_id)
+    result = execute(cmd, return_output=True, show_cmd=False)
+    m = re.search('(\d+)', result[1])
+    return int(m.group(1))
 
 
 def android_start_emu(target_arch):

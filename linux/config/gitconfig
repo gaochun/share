@@ -17,10 +17,10 @@
     default = simple
 
 [http]
-    proxy = socks5://proxy.ir.intel.com:1080
+    proxy = socks5://proxy-mu.intel.com:1080
     postBuffer = 524288000
 [https]
-    proxy = socks5://proxy.ir.intel.com:1080
+    proxy = socks5://proxy-mu.intel.com:1080
 
 # x64
 [review "aia-review.intel.com"]

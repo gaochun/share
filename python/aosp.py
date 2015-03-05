@@ -695,8 +695,14 @@ def prop():
 
     _setup_device()
     device_id = devices_id[0]
-    info('Version: ' + android_get_ver(device_id=device_id))
-    info('Build: ' + android_get_build(device_id=device_id))
+
+    info('Build date: ' + android_get_build_date(device_id=device_id))
+    info('Build description: ' + android_get_build_desc(device_id=device_id))
+    info('Build id: ' + android_get_build_id(device_id=device_id))
+    info('Build product: ' + android_get_build_product(device_id=device_id))
+    info('Build type: ' + android_get_build_type(device_id=device_id))
+    info('Build release: ' + android_get_build_release(device_id=device_id))
+
     info('Debuggable: ' + str(android_get_debuggable(device_id=device_id)))
     info('ABI: ' + android_get_abi(device_id=device_id))
     info('Target arch: ' + android_get_target_arch(device_id=device_id))

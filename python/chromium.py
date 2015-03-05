@@ -1372,7 +1372,7 @@ def _test_gen_report(index_device, results):
             <li>Chromium Revision: ''' + str(rev) + '''</li>
             <li>Host Machine: ''' + host_name + '''</li>
             <li>Target Device: ''' + device_product + '''</li>
-            <li>Target Image: ''' + android_get_build(device_id=device_id) + '''</li>
+            <li>Target Image: ''' + android_get_build_desc(device_id=device_id) + '''</li>
             <li>Build Duration: ''' + str(timer_diff('build')) + '''</li>
             <li>Test Build Duration: ''' + str(timer_diff('test_build')) + '''</li>
             <li>Test Run Duration: ''' + str(timer_diff('test_run_' + str(index_device))) + '''</li>

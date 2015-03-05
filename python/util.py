@@ -1325,7 +1325,7 @@ def android_unlock_screen(device_id=''):
 
 
 def android_set_screen_lock_none(device_id=''):
-    ver = android_get_ver(device_id=device_id)
+    ver = android_get_build_release(device_id=device_id)
     if ver_cmp(ver, '5.0') >= 0:
         info('Andorid Lollipop does not support to set screen lock to none')
     else:
@@ -1333,7 +1333,7 @@ def android_set_screen_lock_none(device_id=''):
 
 
 def android_set_display_sleep_30mins(device_id=''):
-    ver = android_get_ver(device_id=device_id)
+    ver = android_get_build_release(device_id=device_id)
     if ver_cmp(ver, '5.0') >= 0:
         execute_adb_shell(cmd='am start -n com.android.settings/.DisplaySettings && sleep 2 && input tap 200 400 && sleep 2 && input tap 500 800 && am force-stop com.android.settings', device_id=device_id)
     else:
@@ -1341,7 +1341,7 @@ def android_set_display_sleep_30mins(device_id=''):
 
 
 def android_is_screen_on(device_id=''):
-    ver = android_get_ver(device_id=device_id)
+    ver = android_get_build_release(device_id=device_id)
     if ver_cmp(ver, '5.0') >= 0:
         result = execute(adb(cmd='shell dumpsys power', device_id=device_id) + ' |grep "Display Power: state=ON"')
     else:
@@ -1552,12 +1552,28 @@ def android_get_prop(key, device_id=''):
         return 'NA'
 
 
-def android_get_ver(device_id=''):
+def android_get_build_date(device_id=''):
+    return android_get_prop('ro.build.date', device_id=device_id)
+
+
+def android_get_build_desc(device_id=''):
+    return android_get_prop('ro.build.description', device_id=device_id)
+
+
+def android_get_build_id(device_id=''):
+    return android_get_prop('ro.build.id', device_id=device_id)
+
+
+def android_get_build_product(device_id=''):
+    return android_get_prop('ro.build.product', device_id=device_id)
+
+
+def android_get_build_type(device_id=''):
+    return android_get_prop('ro.build.type', device_id=device_id)
+
+
+def android_get_build_release(device_id=''):
     return android_get_prop('ro.build.version.release', device_id=device_id)
-
-
-def android_get_build(device_id=''):
-    return android_get_prop('ro.build.display.id', device_id=device_id)
 
 
 def android_get_debuggable(device_id=''):

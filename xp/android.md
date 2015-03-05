@@ -6,10 +6,9 @@ mount /system/gfx directory
 
 /workspace/project/chrome-android/38.0.2125.509/src/out-x86/out/Release/lib
 /workspace/tool/i686-linux-android-strip libchrome_prebuilt.so -o libchrome.2125.509.so
-
 </todo>
 
-<useful>
+<xp>
 * svc power stayon usb // ensure screen on when charging
 * LD_LIBRARY_PATH=/workspace/tool/adt/sdk/tools/lib /workspace/tool/adt/sdk/tools/emulator64-x86 -avd x86 -no-audio
 
@@ -50,7 +49,26 @@ task: 逻辑上的应用
 adb shell screenrecord --time-limit 10 /cache/reproduce.mp4 or adb shell screenrecord /cache/reproduce.mp4
 
 * netcfg on android
-</useful>
+
+<provision>
+* enable developer
+* settings/developer options/usb debugging
+
+* oem unlock
+enable oem unlock in settings/developer options/enable oem unlock
+adb reboot fastboot
+fastboot oem unlock, and confirm
+fastboot reboot
+
+* settings/display/sleep/30 minutes
+* settings/security/screen lock/none
+
+* disable verity on /system
+adb disable-verity
+adb reboot
+</provision>
+
+</xp>
 
 
 <general>
@@ -310,28 +328,6 @@ start with parameter for chrome? TODO
 
 * instrument test
 am instrument -w com.android.browser.tests/android.test.InstrumentationTestRunner
-
-* stock browser
-am start -a android.intent.action.VIEW -n com.android.browser/.BrowserActivity -d http://www.baidu.com
-am start -a android.intent.action.VIEW -n com.android.browser/.BrowserActivity -d file:///data/local/tmp/index.html
-
-* chrome stable
-adb shell am start -n com.android.chrome/com.android.chrome.Main -d "chrome://version"
-
-* chrome beta
-adb shell am start -n com.chrome.beta/com.chrome.beta.Main -d "chrome://version"
-
-* chrome shell
-adb shell am start -n org.chromium.chrome.shell/.ChromeShellActivity -d "http://wp-02.sh.intel.com/webbench/webgl/webglsamples/aquarium/aquarium.html"
-
-* content shell
-adb shell am start -n org.chromium.content_shell/.ContentShellApplication -d "about:version"
-
-* webview shell
-adb shell am start -n org.chromium.android_webview.shell/.AwShellActivity -d "http://wp-02.sh.intel.com/gytemp/rect0.html"
-
-* self-build chrome
-adb shell am start -n com.android.chromium/com.google.android.apps.chrome.Main -d "chrome://version"
 
 * security setting
 am start -n com.android.settings/.SecuritySettings

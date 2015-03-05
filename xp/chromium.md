@@ -1,7 +1,88 @@
+
+<chrome_product>
+
+build/android/pylib/constants.py
+
+<ninja_target>
+
+libwebviewchromium (android_webview/android_webview.gyp) -> libwebviewchromium.so
+android_webview_apk (android_webview/android_webview.gyp) -> webview shell
+system_webview_apk (android_webview/android_webview.gyp) -> webview shell
+android_webview_telemetry_shell_apk (android_webview_telemetry_shell.gyp) -> webview telemetry shell, used for webview telemetry test
+
+
+</ninja_target>
+
+<chrome_stable>
+/data/local/chrome-command-line
+adb shell am start -n com.android.chrome/com.android.chrome.Main -d "chrome://version"
+adb shell am start -n com.android.chrome/com.google.android.apps.chrome.Main -d "http://wp-02.sh.intel.com/webbench/webgl/webglsamples/aquarium/aquarium.html"
+</chrome_stable>
+
+<chrome_beta>
+adb shell am start -n com.chrome.beta/com.chrome.beta.Main -d "chrome://version"
+
+
+</chrome_beta>
+
+<self-built_chrome>
+adb shell am start -n com.android.chromium/com.google.android.apps.chrome.Main -d "chrome://version"
+</self-built_chrome>
+
+<content_shell>
+/data/local/tmp/content-shell-command-line
+adb shell am start -n org.chromium.content_shell/.ContentShellApplication -d "about:version"
+</content_shell>
+
+<chrome_shell>
+/data/local/tmp/chrome-shell-command-line
+adb shell am start -n org.chromium.chrome.shell/.ChromeShellActivity -d "http://wp-02.sh.intel.com/webbench/webgl/webglsamples/aquarium/aquarium.html"
+</chrome_shell>
+
+<webview_shell>
+/data/local/tmp/android-webview-command-line
+adb shell am start -n org.chromium.android_webview.shell/.AwShellActivity -d "http://wp-02.sh.intel.com/gytemp/rect0.html"
+
+android_webview/test/shell
+/data/local/tmp/android-webview-command-line
+--enable-atrace
+android_webview/test/shell/src/org/chromium/android_webview/shell/AwShellApplication.java
+android_webview/public/browser/draw_gl.h
+
+android_webview/test/shell/src/drawgl
+android_webview/lib/main/webview_entry_point.cc: jni loadlibrary
+</webview_shell>
+
+<system_webview_apk>
+
+
+</system_webview_apk>
+
+<webview_telemetry_shell>
+from android platform/frameworks/webview/chromium/tools/WebViewShell -> chromium android_webview_telemetry_shell_apk
+used to run telemetry test
+</webview_telemetry_shell>
+
+
+<aosp_browser>
+am start -a android.intent.action.VIEW -n com.android.browser/.BrowserActivity -d http://www.baidu.com
+am start -a android.intent.action.VIEW -n com.android.browser/.BrowserActivity -d file:///data/local/tmp/index.html
+
+</aosp_browser>
+
+</chrome_product>
+
+<telemetry>
+all browser: tools/telemetry/telemetry/core/backends/chrome/android_browser_finder.py
+
+</telemetry>
+
+
 <xp>
 * webcatch build issue
 src/tools/clang/scripts/update.sh  # update llvm
 src/build/install-build-deps-android.sh
+
 
 </xp>
 

@@ -49,6 +49,15 @@ mysql -u root -p
 </zsh>
 
 <xp>
+* top
+us: user space
+id: idle
+sy: system (kernel)
+ni: user space processes been niced
+wa: wait for io
+hi/si: hardware or software interrupt
+st: stolen (virtual CPU has spent waiting for the hypervisor to service another virtual CPU)
+
 * add favorite to gnome shell
 alacarte->add new item->search it in applications->add as favorite
 

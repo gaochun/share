@@ -107,7 +107,7 @@ examples:
     parser.add_argument('--cts-run', dest='cts_run', help='package to run with cts, such as android.webkit, com.android.cts.browserbench')
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'all'], default='x86_64')
-    parser.add_argument('--target-type', dest='target_type', help='target type, can be baytrail for t100, generic, mrd7, ecs, mako for nexus4, hammerhead for nexus5, flo for nexus7, manta for nexus 10', default='baytrail')
+    parser.add_argument('--target-type', dest='target_type', help='target type, can be baytrail for t100, generic, mrd7, ecs, and nexus variants', default='baytrail')
     parser.add_argument('--target-module', dest='target_module', help='target module', choices=['adb', 'libwebviewchromium', 'webview', 'browser', 'perf', 'cts', 'system', 'all'], default='system')
 
     parser.add_argument('--variant', dest='variant', help='variant', choices=['user', 'userdebug', 'eng'], default='userdebug')
@@ -290,13 +290,17 @@ def build():
 
         combo = _get_combo(target_arch, target_type)
         if repo_type == 'upstream':
-            dir_driver_upstream = dir_share_python + '/aosp/driver'
-            # Check proprietary binaries.
-            dir_driver_upstream_one = dir_driver_upstream + '/' + target_type + '/' + args.version + '/vendor'
-            if not os.path.exists(dir_driver_upstream_one):
-                error('Proprietary binaries do not exist')
-            execute('rm -rf vendor')
-            execute('cp -rf ' + dir_driver_upstream_one + ' ./')
+            # Nexus9 proprietary binaries are at /vendor, so there is no need to prepare them
+            if args.target_type == 'flounder':
+                pass
+            else:
+                dir_driver_upstream = dir_share_python + '/aosp/driver'
+                # Check proprietary binaries.
+                dir_driver_upstream_one = dir_driver_upstream + '/' + target_type + '/' + args.version + '/vendor'
+                if not os.path.exists(dir_driver_upstream_one):
+                    error('Proprietary binaries do not exist')
+                execute('rm -rf vendor')
+                execute('cp -rf ' + dir_driver_upstream_one + ' ./')
 
         if not args.build_skip_mk and os.path.exists(dir_root + '/external/chromium_org/src'):
             cmd = '. build/envsetup.sh && lunch ' + combo + ' && ' + dir_root + '/external/chromium_org/src/android_webview/tools/gyp_webview linux-x86'
@@ -881,6 +885,9 @@ def _get_repo_info():
             elif merge == 'android-4.4.4_r1':
                 repo_type = 'upstream'
                 repo_ver = '4.4.4.1'
+            elif merge == 'android-5.0.1_r1':
+                repo_type = 'upstream'
+                repo_ver = '5.0.1'
             elif merge == 'android-5.0.0_r2':
                 repo_type = 'upstream'
                 repo_ver = '5.0.0'

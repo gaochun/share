@@ -242,6 +242,23 @@ dir_share_common = dir_share + '/common'
 # </share>
 ## </path>
 
+## <android>
+# * means we have
+nexus_codename = {
+    'mako*': '4',
+    'hammerhead*': '5',
+    'shamu': '6',
+    'flo*': '7',
+    'deb': '7',
+    'grouper': '7',
+    'tilapia': '7',
+    'flounder*': '9',  # same as volantis, which can not be used to build
+    'manta*': '10',
+    'fugu': 'player'
+}
+
+## </android>
+
 ## <chromium>
 chromium_rev_max = 9999999
 

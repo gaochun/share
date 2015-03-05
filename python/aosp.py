@@ -120,11 +120,13 @@ examples:
     parser.add_argument('--device-governor', dest='device_governor', help='device governor')
     parser.add_argument('--device-freq', dest='device_freq', type=int, help='device freq')
 
+    parser.add_argument('--verified-boot', dest='verified_boot', help='enbale verified boot', action='store_true')
+    parser.add_argument('--hack-app-process', dest='hack_app_process', help='hack app_process', action='store_true')
+
     parser.add_argument('--prepare', dest='prepare', help='prepare the device', action='store_true')
     parser.add_argument('--prop', dest='prop', help='show android prop', action='store_true')
     parser.add_argument('--inspect', dest='inspect', help='inspect running info', action='store_true')
-    parser.add_argument('--verified-boot', dest='verified_boot', help='enbale verified boot', action='store_true')
-    parser.add_argument('--hack-app-process', dest='hack_app_process', help='hack app_process', action='store_true')
+    parser.add_argument('--gltrace', dest='gltrace', help='gl trace', action='store_true')
 
     add_argument_common(parser)
 
@@ -714,6 +716,16 @@ def inspect():
         pass
 
 
+def gltrace():
+    if not args.gltrace:
+        return
+
+    _setup_device()
+    device_id = devices_id[0]
+
+    execute('%s/adt/sdk/platform-tools/systrace/systrace.py -a org.chromium.chrome -t 10 gfx -o %s/trace-%s.html' % (dir_tool, dir_share_ignore_chromium, timestamp))
+
+
 def verified_boot():
     if not args.verified_boot:
         return
@@ -966,9 +978,10 @@ if __name__ == "__main__":
     push()
     cts_run()
 
+    verified_boot()
+    set_governor()
+
     prepare()
     prop()
     inspect()
-
-    verified_boot()
-    set_governor()
+    gltrace()

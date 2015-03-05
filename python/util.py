@@ -1454,7 +1454,7 @@ def android_enter_dnx(device_id):
 
 
 def android_enter_fastboot(device_id):
-    execute('timeout 5s ' + adb(cmd='reboot fastboot', device_id=device_id))
+    execute('timeout 5s ' + adb(cmd='reboot bootloader', device_id=device_id))
     sleep_sec = 3
     is_connected = False
     for i in range(0, 60):

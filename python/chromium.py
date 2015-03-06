@@ -358,7 +358,7 @@ def setup():
     if args.just_out:
         dir_out_build_type = dir_src + '/out/' + build_type.capitalize()
     else:
-        dir_out_build_type = dir_src + '/out-' + target_arch + '/out/' + build_type.capitalize()
+        dir_out_build_type = dir_src + '/out-' + target_arch + '/' + build_type.capitalize()
     dir_test = dir_root + '/test'
     dir_test_timestamp = dir_test + '/' + timestamp
 
@@ -704,7 +704,7 @@ def makefile(force=False):
         cmd = 'build/gyp_chromium -Dwerror='
 
     if not args.just_out:
-        cmd += ' --generator-output out-' + target_arch
+        cmd += ' -Goutput_dir=out-' + target_arch + ''
 
     if re.search('source', cmd):
         cmd = bashify_cmd(cmd)

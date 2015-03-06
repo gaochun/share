@@ -1171,7 +1171,7 @@ def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/work
 
     dirs_symbol = [
         dir_aosp + '/out/target/product/%s/symbols/system/lib%s' % (product, target_arch_str),
-        dir_chromium + '/src/out-%s/out/Release/lib' % target_arch,
+        dir_chromium + '/src/out-%s/Release/lib' % target_arch,
     ]
 
     get_symbol(analyze_file(device_id=device_id, type=type), dirs_symbol)

@@ -22,7 +22,7 @@ test_filter = {}
 dir_root = ''  # /workspace/project/chromium-android
 dir_src = ''  # /workspace/project/chromium-android/src
 dir_test = ''  # /workspace/project/chromium-android/test
-dir_out_build_type = ''  # /workspace/project/chromium-android/src/out-x86_64/out/Release
+dir_out_build_type = ''  # /workspace/project/chromium-android/src/out-x86_64/Release
 dir_test_timestamp = ''  # /workspace/project/chromium-android/test
 
 name_file = sys._getframe().f_code.co_filename
@@ -257,12 +257,12 @@ examples:
 ''')
     group_common = parser.add_argument_group('common')
     group_common.add_argument('--repo-type', dest='repo_type', help='repo type. default for upstream, feature for feature test, chrome-android for "Chrome for Android"', default='default')
-    #dir: <arch>-<target-os>/out/<build_type>, example: x86-linux/out/Release
+    #dir: <arch>-<target-os>/out/<build_type>, example: x86-linux/Release
     group_common.add_argument('--target-os', dest='target_os', help='target os', choices=['android', 'linux'])
     group_common.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'arm', 'x86_64', 'arm64'], default='x86')
     group_common.add_argument('--target-module', dest='target_module', help='target module to build, choices can be chrome, webview_shell, content_shell, chrome_shell, chromedriver, cpu_features, etc.', default='webview_shell')
     group_common.add_argument('--device-id', dest='device_id', help='device id list separated by ","', default='')
-    group_common.add_argument('--just-out', dest='just_out', help='stick to out, instead of out-x86_64/out', action='store_true')
+    group_common.add_argument('--just-out', dest='just_out', help='stick to out, instead of out-x86_64', action='store_true')
     group_common.add_argument('--rev', dest='rev', type=int, help='revision, will override --sync-upstream')
     group_common.add_argument('--ver', dest='ver', help='ver for chrome-android')
     group_common.add_argument('--ver-type', dest='ver_type', help='ver type, stable or beta')
@@ -639,7 +639,7 @@ def prebuild(force=False):
         cmd = 'wget -c -i http://storage.googleapis.com/chrome-browser-components/' + build_id + '/index.html'
         execute(cmd, interactive=True, abort=True)
 
-        dir_release = dir_src + '/out-' + target_arch + '/out/Release'
+        dir_release = dir_src + '/out-' + target_arch + '/Release'
         ensure_dir(dir_release)
         cmd = 'cp *.a ' + dir_release
         execute(cmd, abort=True)
@@ -704,7 +704,7 @@ def makefile(force=False):
         cmd = 'build/gyp_chromium -Dwerror='
 
     if not args.just_out:
-        cmd += ' -Goutput_dir=out-' + target_arch + ''
+        cmd += ' -Goutput_dir=out-' + target_arch
 
     if re.search('source', cmd):
         cmd = bashify_cmd(cmd)
@@ -1031,7 +1031,7 @@ def layout():
     if not args.layout:
         return()
 
-    backup_dir(dir_src + '/out/Release')
+    backup_dir(dir_src + '/Release')
     if os.path.isdir('content_shell'):
         execute('rm -rf content_shell_dir')
         execute('mv content_shell content_shell_dir')
@@ -1268,7 +1268,7 @@ def _test_run_device(index_device, results):
                 if args.just_out:
                     cmd = ''
                 else:
-                    cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + '/out '
+                    cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + ' '
 
                 cmd += dir_src + '/build/android/test_runner.py ' + command
 
@@ -1607,7 +1607,7 @@ def _install_apk(device_id, apks, force=False):
 
     cmd = 'python %s/build/android/adb_install_apk.py --apk_package %s --%s' % (dir_src, ' '.join(apks), build_type)
     if not args.just_out:
-        cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + '/out ' + cmd
+        cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + ' ' + cmd
     if device_id != '':
         cmd += ' -d ' + device_id
     result = execute(cmd, interactive=True)

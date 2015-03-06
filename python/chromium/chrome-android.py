@@ -349,7 +349,7 @@ def debug():
     module_name = 'chromium_' + local_ver_type
     device_id = devices_id[0]
     dir_src = '%s/%s/src' % (dir_project_chrome_android, local_ver)
-    dir_out = 'out-%s/out' % local_target_arch
+    dir_out = 'out-%s' % local_target_arch
     dir_symbol = '%s/%s/%s-%s' % (dir_server_chrome_android_todo, local_target_arch, local_ver, local_ver_type)
 
     android_install_module(device_id, dir_symbol + '/Chromium.apk', module_name)

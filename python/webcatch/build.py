@@ -308,7 +308,7 @@ def _patch_before_build(target_os, target_arch, target_module, rev):
 
     # For 7c849b3d759fa9fedd7d4aea73577d643465918d (rev 253545)
     # http://comments.gmane.org/gmane.comp.web.chromium.devel/50482
-    execute('rm -f ' + dir_repo + '/src/out-%s/out/Release/gen/templates/org/chromium/base/ActivityState.java' % target_arch)
+    execute('rm -f ' + dir_repo + '/src/out-%s/Release/gen/templates/org/chromium/base/ActivityState.java' % target_arch)
 
 
 def _patch_func(name):
@@ -542,7 +542,7 @@ def _build_one(comb_next):
     # build
     _patch_before_build(target_os, target_arch, target_module, rev)
 
-    dir_out_build_type = dir_repo + '/src/out-%s/out/Release' % target_arch
+    dir_out_build_type = dir_repo + '/src/out-%s/Release' % target_arch
     ## remove apks first as sometimes ninja build error doesn't actually return error.
     execute('rm -f %s/apks/*' % dir_out_build_type)
     execute('rm -f %s/apks/chrome' % dir_out_build_type)

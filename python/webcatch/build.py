@@ -40,8 +40,8 @@ comb_valid = {
 
     ('android', 'x86', 'webview_shell'): ['(.*).apk$', 297098, 300720],
     ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 297098, 300720],
-    ('android', 'arm', 'webview_shell'): ['(.*).apk$', 297098, 300720],
-    ('android', 'arm64', 'webview_shell'): ['(.*).apk$', 297098, 300720],
+    #('android', 'arm', 'webview_shell'): ['(.*).apk$', 297098, 300720],
+    #('android', 'arm64', 'webview_shell'): ['(.*).apk$', 297098, 300720],
 
     ('linux', 'x86', 'chrome'): ['(.*).tar.gz$', 233137, 236088],
     #['android', 'arm', 'content_shell'],

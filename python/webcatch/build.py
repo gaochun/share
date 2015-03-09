@@ -199,7 +199,7 @@ def build():
     build_fail = 0
     interval_git = 300
     rev_git_max = _chromium_get_rev_max(need_fetch=False)
-    time_git = get_epoch_second()
+    time_git = 0
     comb_next = _get_comb_next()
     rev_next = comb_next[COMB_INDEX_REV]
     while True:
@@ -210,7 +210,8 @@ def build():
             comb_next = _get_comb_next()
             rev_next = comb_next[COMB_INDEX_REV]
         elif args.build_auto_checkout:
-            rev_git_max = _chromium_get_rev_max()
+            rev_git_max = _chromium_get_rev_max(need_fetch=True)
+            time_git = get_epoch_second()
             if rev_next > rev_git_max:
                 return
         else:
@@ -219,7 +220,7 @@ def build():
                 info('Sleeping ' + str(interval_git) + ' seconds...')
                 time.sleep(interval_git)
 
-            rev_git_max = _chromium_get_rev_max()
+            rev_git_max = _chromium_get_rev_max(need_fetch=True)
             time_git = get_epoch_second()
 
 

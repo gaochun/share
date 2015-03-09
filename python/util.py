@@ -1162,7 +1162,7 @@ def analyze_issue(dir_aosp='/workspace/project/aosp-stable', dir_chromium='/work
                   type='tombstone', repo_type=None, device_type=None, product_brand=None, product_name=None):
     if device_id == '' or device_id == '192.168.42.1:5555':
         device_type = 'baytrail'
-    target_arch = android_get_abi(device_id=device_id)
+    target_arch = android_get_target_arch(device_id=device_id)
     product = get_product(repo_type, target_arch, device_type, product_brand, product_name)
     if target_arch == 'x86_64':
         target_arch_str = '64'
@@ -1307,7 +1307,7 @@ def setup_device(devices_id_limit=[]):
         if devices_mode[index] == 'fastboot':
             devices_arch.append('')
         else:
-            devices_arch.append(android_get_abi(device_id=device_id))
+            devices_arch.append(android_get_target_arch(device_id=device_id))
 
     return (devices_id, devices_product, devices_type, devices_arch, devices_mode)
 

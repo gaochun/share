@@ -245,18 +245,18 @@ def clean_lock():
 def init():
     dir_chromium_android = dir_project_webcatch_project + '/chromium-android'
     if os.path.exists(dir_chromium_android):
+        _install_build_deps(dir_chromium_android, 'android', 'x86')
+
         backup_dir(dir_chromium_android)
-        cmd = 'src/build/install-build-deps-android.sh'
-        execute(cmd, interactive=True)
         cmd = 'GYP_DEFINES="werror= disable_nacl=1 component=shared_library enable_svg=0" gclient sync -f -j16'
         execute(cmd, interactive=True)
         restore_dir()
 
     dir_chromium_linux = dir_project_webcatch_project + '/chromium-linux'
     if os.path.exists(dir_chromium_linux):
+        _install_build_deps(dir_chromium_linux, 'linux', 'x86_64')
+
         backup_dir(dir_chromium_linux)
-        cmd = 'src/build/install-build-deps.sh'
-        execute(cmd, interactive=True)
         cmd = 'GYP_DEFINES="werror= disable_nacl=1 component=shared_library enable_svg=0" gclient sync -f -j16'
         execute(cmd, interactive=True)
         restore_dir()
@@ -533,12 +533,18 @@ def _build_one(comb_next):
     cmd_makefile = python_share_chromium + ' --makefile --target-arch ' + target_arch + ' --target-module ' + target_module + ' --dir-root ' + dir_repo + ' --rev ' + str(rev)
     result = execute(cmd_makefile, dryrun=DRYRUN, show_progress=True)
     if result[0]:
-        # Run hook to retry. E.g., for revision >=252065, we have to run with hook to update gn tool.
-        cmd_sync_hook = cmd_sync.replace('-n ', '')
-        execute(cmd_sync_hook, dryrun=DRYRUN, show_progress=True)
-        result = execute(cmd_makefile, dryrun=DRYRUN)
+        # sometimes, we need to update google play service
+        if target_os == 'android':
+            _install_build_deps(dir_repo, 'android', target_arch)
+            result = execute(cmd_makefile, dryrun=DRYRUN, show_progress=True)
+
         if result[0]:
-            _report_fail('makefile', file_lock)
+            # Run hook to retry. E.g., for revision >=252065, we have to run with hook to update gn tool.
+            cmd_sync_hook = cmd_sync.replace('-n ', '')
+            execute(cmd_sync_hook, dryrun=DRYRUN, show_progress=True)
+            result = execute(cmd_makefile, dryrun=DRYRUN)
+            if result[0]:
+                _report_fail('makefile', file_lock)
 
     # build
     _patch_before_build(target_os, target_arch, target_module, rev)
@@ -553,10 +559,7 @@ def _build_one(comb_next):
     ## retry here
     if result_build[0]:
         if target_os == 'android':
-            cmd = dir_repo + '/src/build/install-build-deps-android.sh'
-            if target_arch[:3] == 'arm':
-                cmd += ' --arm'
-            execute(cmd, interactive=True, dryrun=DRYRUN)
+            _install_build_deps(dir_repo, 'android', target_arch)
             result_build = execute(cmd_build, dryrun=DRYRUN, show_progress=True)
         if result_build[0] and not args.keep_out:
             execute('rm -rf ' + dir_repo + '/src/out*', dryrun=DRYRUN)
@@ -716,6 +719,25 @@ def _report_fail(phase, file_lock=''):
         execute(_remotify_cmd('rm -f ' + file_lock))
     send_mail('webcatch@intel.com', ['yang.gu@intel.com', 'guanxian.li@intel.com'], '[webcatch] Failed to %s at %s' % (phase, host_name), '')
     error('Failed to %s' % phase)
+
+
+def _install_build_deps(dir_chromium, target_os, target_arch):
+    backup_dir(dir_chromium)
+    if target_os == 'linux':
+        cmd = 'src/build/install-build-deps.sh'
+        execute(cmd)
+    elif target_os == 'android':
+        cmd = 'src/build/install-build-deps-android.sh'
+        if target_arch[:3] == 'arm':
+            cmd += ' --arm'
+        print cmd
+        child = pexpect.spawn(cmd)
+        child.logfile = sys.stdout
+        child.expect('[y/n]', timeout=180)
+        child.sendline('y')
+        child.expect(pexpect.EOF, timeout=None)
+
+    restore_dir()
 # </internal>
 
 

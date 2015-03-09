@@ -28,6 +28,7 @@ import multiprocessing
 from multiprocessing import Pool
 import operator
 import os
+import pexpect
 import pickle
 import platform
 import random

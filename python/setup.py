@@ -110,8 +110,6 @@ def update(force=False):
     if not args.update_system and not force:
         return
 
-    execute('echo \'Acquire::http::proxy "http://127.0.0.1:8118";\' >apt.conf', show_cmd=False)
-    execute('sudo mv apt.conf /etc/apt/', show_cmd=False)
     execute('echo \'deb https://dl.google.com/linux/chrome/deb/ stable main\' >google.list', show_cmd=False)
     execute('sudo mv google.list /etc/apt/sources.list.d/', show_cmd=False)
     set_proxy()
@@ -223,6 +221,7 @@ def config():
     copy_file(dir_share_linux_config, 'tsocks.conf', '/etc', is_sylk=is_sylk)
     copy_file(dir_share_linux_config, 'proxychains.conf', '/etc', is_sylk=is_sylk)
     copy_file(dir_share_linux_config, '51-android.rules', '/etc/udev/rules.d', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config, 'apt.conf', '/etc/apt', is_sylk=is_sylk)
 
     copy_file(dir_share_linux_config, 'androidtool.cfg', dir_home + '/.android', is_sylk=is_sylk)
 

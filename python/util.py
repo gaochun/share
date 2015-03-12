@@ -265,7 +265,7 @@ chromium_rev_max = 9999999
 
 # src/build/android/pylib/constants.py
 chromium_android_info = {
-    'chrome_stable': ['', 'com.android.chrome', '.Main', True],
+    'chrome_stable': ['', 'com.android.chrome', 'com.google.android.apps.chrome.Main', True],
     'chrome_beta': ['', 'com.chrome.beta', '.Main', True],
     'stock_browser': ['', 'com.android.browser', '.BrowserActivity', True],
     'content_shell': ['ContentShell', 'org.chromium.content_shell_apk', '.ContentShellActivity', True],

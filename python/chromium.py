@@ -300,6 +300,7 @@ examples:
     group_basic.add_argument('--notify', dest='notify', help='notify', action='store_true')
     group_basic.add_argument('--install', dest='install', help='install module', action='store_true')
     group_basic.add_argument('--run', dest='run', help='run', action='store_true')
+    group_basic.add_argument('--run-link', dest='run_link', help='link to run with')
     group_basic.add_argument('--run-option', dest='run_option', help='option to run')
     group_basic.add_argument('--run-gpu', dest='run_GPU', help='enable GPU acceleration', action='store_true')
     group_basic.add_argument('--run-debug-renderer', dest='run_debug_renderer', help='run gdb before renderer starts', action='store_true')
@@ -989,8 +990,13 @@ def run():
             option = option + ' --renderer-cmd-prefix="xterm -title renderer -e gdb --args"'
 
         cmd = dir_out_build_type + '/chrome ' + option
-    else:
-        cmd = dir_src + '/build/android/adb_run_content_shell'
+    elif target_os == 'android':
+        _setup_device()
+        device_id = devices_id[0]
+        cmd = adb(cmd='shell am start -n %s/%s' % (chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_PKG], chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_ACT]), device_id=device_id)
+
+        if args.run_link:
+            cmd += ' -d "%s"' % args.run_link
 
     if args.run_option:
         cmd += ' ' + args.run_option

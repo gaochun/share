@@ -258,9 +258,9 @@ examples:
     group_common = parser.add_argument_group('common')
     group_common.add_argument('--repo-type', dest='repo_type', help='repo type. default for upstream, feature for feature test, chrome-android for "Chrome for Android"', default='default')
     #dir: <arch>-<target-os>/out/<build_type>, example: x86-linux/Release
-    group_common.add_argument('--target-os', dest='target_os', help='target os', choices=['android', 'linux'])
+    group_common.add_argument('--target-os', dest='target_os', help='target os', choices=['android', 'linux'], default='android')
     group_common.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'arm', 'x86_64', 'arm64'], default='x86')
-    group_common.add_argument('--target-module', dest='target_module', help='target module to build, choices can be chrome, webview_shell, content_shell, chrome_shell, chromedriver, cpu_features, etc.', default='webview_shell')
+    group_common.add_argument('--target-module', dest='target_module', help='target module to build, choices can be chrome, webview_shell, content_shell, chrome_shell, chromedriver, cpu_features, etc.', default='chrome_shell')
     group_common.add_argument('--device-id', dest='device_id', help='device id list separated by ","', default='')
     group_common.add_argument('--just-out', dest='just_out', help='stick to out, instead of out-x86_64', action='store_true')
     group_common.add_argument('--rev', dest='rev', type=int, help='revision, will override --sync-upstream')
@@ -297,7 +297,7 @@ examples:
     group_basic.add_argument('--verify', dest='verify', help='verify', action='store_true')
     group_basic.add_argument('--backup', dest='backup', help='backup', action='store_true')
     group_basic.add_argument('--notify', dest='notify', help='notify', action='store_true')
-    group_basic.add_argument('--install', dest='install', help='install chrome for android', choices=['release', 'debug'])
+    group_basic.add_argument('--install', dest='install', help='install module', action='store_true')
     group_basic.add_argument('--run', dest='run', help='run', action='store_true')
     group_basic.add_argument('--run-option', dest='run_option', help='option to run')
     group_basic.add_argument('--run-gpu', dest='run_GPU', help='enable GPU acceleration', action='store_true')
@@ -337,7 +337,6 @@ examples:
 def setup():
     global dir_src, dir_out_build_type, dir_test, dir_test_timestamp
     global target_os, target_arch, target_module
-    global devices_id, devices_product, devices_type, devices_arch
     global test_suite, build_type, rev, dir_patches, patches, test_filter, repo_type
     global ver, ver_type, chrome_android_soname, dir_server_chrome_android_todo_comb, chrome_android_file_readme, chrome_android_apk
     global dir_root, log, timestamp
@@ -404,18 +403,6 @@ def setup():
         else:
             target_os = 'linux'
 
-    if _need_device():
-        if args.device_id:
-            devices_id_limit = args.device_id.split(',')
-        else:
-            devices_id_limit = []
-
-        if not devices_id_limit or '192.168.42.1:5555' in devices_id_limit:
-            connect_device()
-        (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_id_limit=devices_id_limit)
-
-        _hack_app_process()
-
     # repo type specific variables
     if repo_type == 'chrome-android':
         if args.chrome_android_apk:
@@ -473,6 +460,8 @@ def buildid(force=False):
     global chrome_android_apk
     if not args.buildid and not force:
         return
+
+    _setup_device()
 
     if os.path.exists('lib'):
         is_gms = True
@@ -972,6 +961,17 @@ def phase_continue():
             phase = phase_new
 
 
+def install():
+    if not args.install:
+        return
+
+    _setup_device()
+    device_id = devices_id[0]
+
+    apk = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_APK]
+    _install_apk(apk=apk, device_id=device_id)
+
+
 def run():
     if not args.run:
         return()
@@ -1083,7 +1083,7 @@ def test_run(force=False):
         return
 
     ensure_dir(dir_test)
-
+    _setup_device()
     number_device = len(devices_id)
     if number_device < 1:
         error('Please ensure test device is connected')
@@ -1250,8 +1250,8 @@ def _test_run_device(index_device, results):
                 if command == 'instrumentation':
                     # Install packages before running
                     apks = [instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_APK_PACKAGE], instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_APK]]
-                    if apks:
-                        _install_apk(device_id=device_id, apks=apks, force=True)
+                    for apk in apks:
+                        _install_apk(apk=apk, device_id=device_id)
 
                     # push test data
                     #cmd = adb(cmd='push ', device_id=device_id)
@@ -1598,18 +1598,17 @@ def _calc_test_filter(device_type, target_arch, suite):
     return (test_filter_str, count_test_filter)
 
 
-def _install_apk(device_id, apks, force=False):
-    if not args.install and not force:
-        return
-
+def _install_apk(apk, device_id):
     if not target_os == 'android':
         return
 
-    cmd = 'python %s/build/android/adb_install_apk.py --apk_package %s --%s' % (dir_src, ' '.join(apks), build_type)
+    cmd = 'python %s/build/android/adb_install_apk.py --keep_data --%s' % (dir_src, build_type)
     if not args.just_out:
         cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + ' ' + cmd
     if device_id != '':
         cmd += ' -d ' + device_id
+
+    cmd += ' ' + apk
     result = execute(cmd, interactive=True)
 
     if result[0]:
@@ -1746,7 +1745,6 @@ def _update_phase(phase):
 
 # get one device for each target_arch
 def _get_target_arch_device_id():
-    (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device()
     target_arch_device_id = {}
     for index, device_id in enumerate(devices_id):
         target_arch_temp = devices_arch[index]
@@ -1761,6 +1759,15 @@ def _has_element_ver(driver):
         return True
     else:
         return False
+
+
+def _setup_device():
+    global devices_id, devices_product, devices_type, devices_arch, devices_mode
+
+    if devices_id:
+        return
+
+    (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_id_limit=args.device_id)
 
 
 def _teardown():
@@ -1789,6 +1796,7 @@ if __name__ == '__main__':
     backup()
     notify()
     phase_continue()
+    install()
     run()
     # test
     test_build()

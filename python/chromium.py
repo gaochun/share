@@ -1001,7 +1001,7 @@ def run():
     if args.run_option:
         cmd += ' ' + args.run_option
 
-    execute(cmd)
+    execute(cmd, interactive=True)
 
 
 def owner():

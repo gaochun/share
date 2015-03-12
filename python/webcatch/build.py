@@ -60,6 +60,7 @@ COMB_INDEX_REV = 3
 # [reva, revb], where reva is bad, and revb is good
 # A failure is by default for all combs expect for some specification, like [arm] in comment
 expectfail = [
+    [319991, 320070],  # using android ndk r10d in src/breakpad after rolling but ndk in chromium is not updated to that. this breaks x86_64 build.
     [315314, 315475],  # some target_arch constants are wrong/missing for V8 snapshot
     [311969, 311981],  # webview_license.py raise License Missing Error. BUG=448703.
     [300711, 300726],  # DevToolsTracingHandler

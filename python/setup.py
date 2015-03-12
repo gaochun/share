@@ -8,6 +8,7 @@
 
 
 from util import *
+is_sylk = True
 
 pkgs_common = [
     'tsocks', 'privoxy',
@@ -204,11 +205,14 @@ D3+sWZF/WACfeNAu1/1hwZtUo1bR+MWiCjpvHtwAnA1R3IHqFLQ2X3xJ40XPuAyY
         info('Key for Chrome has been added')
 
 
-def config():
+def config_before_update():
+    copy_file(dir_share_linux_config + '/apt', 'apt.conf', '/etc/apt', is_sylk=is_sylk)
+    copy_file(dir_share_linux_config + '/apt', 'sources.list', '/etc/apt', is_sylk=is_sylk)
+
+
+def config_after_update():
     # Change default shell
     execute('sudo chsh -s /bin/zsh ' + username, show_cmd=False)
-
-    is_sylk = True
 
     copy_file(dir_share_linux_config, 'bashrc', dir_home, '.bashrc', is_sylk=is_sylk)
     copy_file(dir_share_linux_config, 'gdbinit', dir_home, '.gdbinit', is_sylk=is_sylk)
@@ -221,7 +225,6 @@ def config():
     copy_file(dir_share_linux_config, 'tsocks.conf', '/etc', is_sylk=is_sylk)
     copy_file(dir_share_linux_config, 'proxychains.conf', '/etc', is_sylk=is_sylk)
     copy_file(dir_share_linux_config, '51-android.rules', '/etc/udev/rules.d', is_sylk=is_sylk)
-    copy_file(dir_share_linux_config, 'apt.conf', '/etc/apt', is_sylk=is_sylk)
 
     copy_file(dir_share_linux_config, 'androidtool.cfg', dir_home + '/.android', is_sylk=is_sylk)
 
@@ -243,7 +246,7 @@ def config():
         copy_file(dir_share_common + '/sublime/%s' % version, 'SublimeLinter.sublime-settings', dir_home + '/.config/sublime-text-%s/Packages/User' % version, is_sylk=is_sylk)
 
     # Chromium build
-    copy_file('/usr/include/x86_64-linux-gnu', 'asm', '/usr/include', is_sylk=True)
+    copy_file('/usr/include/x86_64-linux-gnu', 'asm', '/usr/include', is_sylk=is_sylk)
 
     # apache2
     dir_share_linux_config_apache2 = dir_share_linux_config + '/apache2'
@@ -295,8 +298,9 @@ if __name__ == '__main__':
     parse_arg()
     setup()
     patch_sudo(force=args.default)  # This should be done first
+    config_before_update()
     update(force=args.default)
     install_pkg(force=args.default)
     install_chromium()
-    config()
+    config_after_update()
     cleanup()

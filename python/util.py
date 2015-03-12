@@ -87,6 +87,8 @@ server_webcatch = machines[1]
 # main server for chromeforandroid
 server_chromeforandroid = machines[2]
 
+server_dashboard = machines[1]
+
 target_arch_index = {'x86': 0, 'arm': 1, 'x86_64': 2, 'arm64': 3}
 target_arch_strip = {
     'x86': 'i686-linux-android-strip',
@@ -193,6 +195,7 @@ dir_server_chromium = dir_server + '/chromium'
 dir_server_webbench = dir_server + '/webbench'
 dir_server_chrome_android_todo = dir_server_chromium + '/android-chrome-todo'
 dir_server_chrome_android_todo_buildid = dir_server_chrome_android_todo + '/buildid'
+dir_server_dashboard = dir_server + '/dashboard'
 # </server>
 
 # <tool> dir_tool_xxx
@@ -231,6 +234,7 @@ dir_share_python_chromium = dir_share_python + '/chromium'
 python_share_webmark = 'python ' + dir_share_python_webmark + '/webmark.py'
 python_share_chromium = 'python ' + dir_share_python + '/chromium.py'
 python_share_aosp = 'python ' + dir_share_python + '/aosp.py'
+python_share_dashboard = 'python ' + dir_share_python + '/dashboard.py'
 
 dir_share_linux = dir_share + '/linux'
 dir_share_linux_config = dir_share_linux + '/config'
@@ -871,6 +875,11 @@ def set_interval(interval, function, *args, **kwargs):
     t.daemon = True
     t.start()
     return stop_event
+
+
+def dashboard(message):
+    cmd = remotify_cmd(python_share_dashboard + ' --message %s --machine %s' % (message, host_name), server=server_dashboard[MACHINES_INDEX_HOSTNAME])
+    execute(cmd)
 ## </misc>
 
 

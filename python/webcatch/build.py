@@ -463,7 +463,10 @@ def _move_to_server(file, target_os, target_arch, target_module):
 
 
 def _build(comb_next):
+    comb_next_name = '-'.join(comb_next)
+    dashboard('[webcatch] Begin ' + comb_next_name)
     result = _build_one(comb_next)
+    dashboard('[webcatch] End ' + comb_next_name)
     comb_next[COMB_INDEX_REV] += build_every
     if result:
         build_fail = 0

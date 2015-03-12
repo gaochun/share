@@ -108,7 +108,7 @@ examples:
 
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'x86_64', 'all'], default='x86_64')
     parser.add_argument('--target-type', dest='target_type', help='target type, can be baytrail for t100, generic, mrd7, ecs, and nexus variants', default='baytrail')
-    parser.add_argument('--target-module', dest='target_module', help='target module', choices=['adb', 'libwebviewchromium', 'webview', 'browser', 'perf', 'cts', 'system', 'all'], default='system')
+    parser.add_argument('--target-module', dest='target_module', help='target module, choices can be adb, libwebviewchromium, webview, browser, perf, cts, system, all', default='system')
 
     parser.add_argument('--variant', dest='variant', help='variant', choices=['user', 'userdebug', 'eng'], default='userdebug')
     parser.add_argument('--version', dest='version', help='version, KTU84P for 4.4.4, master')
@@ -127,6 +127,7 @@ examples:
     parser.add_argument('--prop', dest='prop', help='show android prop', action='store_true')
     parser.add_argument('--inspect', dest='inspect', help='inspect running info', action='store_true')
     parser.add_argument('--gltrace', dest='gltrace', help='gl trace', action='store_true')
+    parser.add_argument('--gltrace-target', dest='gltrace_target', help='gl trace target. Can be logcat, systrace, etc.', default='logcat')
 
     add_argument_common(parser)
 
@@ -317,7 +318,7 @@ def build():
                 cmd += 'dist'
             else:
                 cmd += target_module
-        elif target_module in ['browser', 'libwebviewchromium', 'perf', 'webview', 'adb']:
+        else:
             cmd = '. build/envsetup.sh && lunch ' + combo + ' && '
             if args.build_no_dep:
                 cmd += 'mmm '
@@ -334,6 +335,8 @@ def build():
                 cmd += 'frameworks/webview'
             elif target_module == 'adb':
                 cmd += 'system/core/adb'
+            else:
+                cmd += target_module
 
         if args.build_showcommands:
             cmd += ' showcommands'
@@ -729,7 +732,13 @@ def gltrace():
     _setup_device()
     device_id = devices_id[0]
 
-    execute('%s/adt/sdk/platform-tools/systrace/systrace.py -a org.chromium.chrome -t 10 gfx -o %s/trace-%s.html' % (dir_tool, dir_share_ignore_chromium, timestamp))
+    if args.gltrace_target == 'systrace':
+        execute('%s/adt/sdk/platform-tools/systrace/systrace.py -a org.chromium.chrome -t 10 gfx -o %s/trace-%s.html' % (dir_tool, dir_share_ignore_chromium, timestamp))
+    else:
+        android_set_egl_debug_proc('org.chromium.chrome.shell', device_id=device_id)
+        android_set_egl_trace(1, device_id=device_id)
+        execute('adb logcat -c && timeout 10s adb logcat 2>&1 |tee %s/trace-%s.txt' % (dir_share_ignore_chromium, timestamp))
+        #android_set_egl_trace('0', device_id=device_id)
 
 
 def verified_boot():

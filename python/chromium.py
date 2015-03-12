@@ -260,7 +260,8 @@ examples:
     #dir: <arch>-<target-os>/out/<build_type>, example: x86-linux/Release
     group_common.add_argument('--target-os', dest='target_os', help='target os', choices=['android', 'linux'], default='android')
     group_common.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'arm', 'x86_64', 'arm64'], default='x86')
-    group_common.add_argument('--target-module', dest='target_module', help='target module to build, choices can be chrome, webview_shell, content_shell, chrome_shell, chromedriver, cpu_features, etc.', default='chrome_shell')
+    group_common.add_argument('--target-module', dest='target_module', help='target module to build, choices can be chrome, webview_shell, \
+        content_shell, chrome_shell, chromedriver, cpu_features, system_webview_apk, android_webview_telemetry_shell_apk, etc.', default='chrome_shell')
     group_common.add_argument('--device-id', dest='device_id', help='device id list separated by ","', default='')
     group_common.add_argument('--just-out', dest='just_out', help='stick to out, instead of out-x86_64', action='store_true')
     group_common.add_argument('--rev', dest='rev', type=int, help='revision, will override --sync-upstream')

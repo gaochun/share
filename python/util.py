@@ -467,13 +467,14 @@ def suffix_cmd(cmd, args, log):
 
 
 # Patch command if it needs to run on server
+# Note that " is not allowed in cmd
 def remotify_cmd(cmd, server):
     if re.match('ubuntu', server):
         username = 'gyagp'
     else:
         username = 'wp'
 
-    return 'ssh %s@%s %s' % (username, server, cmd)
+    return 'ssh %s@%s "%s"' % (username, server, cmd)
 
 
 def shell_source(shell_cmd, use_bash=False):
@@ -878,7 +879,7 @@ def set_interval(interval, function, *args, **kwargs):
 
 
 def dashboard(message):
-    cmd = remotify_cmd(python_share_dashboard + ' --message %s --machine %s' % (message, host_name), server=server_dashboard[MACHINES_INDEX_HOSTNAME])
+    cmd = remotify_cmd(python_share_dashboard + ' --message \'%s\' --machine \'%s\'' % (message, host_name), server=server_dashboard[MACHINES_INDEX_HOSTNAME])
     execute(cmd)
 ## </misc>
 

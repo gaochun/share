@@ -463,8 +463,6 @@ def buildid(force=False):
     if not args.buildid and not force:
         return
 
-    _setup_device()
-
     if os.path.exists('lib'):
         is_gms = True
     else:
@@ -1221,7 +1219,7 @@ def _test_build_name(command, name):
 
 def _test_run_device(index_device, results):
     timer_start('test_run_' + str(index_device))
-
+    _setup_device()
     device_id = devices_id[index_device]
     device_product = devices_product[index_device]
     device_type = devices_type[index_device]
@@ -1348,6 +1346,7 @@ def _test_sendmail(index_device, html):
 
 
 def _test_gen_report(index_device, results):
+    _setup_device()
     device_id = devices_id[index_device]
     device_product = devices_product[index_device]
     device_type = devices_type[index_device]
@@ -1500,6 +1499,7 @@ def _test_gen_report(index_device, results):
 
 
 def _hack_app_process():
+    _setup_device()
     for device_id in devices_id:
         if not execute_adb_shell("test -d /system/lib64", device_id=device_id):
             continue
@@ -1752,6 +1752,7 @@ def _update_phase(phase):
 
 # get one device for each target_arch
 def _get_target_arch_device_id():
+    _setup_device()
     target_arch_device_id = {}
     for index, device_id in enumerate(devices_id):
         target_arch_temp = devices_arch[index]

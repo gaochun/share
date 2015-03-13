@@ -116,7 +116,7 @@ def update(force=False):
         if has_recent_change('/var/lib/apt/lists') and not args.update_force:
             info('Packages have been upgraded recently')
         else:
-            execute('sudo apt-get update && sudo apt-get -y --force-yes dist-upgrade', interactive=True)
+            execute('sudo apt-get update && sudo apt-get --force-yes -y dist-upgrade', interactive=True)
             # This takes quite a long time
             #execute('sudo apt-file update', interactive=True)
 

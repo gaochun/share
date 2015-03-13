@@ -198,6 +198,8 @@ def config_after_update():
 
     copy_file(dir_share_python, 'skia.py', dir_project + '/skia', is_sylk=is_sylk)
 
+    copy_file(dir_share_web, 'dashboard.html', dir_server_dashboard, is_sylk=is_sylk)
+
     # sublime
     for version in ['2', '3']:
         copy_file(dir_share_common + '/sublime/%s' % version, 'Preferences.sublime-settings', dir_home + '/.config/sublime-text-%s/Packages/User' % version, is_sylk=is_sylk)

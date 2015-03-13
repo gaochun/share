@@ -1,0 +1,38 @@
+<body>
+
+</body>
+
+<script>
+  var files = ['wp-01', 'wp-02', 'wp-03', 'wp-04', 'ubuntu-ygu5-01', 'ubuntu-ygu5-02'];
+  var data = [];
+  var divs = [];
+  for (i = 0; i < files.length; i++) {
+    div = document.createElement('div');
+    div.id = files[i];
+    div.width = 200;
+    div.height = 200;
+    div.innerHTML = '<b>' + files[i] + '</b>';
+    document.body.appendChild(div);
+    data[i] = '';
+  }
+  setInterval(refresh_data, 2000);
+
+  function refresh_data() {
+    for (i = 0; i < files.length; i++) {
+      refresh_one(files[i]);
+    }
+  }
+
+  function refresh_one(file) {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState == 4 && xhr.status == 200 && xhr.responseText != data[i]) {
+        data[i] = xhr.responseText;
+        document.getElementById(file).innerHTML = '<b>' + file + '</b>' + '<br/>' + data[i].replace(/(?:\r\n|\r|\n)/g, '<br/>');;
+      }
+    }
+    xhr.open('GET', '/dashboard/' + file, true);
+    xhr.send();
+  }
+</script>
+

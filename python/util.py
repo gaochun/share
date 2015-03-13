@@ -244,6 +244,7 @@ path_share_chromedriver = dir_share_linux_tool + '/chromedriver/chromedriver-2.1
 path_share_apktool = dir_share_linux_tool + '/apktool/apktool_2.0.0rc3.jar'
 
 dir_share_common = dir_share + '/common'
+dir_share_web = dir_share + '/web'
 # </share>
 ## </path>
 

@@ -64,6 +64,7 @@ Examples:
 ''')
     parser.add_argument('--default', dest='default', help='default setup', action='store_true')
     parser.add_argument('--update-system', dest='update_system', help='update system', action='store_true')
+    parser.add_argument('--update-force', dest='update_force', help='avoid the check of recent update and update anyway', action='store_true')
     parser.add_argument('--cleanup', dest='cleanup', help='cleanup and release more disk space', action='store_true')
     parser.add_argument('--install-chromium', dest='install_chromium', help='install chromium', action='store_true')
     args = parser.parse_args()
@@ -116,10 +117,10 @@ def update(force=False):
     set_proxy()
 
     if force:
-        if has_recent_change('/var/lib/apt/lists'):
+        if has_recent_change('/var/lib/apt/lists') and not args.update_force:
             info('Packages have been upgraded recently')
         else:
-            execute('sudo apt-get update && sudo apt-get -y dist-upgrade', interactive=True)
+            execute('sudo apt-get update && sudo apt-get -y --force-yes dist-upgrade', interactive=True)
             # This takes quite a long time
             #execute('sudo apt-file update', interactive=True)
 

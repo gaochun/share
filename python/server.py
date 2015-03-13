@@ -156,7 +156,6 @@ def webcatch_build():
 
 # If callback does not start within interval, start it
 def _run_one(cb):
-    dashboard('[server] Begin ' + cb)
     file_cb = dir_share_ignore_timestamp + '/' + cb
     if cb in cb_interval:
         interval = cb_interval[cb]
@@ -164,6 +163,8 @@ def _run_one(cb):
         interval = cb_interval['default']
 
     if not os.path.exists(file_cb) or not has_recent_change(file_cb, interval=interval):
+        dashboard('[server] Begin ' + cb)
+
         execute('touch ' + file_cb)
         cmd = globals()[cb]()
         if cmd:
@@ -171,7 +172,7 @@ def _run_one(cb):
             cmd = suffix_cmd(cmd, args, log)
             execute(cmd, interactive=True)
 
-    dashboard('[server] End ' + cb)
+        dashboard('[server] End ' + cb)
 
 
 def _update_repo(dir_repo):

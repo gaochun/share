@@ -377,7 +377,7 @@ def setup():
     elif args.rev:
         rev = args.rev
     else:
-        rev = chromium_get_rev_max(dir_src)
+        rev = chromium_rev_max
 
     for cmd in ['adb', 'git', 'gclient']:
         result = execute('which ' + cmd, show_cmd=False)
@@ -1350,6 +1350,8 @@ def _test_gen_report(index_device, results):
     device_type = devices_type[index_device]
     dir_test_device_product = dir_test_timestamp + '-' + device_product
 
+    _setup_rev()
+
     html_start = '''
 <html>
   <head>
@@ -1772,6 +1774,13 @@ def _setup_device():
         return
 
     (devices_id, devices_product, devices_type, devices_arch, devices_mode) = setup_device(devices_id_limit=args.device_id)
+
+
+def _setup_rev():
+    global rev
+
+    if rev == chromium_rev_max:
+        rev = chromium_get_rev_max(dir_src=dir_src, need_fetch=False)
 
 
 def _teardown():

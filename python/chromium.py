@@ -216,8 +216,8 @@ def parse_arg():
 examples:
   python %(prog)s --revert -s --patch -b
   python %(prog)s --batch-build
-  python %(prog)s --batch-build --sync-upstream
-  python %(prog)s --revert -s --sync-upstream --patch
+  python %(prog)s --batch-build
+  python %(prog)s --revert --sync --patch
   python %(prog)s --batch-build --test-run
   python %(prog)s --batch-test
   python %(prog)s --test-dryrun --time-fixed
@@ -230,7 +230,7 @@ examples:
   python %(prog)s --fetch
   python %(prog)s --sync --rev 270000
   python %(prog)s --sync --repo_type feature
-  python %(prog)s --sync --repo_type feature --sync-upstream
+  python %(prog)s --sync --repo_type feature
   python %(prog)s --runhooks
 
   build:
@@ -264,7 +264,7 @@ examples:
         content_shell, chrome_shell, chromedriver, cpu_features, system_webview_apk, android_webview_telemetry_shell_apk, etc.', default='chrome_shell')
     group_common.add_argument('--device-id', dest='device_id', help='device id list separated by ","', default='')
     group_common.add_argument('--just-out', dest='just_out', help='stick to out, instead of out-x86_64', action='store_true')
-    group_common.add_argument('--rev', dest='rev', type=int, help='revision, will override --sync-upstream')
+    group_common.add_argument('--rev', dest='rev', type=int, help='revision')
     group_common.add_argument('--ver', dest='ver', help='ver for chrome-android')
     group_common.add_argument('--ver-type', dest='ver_type', help='ver type, stable or beta')
     group_common.add_argument('--chrome-android-apk', dest='chrome_android_apk', help='chrome android apk')
@@ -276,9 +276,9 @@ examples:
     group_gclient.add_argument('--revert', dest='revert', help='revert', action='store_true')
     group_gclient.add_argument('--fetch', dest='fetch', help='fetch', action='store_true')
     group_gclient.add_argument('--cleanup', dest='cleanup', help='cleanup', action='store_true')
-    group_gclient.add_argument('--sync', dest='sync', help='sync', action='store_true')
-    group_gclient.add_argument('--sync-reset', dest='sync_reset', help='sync reset', action='store_true')
-    group_gclient.add_argument('--sync-upstream', dest='sync_upstream', help='sync with upstream latest', action='store_true')
+    group_gclient.add_argument('--sync', dest='sync', help='sync to a specific rev if designated, otherwise, sync to upstream', action='store_true')
+    # -f has similar capability to reset local non-committed changes
+    group_gclient.add_argument('--sync-reset', dest='sync_reset', help='sync reset, and reset local changes', action='store_true')
     group_gclient.add_argument('--runhooks', dest='runhooks', help='runhooks', action='store_true')
 
     group_basic = parser.add_argument_group('basic')
@@ -376,10 +376,8 @@ def setup():
         rev = 0
     elif args.rev:
         rev = args.rev
-    elif args.sync_upstream:
-        rev = chromium_get_rev_max(dir_src)
     else:
-        rev = chromium_get_rev_max(dir_src, need_fetch=False)
+        rev = chromium_get_rev_max(dir_src)
 
     for cmd in ['adb', 'git', 'gclient']:
         result = execute('which ' + cmd, show_cmd=False)
@@ -600,7 +598,7 @@ def sync(force=False):
             restore_dir()
 
         cmd_extra = ''
-        if rev != chromium_rev_max:
+        if args.rev:
             hash_temp = chromium_get_rev_hash(dir_src, rev)
             if not hash_temp:
                 error('Could not find hash for rev ' + str(rev))
@@ -1542,8 +1540,6 @@ def _run_gclient(cmd_type, cmd_extra=''):
 
     if cmd_type == 'sync' and args.sync_reset:
         cmd += ' -R'
-    if cmd_type == 'sync':
-        cmd += ' -f'
     cmd += ' -j' + str(count_cpu_build)
 
     if repo_type == 'chrome-android' and cmd_type == 'runhooks' and ver_cmp(ver, ver_envsetup) < 0:

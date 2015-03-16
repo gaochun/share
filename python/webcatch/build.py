@@ -33,13 +33,13 @@ comb_valid = {
     ('android', 'arm', 'content_shell'): ['(.*).apk$', 260368, 301780],
     ('android', 'arm64', 'content_shell'): ['(.*).apk$', 260368, 301780],
 
-    ('android', 'x86', 'chrome_shell'): ['(.*).apk$', 297098, 309000],
-    ('android', 'x86_64', 'chrome_shell'): ['(.*).apk$', 297098, 309000],
-    ('android', 'arm', 'chrome_shell'): ['(.*).apk$', 297098, 309000],
-    ('android', 'arm64', 'chrome_shell'): ['(.*).apk$', 297098, 309000],
+    ('android', 'x86', 'chrome_shell'): ['(.*).apk$', 297098, 310200],
+    ('android', 'x86_64', 'chrome_shell'): ['(.*).apk$', 297098, 310200],
+    ('android', 'arm', 'chrome_shell'): ['(.*).apk$', 297098, 310200],
+    ('android', 'arm64', 'chrome_shell'): ['(.*).apk$', 297098, 310200],
 
-    ('android', 'x86', 'webview_shell'): ['(.*).apk$', 297098, 309000],
-    ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 297098, 309000],
+    ('android', 'x86', 'webview_shell'): ['(.*).apk$', 297098, 310200],
+    ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 297098, 310200],
     #('android', 'arm', 'webview_shell'): ['(.*).apk$', 297098, 300720],
     #('android', 'arm64', 'webview_shell'): ['(.*).apk$', 297098, 300720],
 
@@ -463,7 +463,11 @@ def _move_to_server(file, target_os, target_arch, target_module):
 
 
 def _build(comb_next):
-    comb_next_name = '-'.join(comb_next)
+    comb_next_target_os = comb_next[COMB_INDEX_TARGET_OS]
+    comb_next_target_arch = comb_next[COMB_INDEX_TARGET_ARCH]
+    comb_next_target_module = comb_next[COMB_INDEX_TARGET_MODULE]
+    comb_next_target_rev = comb_next[COMB_INDEX_REV]
+    comb_next_name = _get_comb_name(comb_next_target_os, comb_next_target_arch, comb_next_target_module, str(comb_next_target_rev))
     dashboard('[webcatch] Begin ' + comb_next_name)
     result = _build_one(comb_next)
     dashboard('[webcatch] End ' + comb_next_name)

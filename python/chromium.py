@@ -248,6 +248,7 @@ examples:
   misc:
   python %(prog)s --owner
   python %(prog)s --backup-test content_gl_tests --time-fixed
+  python %(prog)s --run --run-link http://wp-02.sh.intel.com/media/vpx/vpx.html --debug --debug-process renderer
 
   chrome-android:
   python %(prog)s --repo-type chrome-android --target-os android --target-module chrome --dir-root /workspace/project/chrome-android/37.0.2062.94 --target-arch x86 --ver 37.0.2062.94 --ver-type beta --phase-continue
@@ -300,7 +301,7 @@ examples:
     group_basic.add_argument('--notify', dest='notify', help='notify', action='store_true')
     group_basic.add_argument('--install', dest='install', help='install module', action='store_true')
     group_basic.add_argument('--run', dest='run', help='run', action='store_true')
-    group_basic.add_argument('--run-link', dest='run_link', help='link to run with')
+    group_basic.add_argument('--run-link', dest='run_link', help='link to run with', default='')
     group_basic.add_argument('--run-option', dest='run_option', help='option to run')
     group_basic.add_argument('--run-gpu', dest='run_GPU', help='enable GPU acceleration', action='store_true')
     group_basic.add_argument('--run-debug-renderer', dest='run_debug_renderer', help='run gdb before renderer starts', action='store_true')
@@ -325,6 +326,8 @@ examples:
     group_misc.add_argument('--owner', dest='owner', help='find owner for latest commit', action='store_true')
     group_misc.add_argument('--layout', dest='layout', help='layout test')
     group_misc.add_argument('--backup-test', dest='backup_test', help='backup test, so that bug can be easily reproduced by others')
+    group_misc.add_argument('--debug', dest='debug', help='debug', action='store_true')
+    group_misc.add_argument('--debug-process', dest='debug_process', help='debug process', default='browser')
 
     add_argument_common(parser)
 
@@ -986,18 +989,15 @@ def run():
             option = option + ' --renderer-cmd-prefix="xterm -title renderer -e gdb --args"'
 
         cmd = dir_out_build_type + '/chrome ' + option
+        if args.run_option:
+            cmd += ' ' + args.run_option
+
+        execute(cmd, interactive=True)
+
     elif target_os == 'android':
         _setup_device()
         device_id = devices_id[0]
-        cmd = adb(cmd='shell am start -n %s/%s' % (chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_PKG], chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_ACT]), device_id=device_id)
-
-        if args.run_link:
-            cmd += ' -d "%s"' % args.run_link
-
-    if args.run_option:
-        cmd += ' ' + args.run_option
-
-    execute(cmd, interactive=True)
+        chromium_run_module(device_id=device_id, module_name=target_module, url=args.run_link)
 
 
 def owner():
@@ -1138,6 +1138,18 @@ def backup_test():
 
     dir_backup = timestamp + '-' + args.backup_test
     backup_files(files_backup=files_backup, dir_backup=dir_backup, dir_src=dir_src)
+
+
+def debug():
+    if not args.debug:
+        return
+
+    _setup_device()
+    device_id = devices_id[0]
+    dir_symbol = '/workspace/project/chromium-android/src/out-x86/Release/lib'
+    dir_out = 'out-' + target_arch
+    dir_src_tmp = 'src'
+    chromium_gdb_module(device_id, target_module, target_arch, dir_src=dir_src_tmp, dir_symbol=dir_symbol, dir_out=dir_out, process=args.debug_process, pull_lib=False)
 
 
 ########## Internal function begin ##########
@@ -1819,3 +1831,4 @@ if __name__ == '__main__':
     owner()
     layout()
     backup_test()
+    debug()

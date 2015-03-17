@@ -353,8 +353,8 @@ def debug():
     dir_symbol = '%s/%s/%s-%s' % (dir_server_chrome_android_todo, local_target_arch, local_ver, local_ver_type)
 
     android_install_module(device_id, dir_symbol + '/Chromium.apk', module_name)
-    android_run_module(device_id, module_name)
-    android_gdb_module(device_id, module_name, local_target_arch, dir_src, dir_symbol=dir_symbol, dir_out=dir_out)
+    chromium_run_module(device_id, module_name)
+    chromium_gdb_module(device_id, module_name, local_target_arch, dir_src, dir_symbol=dir_symbol, dir_out=dir_out)
 
 
 def analyze():

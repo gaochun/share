@@ -720,6 +720,7 @@ def inspect():
     _setup_device()
     device_id = devices_id[0]
     set_interval(1, _inspect_one, device_id)
+    execute('adb logcat -c && adb logcat 2>&1 |tee /workspace/gytemp/logcat.txt', interactive=True)
 
     while True:
         pass

@@ -31,7 +31,7 @@
         document.getElementById(file).innerHTML = '<b>' + file + '</b>' + '<br/>' + data[i].replace(/(?:\r\n|\r|\n)/g, '<br/>');;
       }
     }
-    xhr.open('GET', '/dashboard/' + file, true);
+    xhr.open('GET', '/dashboard/' + file + "?t=" + Math.random(), true);
     xhr.send();
   }
 </script>

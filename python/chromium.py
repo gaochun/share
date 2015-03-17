@@ -1252,9 +1252,8 @@ def _test_run_device(index_device, results):
 
                 if command == 'instrumentation':
                     # Install packages before running
-                    apks = [instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_APK_PACKAGE], instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_APK]]
-                    for apk in apks:
-                        _install_apk(apk=apk, device_id=device_id)
+                    apk = instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_APK]
+                    _install_apk(apk=apk, device_id=device_id)
 
                     # push test data
                     #cmd = adb(cmd='push ', device_id=device_id)

@@ -158,6 +158,7 @@ device_product_info['asus_t100_64p'] = device_product_info['asus_t100']
 device_product_info['ecs_e7'] = device_product_info['cruise7']
 device_product_info['ecs_e7_64p'] = device_product_info['cruise7']
 device_product_info['cruise8'] = device_product_info['cruise7']
+device_product_info['cloudpad'] = device_product_info['cruise7']
 ## </misc>
 
 

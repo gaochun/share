@@ -735,7 +735,7 @@ def _install_build_deps(dir_chromium, target_os, target_arch):
         cmd = 'src/build/install-build-deps.sh'
         execute(cmd)
     elif target_os == 'android':
-        cmd = 'src/build/install-build-deps-android.sh'
+        cmd = 'src/build/install-build-deps-android.sh --no-chromeos-fonts'
         if target_arch[:3] == 'arm':
             cmd += ' --arm'
         print cmd

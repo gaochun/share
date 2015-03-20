@@ -63,6 +63,7 @@ Examples:
   python %(prog)s --default
 ''')
     parser.add_argument('--default', dest='default', help='default setup', action='store_true')
+    parser.add_argument('--time', dest='time', help='set system time and hardware clock time with "MM/dd/yyyy hh:mm:ss" format')
     parser.add_argument('--update-system', dest='update_system', help='update system', action='store_true')
     parser.add_argument('--update-force', dest='update_force', help='avoid the check of recent update and update anyway', action='store_true')
     parser.add_argument('--cleanup', dest='cleanup', help='cleanup and release more disk space', action='store_true')
@@ -106,6 +107,14 @@ def patch_sudo(force=False):
             #execute('/etc/init.d/sudo restart')
         else:
             warning('Failed to enable sudo')
+
+
+def time():
+    if not args.time:
+        return
+
+    execute('sudo date -s "%s"' % args.time)
+    execute('sudo hwclock --set --date="%s"' % args.time)
 
 
 def update(force=False):
@@ -258,6 +267,7 @@ if __name__ == '__main__':
     parse_arg()
     setup()
     patch_sudo(force=args.default)  # This should be done first
+    time()
     config_before_update()
     update(force=args.default)
     install_pkg(force=args.default)

@@ -33,13 +33,13 @@ comb_valid = {
     ('android', 'arm', 'content_shell'): ['(.*).apk$', 260368, 301780],
     ('android', 'arm64', 'content_shell'): ['(.*).apk$', 260368, 301780],
 
-    ('android', 'x86', 'chrome_shell'): ['(.*).apk$', 297098, 310200],
-    ('android', 'x86_64', 'chrome_shell'): ['(.*).apk$', 297098, 310200],
-    ('android', 'arm', 'chrome_shell'): ['(.*).apk$', 297098, 310200],
-    ('android', 'arm64', 'chrome_shell'): ['(.*).apk$', 297098, 310200],
+    ('android', 'x86', 'chrome_shell'): ['(.*).apk$', 297098, 313680],
+    ('android', 'x86_64', 'chrome_shell'): ['(.*).apk$', 297098, 313680],
+    ('android', 'arm', 'chrome_shell'): ['(.*).apk$', 297098, 313680],
+    ('android', 'arm64', 'chrome_shell'): ['(.*).apk$', 297098, 313680],
 
-    ('android', 'x86', 'webview_shell'): ['(.*).apk$', 297098, 310200],
-    ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 297098, 310200],
+    ('android', 'x86', 'webview_shell'): ['(.*).apk$', 297098, 313680],
+    ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 297098, 313680],
     #('android', 'arm', 'webview_shell'): ['(.*).apk$', 297098, 300720],
     #('android', 'arm64', 'webview_shell'): ['(.*).apk$', 297098, 300720],
 

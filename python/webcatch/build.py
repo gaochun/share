@@ -33,13 +33,13 @@ comb_valid = {
     ('android', 'arm', 'content_shell'): ['(.*).apk$', 260368, 301780],
     ('android', 'arm64', 'content_shell'): ['(.*).apk$', 260368, 301780],
 
-    ('android', 'x86', 'chrome_shell'): ['(.*).apk$', 297098, 313680],
-    ('android', 'x86_64', 'chrome_shell'): ['(.*).apk$', 297098, 313680],
-    ('android', 'arm', 'chrome_shell'): ['(.*).apk$', 297098, 313680],
-    ('android', 'arm64', 'chrome_shell'): ['(.*).apk$', 297098, 313680],
+    ('android', 'x86', 'chrome_shell'): ['(.*).apk$', 297098, 313730],
+    ('android', 'x86_64', 'chrome_shell'): ['(.*).apk$', 297098, 313730],
+    ('android', 'arm', 'chrome_shell'): ['(.*).apk$', 297098, 313730],
+    ('android', 'arm64', 'chrome_shell'): ['(.*).apk$', 297098, 313730],
 
-    ('android', 'x86', 'webview_shell'): ['(.*).apk$', 297098, 313680],
-    ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 297098, 313680],
+    ('android', 'x86', 'webview_shell'): ['(.*).apk$', 297098, 313730],
+    ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 297098, 313730],
     #('android', 'arm', 'webview_shell'): ['(.*).apk$', 297098, 300720],
     #('android', 'arm64', 'webview_shell'): ['(.*).apk$', 297098, 300720],
 
@@ -197,6 +197,7 @@ def build():
     if not args.build:
         return
 
+    _pause()
     build_fail = 0
     interval_git = 300
     rev_git_max = _chromium_get_rev_max(need_fetch=False)
@@ -204,6 +205,7 @@ def build():
     comb_next = _get_comb_next()
     rev_next = comb_next[COMB_INDEX_REV]
     while True:
+        _pause()
         if rev_next > rev_max:
             return
         elif rev_next <= rev_git_max:
@@ -479,19 +481,6 @@ def _build(comb_next):
         if build_fail >= args.build_fail_max:
             error('You have reached maximum failure number')
 
-    # no need to pause
-    if comb_next[COMB_INDEX_REV] > rev_max:
-        return
-
-    if os.path.exists(dir_share_ignore_webcatch_pause):
-        info('Paused, and please remove pause file to continue')
-        while True:
-            time.sleep(1)
-            if os.path.exists(dir_share_ignore_webcatch_pause):
-                continue
-            else:
-                break
-
 
 def _build_one(comb_next):
     (target_os, target_arch, target_module, rev) = comb_next
@@ -746,6 +735,17 @@ def _install_build_deps(dir_chromium, target_os, target_arch):
         child.expect(pexpect.EOF, timeout=None)
 
     restore_dir()
+
+
+def _pause():
+    if os.path.exists(dir_share_ignore_webcatch_pause):
+        info('Paused, and please remove pause file to continue')
+        while True:
+            time.sleep(1)
+            if os.path.exists(dir_share_ignore_webcatch_pause):
+                continue
+            else:
+                break
 # </internal>
 
 

@@ -9,6 +9,7 @@ proxies = [
     ['proxy-mu.intel.com', 'socks5', 1080],
     ['proxy-us.intel.com', 'http', 912],
     ['child-prc.intel.com', 'http', 913],
+    ['proxy-prc.intel.com', 'socks5', 1080],
 
     #'proxy.mu.intel.com',  ## can not be used
     #'proxy.ir.intel.com',  # same as -ir

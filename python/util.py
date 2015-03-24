@@ -240,6 +240,7 @@ python_share_dashboard = 'python ' + dir_share_python + '/dashboard.py'
 dir_share_linux = dir_share + '/linux'
 dir_share_linux_config = dir_share_linux + '/config'
 dir_share_linux_tool = dir_share_linux + '/tool'
+dir_share_linux_tool_perf = dir_share_linux_tool + '/perf'
 path_share_fastboot = dir_share_linux_tool + '/fastboot'
 path_share_chromedriver = dir_share_linux_tool + '/chromedriver/chromedriver-2.12'
 path_share_apktool = dir_share_linux_tool + '/apktool/apktool_2.0.0rc3.jar'
@@ -271,29 +272,31 @@ chromium_rev_max = 9999999
 
 # src/build/android/pylib/constants.py
 chromium_android_info = {
-    'chrome_stable': ['', 'com.android.chrome', 'com.google.android.apps.chrome.Main', True],
-    'chrome_beta': ['', 'com.chrome.beta', 'com.google.android.apps.chrome.Main', True],
-    'stock_browser': ['', 'com.android.browser', '.BrowserActivity', True],
-    'content_shell': ['ContentShell', 'org.chromium.content_shell_apk', '.ContentShellActivity', True],
-    'chrome_shell': ['ChromeShell', 'org.chromium.chrome.shell', '.ChromeShellActivity', True],
-    'webview_shell': ['AndroidWebView', 'org.chromium.android_webview.shell', '.AwShellActivity', False],
+    'chrome_stable': ['', 'com.android.chrome', 'com.google.android.apps.chrome.Main', True, '', ''],
+    'chrome_beta': ['', 'com.chrome.beta', 'com.google.android.apps.chrome.Main', True, '', ''],
+    'stock_browser': ['', 'com.android.browser', '.BrowserActivity', True, '', ''],
+    'content_shell': ['ContentShell', 'org.chromium.content_shell_apk', '.ContentShellActivity', True, 'content_shell_content_view', ''],
+    'chrome_shell': ['ChromeShell', 'org.chromium.chrome.shell', '.ChromeShellActivity', True, 'chromeshell', '/data/app/org.chromium.chrome.shell-1'],
+    'webview_shell': ['AndroidWebView', 'org.chromium.android_webview.shell', '.AwShellActivity', False, 'webviewchromium', ''],
 
     # self defined
     ## after the change of package name and AndroidManifest.xml
-    'chromium_stable': ['', 'com.android.chromium', 'com.google.android.apps.chrome.Main', False],
-    'chromium_beta': ['', 'com.chromium.beta', 'com.google.android.apps.chrome.Main', False],
-    'chromium2_stable': ['', 'com.android.chrome', 'com.google.android.apps.chrome.Main', True],
-    'chromium2_beta': ['', 'com.chrome.beta', 'com.google.android.apps.chrome.Main', True],
+    'chromium_stable': ['', 'com.android.chromium', 'com.google.android.apps.chrome.Main', False, '', ''],
+    'chromium_beta': ['', 'com.chromium.beta', 'com.google.android.apps.chrome.Main', False, '', ''],
+    'chromium2_stable': ['', 'com.android.chrome', 'com.google.android.apps.chrome.Main', True, '', ''],
+    'chromium2_beta': ['', 'com.chrome.beta', 'com.google.android.apps.chrome.Main', True, '', ''],
     ## before the change of package name and AndroidManifest.xml
-    'chrome_example': ['', 'com.example.chromium', 'com.google.android.apps.chrome.Main', False],
+    'chrome_example': ['', 'com.example.chromium', 'com.google.android.apps.chrome.Main', False, '', ''],
     ## old builds before transition, including some M33 builds
-    'chrome_example_stable': ['', 'com.chromium.stable', 'com.google.android.apps.chrome.Main', False],
-    'chrome_example_beta': ['', 'com.chromium.beta', 'com.google.android.apps.chrome.Main', False],
+    'chrome_example_stable': ['', 'com.chromium.stable', 'com.google.android.apps.chrome.Main', False, '', ''],
+    'chrome_example_beta': ['', 'com.chromium.beta', 'com.google.android.apps.chrome.Main', False, '', ''],
 }
 CHROMIUM_ANDROID_INFO_INDEX_APK = 0
 CHROMIUM_ANDROID_INFO_INDEX_PKG = 1
 CHROMIUM_ANDROID_INFO_INDEX_ACT = 2
 CHROMIUM_ANDROID_INFO_INDEX_ISKNOWN = 3
+CHROMIUM_ANDROID_INFO_INDEX_SONAME = 4
+CHROMIUM_ANDROID_INFO_INDEX_DIRLIB = 5
 
 # Each chromium version is: major.minor.build.patch
 # major -> svn rev, git commit, build. major commit is after build commit.
@@ -1753,6 +1756,10 @@ def chromium_gdb_module(device_id, module_name, target_arch, dir_src, dir_symbol
     cmd += ' --force'
     execute(cmd, interactive=True)
     restore_dir()
+
+
+def chromium_get_soname(module):
+    return 'lib' + chromium_android_info[module][CHROMIUM_ANDROID_INFO_INDEX_SONAME] + '.so'
 ## </chromium>
 
 

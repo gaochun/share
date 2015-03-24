@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 
+# steps to perf:
+# 1. push share/android/tool/perf to target machine /system/bin/perf
+# 2. designate perf on host machine
+#    /workspace/project/linux-kernel/3.19.2/tools/perf and /usr/bin/perf are similar.
+#    We can also use perf from aosp out/host/linux-x86/bin/perfhost
+
+
 import fileinput
 from multiprocessing import Pool
 from util import *
@@ -224,7 +231,6 @@ examples:
   python %(prog)s --test-to yang.gu@intel.com --test-case 'webkit_compositor_bindings_unittests' --test-run
   python %(prog)s --instrumentation-suite ContentShellTest --test-run --test-command instrumentation --test-formal --test-to yang.gu@intel.com
 
-
   gclient:
   python %(prog)s --revert
   python %(prog)s --fetch
@@ -244,6 +250,9 @@ examples:
   python %(prog)s -r '--run-option --enable-logging=stderr'
   python %(prog)s -r --run-debug-renderer
   python %(prog)s -r --run-option 'http://browsermark.rightware.com'
+
+  debug & perf:
+  python %(prog)s --perf --target-module chrome_shell --process renderer --perf-second 5 --perf-binary-host /usr/bin/perf
 
   misc:
   python %(prog)s --owner
@@ -326,8 +335,13 @@ examples:
     group_misc.add_argument('--owner', dest='owner', help='find owner for latest commit', action='store_true')
     group_misc.add_argument('--layout', dest='layout', help='layout test')
     group_misc.add_argument('--backup-test', dest='backup_test', help='backup test, so that bug can be easily reproduced by others')
+
     group_misc.add_argument('--debug', dest='debug', help='debug', action='store_true')
-    group_misc.add_argument('--debug-process', dest='debug_process', help='debug process', default='browser')
+    group_misc.add_argument('--process', dest='process', help='process, browser or renderer', default='browser')
+    group_misc.add_argument('--perf', dest='perf', help='perf', action='store_true')
+    group_misc.add_argument('--perf-second', dest='perf_second', help='perf second', default='10')
+    group_misc.add_argument('--perf-binary-host', dest='perf_binary_host', help='perf binary host', default='/usr/bin/perf')
+    group_misc.add_argument('--perf-arg-host', dest='perf_arg_host', help='perf arg host, can be --stdio, -G', default='')
 
     add_argument_common(parser)
 
@@ -1149,7 +1163,59 @@ def debug():
     dir_symbol = '/workspace/project/chromium-android/src/out-x86/Release/lib'
     dir_out = 'out-' + target_arch
     dir_src_tmp = 'src'
-    chromium_gdb_module(device_id, target_module, target_arch, dir_src=dir_src_tmp, dir_symbol=dir_symbol, dir_out=dir_out, process=args.debug_process, pull_lib=False)
+    chromium_gdb_module(device_id, target_module, target_arch, dir_src=dir_src_tmp, dir_symbol=dir_symbol, dir_out=dir_out, process=args.process, pull_lib=False)
+
+
+def perf():
+    if not args.perf:
+        return
+
+    _setup_device()
+    device_id = devices_id[0]
+
+    # For perf data collection
+    dryrun = True
+
+    # get pid
+    name_process = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_PKG] + ':'
+    if args.process == 'browser':
+        name_process += 'privileged_process'
+    elif args.process == 'renderer':
+        name_process += 'sandboxed_process'
+    cmd = adb('shell "ps |grep %s"' % name_process, device_id=device_id)
+    result = execute(cmd, return_output=True)
+    if result[0]:
+        error('Failed to find process')
+    else:
+        pid = result[1].strip('\n').split()[1]
+
+    # run perf
+    cmd = adb('shell perf record -g -p %s -o /data/local/tmp/perf.data sleep %s' % (pid, args.perf_second), device_id=device_id)
+    execute(cmd, dryrun=dryrun)
+
+    backup_dir(dir_share_ignore_chromium)
+    # pull perf data
+    cmd = adb('pull /data/local/tmp/perf.data', device_id=device_id)
+    execute(cmd, dryrun=dryrun)
+
+    # create symbol dir
+    dir_symbol = dir_share_ignore_chromium + '/symbol'
+    dir_lib_host = '%s%s/lib/%s' % (dir_symbol, chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_DIRLIB], target_arch)
+    ensure_dir(dir_lib_host)
+
+    # symbolic link to real symbol file
+    copy_file(dir_out_build_type + '/lib', chromium_get_soname(target_module), dir_lib_host, is_sylk=True)
+
+    # generate perf report
+    cmd = '%s report' % args.perf_binary_host
+    if args.perf_arg_host:
+        cmd += args.perf_arg_host
+    else:
+        cmd += ' -g'
+    cmd += ' -i %s/perf.data --symfs %s' % (dir_share_ignore_chromium, dir_symbol)
+    execute(cmd, interactive=True)
+
+    restore_dir()
 
 
 ########## Internal function begin ##########
@@ -1822,6 +1888,7 @@ if __name__ == '__main__':
     phase_continue()
     install()
     run()
+    perf()
     # test
     test_build()
     test_run()

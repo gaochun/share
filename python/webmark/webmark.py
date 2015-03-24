@@ -51,8 +51,9 @@ examples:
     # cmdline only
     parser.add_argument('--driver-log', dest='driver_log', help='log of chromedriver', action='store_true')
     parser.add_argument('--driver-verbose', dest='driver_verbose', help='verbose log of chromedriver', action='store_true')
-    parser.add_argument('--use-running-app', dest='use_running_app', help='use running app', action='store_true', default=False)
-    parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true', default=False)
+    parser.add_argument('--use-running-app', dest='use_running_app', help='use running app', action='store_true')
+    parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
+    parser.add_argument('--skip-quit', dest='skip_quit', help='skip quit', action='store_true')
     parser.add_argument('--analyze', dest='analyze', help='file to analyze')
     parser.add_argument('--upload', dest='upload', help='file to upload')
     parser.add_argument('--formal', dest='formal', help='formal benchmark results, which would send email and backup to samba server', action='store_true')
@@ -459,7 +460,7 @@ class Suite:
             fw.write(result + '\n')
             logger.info(webmark_result_str + result)
 
-            if not dryrun:
+            if not dryrun and not args.skip_quit:
                 driver.quit()
         fw.close()
         #analyze(file_result)

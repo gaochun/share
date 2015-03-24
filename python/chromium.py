@@ -3,8 +3,8 @@
 # steps to perf:
 # 1. push share/android/tool/perf to target machine /system/bin/perf
 # 2. designate perf on host machine
-#    /workspace/project/linux-kernel/3.19.2/tools/perf and /usr/bin/perf are similar.
-#    We can also use perf from aosp out/host/linux-x86/bin/perfhost
+#    /workspace/project/linux-kernel/3.19.2/tools/perf/perf and /usr/bin/perf are similar.
+#    We can also use perf from aosp /workspace/project/aosp-gminl/out/host/linux-x86/bin/perfhost
 
 
 import fileinput
@@ -342,6 +342,7 @@ examples:
     group_misc.add_argument('--perf-second', dest='perf_second', help='perf second', default='10')
     group_misc.add_argument('--perf-binary-host', dest='perf_binary_host', help='perf binary host', default='/usr/bin/perf')
     group_misc.add_argument('--perf-arg-host', dest='perf_arg_host', help='perf arg host, can be --stdio, -G', default='')
+    group_misc.add_argument('--perf-dryrun', dest='perf_dryrun', help='without actual run of perf on target', action='store_true')
 
     add_argument_common(parser)
 
@@ -1174,7 +1175,7 @@ def perf():
     device_id = devices_id[0]
 
     # For perf data collection
-    dryrun = True
+    dryrun = args.perf_dryrun
 
     # get pid
     name_process = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_PKG] + ':'
@@ -1209,7 +1210,7 @@ def perf():
     # generate perf report
     cmd = '%s report' % args.perf_binary_host
     if args.perf_arg_host:
-        cmd += args.perf_arg_host
+        cmd += ' ' + args.perf_arg_host
     else:
         cmd += ' -g'
     cmd += ' -i %s/perf.data --symfs %s' % (dir_share_ignore_chromium, dir_symbol)

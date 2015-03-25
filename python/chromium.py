@@ -29,7 +29,8 @@ test_filter = {}
 dir_root = ''  # /workspace/project/chromium-android
 dir_src = ''  # /workspace/project/chromium-android/src
 dir_test = ''  # /workspace/project/chromium-android/test
-dir_out_build_type = ''  # /workspace/project/chromium-android/src/out-x86_64/Release
+dir_out_relative = ''  # out-x86-profiling
+dir_out_build_type = ''  # /workspace/project/chromium-android/src/out-x86-profiling/Release
 dir_test_timestamp = ''  # /workspace/project/chromium-android/test
 
 name_file = sys._getframe().f_code.co_filename
@@ -281,6 +282,7 @@ examples:
     group_common.add_argument('--phase-end', dest='phase_end', help='phase which running end with')
     group_common.add_argument('--phase-continue', dest='phase_continue', help='run all left phases', action='store_true')
     group_common.add_argument('--build-type', dest='build_type', help='build type', choices=['release', 'debug'], default='release')
+    group_common.add_argument('--profiling', dest='profiling', help='enable profiling by adding profiling=1 into GYP_DEFINES', action='store_true')
 
     group_gclient = parser.add_argument_group('gclient')
     group_gclient.add_argument('--revert', dest='revert', help='revert', action='store_true')
@@ -302,7 +304,6 @@ examples:
     group_basic.add_argument('--build-skip-mk', dest='build_skip_mk', help='skip the generation of makefile', action='store_true')
     group_basic.add_argument('--build-fail-max', dest='build_fail_max', help='allow n build failures before it stops', type=int, default=1)
     group_basic.add_argument('--build-verbose', dest='build_verbose', help='output verbose info. Find log at out/Release/.ninja_log', action='store_true')
-    group_basic.add_argument('--build-profiling', dest='build_profiling', help='enable profiling by adding profiling=1 into GYP_DEFINES', action='store_true')
     group_basic.add_argument('--build-asan', dest='build_asan', help='enable asan by adding asan=1 into GYP_DEFINES', action='store_true')
     group_basic.add_argument('--postbuild', dest='postbuild', help='postbuild', action='store_true')
     group_basic.add_argument('--verify', dest='verify', help='verify', action='store_true')
@@ -355,7 +356,7 @@ examples:
 
 
 def setup():
-    global dir_src, dir_out_build_type, dir_test, dir_test_timestamp
+    global dir_src, dir_out_relative, dir_out_build_type, dir_test, dir_test_timestamp
     global target_os, target_arch, target_module
     global test_suite, build_type, rev, dir_patches, patches, test_filter, repo_type
     global ver, ver_type, chrome_android_soname, dir_server_chrome_android_todo_comb, chrome_android_file_readme, chrome_android_apk
@@ -375,9 +376,14 @@ def setup():
     dir_src = dir_root + '/src'
     build_type = args.build_type
     if args.just_out:
-        dir_out_build_type = dir_src + '/out/' + build_type.capitalize()
+        dir_out_relative = 'out'
     else:
-        dir_out_build_type = dir_src + '/out-' + target_arch + '/' + build_type.capitalize()
+        dir_out_relative = 'out-' + target_arch
+        if args.profiling:
+            dir_out_relative += '-profiling'
+
+    dir_out_build_type = dir_src + '/' + dir_out_relative + '/' + build_type.capitalize()
+
     dir_test = dir_root + '/test'
     dir_test_timestamp = dir_test + '/' + timestamp
 
@@ -456,7 +462,7 @@ def setup():
         else:
             gyp_defines += 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os
 
-    if args.build_profiling:
+    if args.profiling:
         gyp_defines += ' profiling=1'
 
     if args.build_asan:
@@ -709,7 +715,7 @@ def makefile(force=False):
         cmd = 'build/gyp_chromium -Dwerror='
 
     if not args.just_out:
-        cmd += ' -Goutput_dir=out-' + target_arch
+        cmd += ' -Goutput_dir=%s' % dir_out_relative
 
     if re.search('source', cmd):
         cmd = bashify_cmd(cmd)
@@ -1349,7 +1355,7 @@ def _test_run_device(index_device, results):
                 if args.just_out:
                     cmd = ''
                 else:
-                    cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + ' '
+                    cmd = 'CHROMIUM_OUT_DIR=%s ' % dir_out_relative
 
                 cmd += dir_src + '/build/android/test_runner.py ' + command
 
@@ -1687,7 +1693,7 @@ def _install_apk(apk, device_id):
 
     cmd = 'python %s/build/android/adb_install_apk.py --keep_data --%s' % (dir_src, build_type)
     if not args.just_out:
-        cmd = 'CHROMIUM_OUT_DIR=out-' + target_arch + ' ' + cmd
+        cmd = 'CHROMIUM_OUT_DIR=%s ' % dir_out_relative + cmd
     if device_id != '':
         cmd += ' -d ' + device_id
 

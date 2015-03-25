@@ -1184,11 +1184,13 @@ def perf():
     dryrun = args.perf_dryrun
 
     # get pid
-    name_process = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_PKG] + ':'
-    if args.process == 'browser':
-        name_process += 'privileged_process'
+    name_process = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_PKG]
+    if args.process == 'gpu':
+        name_process += ':privileged_process'
     elif args.process == 'renderer':
-        name_process += 'sandboxed_process'
+        name_process += ':sandboxed_process'
+    elif args.process == 'browser':
+        name_process += ''
     cmd = adb('shell "ps |grep %s"' % name_process, device_id=device_id)
     result = execute(cmd, return_output=True)
     if result[0]:

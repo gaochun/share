@@ -348,7 +348,7 @@ def info(msg):
 
 
 def warning(msg):
-    _msg(msg, show_trace=True)
+    _msg(msg, show_strace=True)
 
 
 def cmd(msg):
@@ -360,28 +360,28 @@ def debug(msg):
     _msg(msg)
 
 
-def trace(msg):
+def strace(msg):
     _msg(msg)
 
 
 def error(msg, abort=True, error_code=1):
-    _msg(msg, show_trace=True)
+    _msg(msg, show_strace=True)
     if abort:
         quit(error_code)
 
 
-def trace_func(frame, event, arg, indent=[0]):
+def strace_func(frame, event, arg, indent=[0]):
     path_file = frame.f_code.co_filename
     name_func = frame.f_code.co_name
     name_file = path_file.split('/')[-1]
     if path_file[:4] != '/usr' and path_file != '<string>':
         if event == 'call':
             indent[0] += 2
-            trace('-' * indent[0] + '> call %s:%s' % (name_file, name_func))
+            strace('-' * indent[0] + '> call %s:%s' % (name_file, name_func))
         elif event == 'return':
-            trace('<' + '-' * indent[0] + ' exit %s:%s' % (name_file, name_func))
+            strace('<' + '-' * indent[0] + ' exit %s:%s' % (name_file, name_func))
             indent[0] -= 2
-    return trace_func
+    return strace_func
 
 
 def hasvalue(obj, member):
@@ -464,8 +464,8 @@ def bashify_cmd(cmd):
 
 
 def suffix_cmd(cmd, args, log):
-    if args.trace:
-        cmd += ' --trace'
+    if args.strace:
+        cmd += ' --strace'
     if log:
         cmd += ' --log ' + log
     return cmd
@@ -808,8 +808,8 @@ def rounddown(num, base):
 def setup_common(args, teardown):
     atexit.register(teardown)
 
-    if args.trace:
-        sys.settrace(trace_func)
+    if args.strace:
+        sys.settrace(strace_func)
 
     if args.time_fixed:
         timestamp = get_datetime(format='%Y%m%d')
@@ -851,7 +851,7 @@ def add_argument_common(parser):
     parser.add_argument('--log', dest='log', help='log')
     parser.add_argument('--path-extra', dest='path_extra', help='extra path for execution, such as path for depot_tools')
     parser.add_argument('--time-fixed', dest='time_fixed', help='fix the time for test sake. We may run multiple tests and results are in same dir', action='store_true')
-    parser.add_argument('--trace', dest='trace', help='trace', action='store_true')
+    parser.add_argument('--strace', dest='strace', help='system trace', action='store_true')
 
 
 # Get available disk size for a specific path
@@ -1835,9 +1835,9 @@ def _chromium_get_rev_hash(rev_min, rev_max=0, force=False):
                 return rev_hash
 
 
-def _msg(msg, show_trace=False):
+def _msg(msg, show_strace=False):
     m = inspect.stack()[1][3].upper()
-    if show_trace:
+    if show_strace:
         m += ', File "%s", Line: %s, Function %s' % inspect.stack()[2][1:4]
     m = '[' + m + '] ' + msg
     # This is legal usage of print

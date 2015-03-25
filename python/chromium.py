@@ -29,8 +29,8 @@ test_filter = {}
 dir_root = ''  # /workspace/project/chromium-android
 dir_src = ''  # /workspace/project/chromium-android/src
 dir_test = ''  # /workspace/project/chromium-android/test
-dir_out_relative = ''  # out-x86-profiling
-dir_out_build_type = ''  # /workspace/project/chromium-android/src/out-x86-profiling/Release
+dir_out_relative = ''  # out-x86
+dir_out_build_type = ''  # /workspace/project/chromium-android/src/out-x86/Release
 dir_test_timestamp = ''  # /workspace/project/chromium-android/test
 
 name_file = sys._getframe().f_code.co_filename
@@ -282,7 +282,16 @@ examples:
     group_common.add_argument('--phase-end', dest='phase_end', help='phase which running end with')
     group_common.add_argument('--phase-continue', dest='phase_continue', help='run all left phases', action='store_true')
     group_common.add_argument('--build-type', dest='build_type', help='build type', choices=['release', 'debug'], default='release')
-    group_common.add_argument('--profiling', dest='profiling', help='enable profiling by adding profiling=1 into GYP_DEFINES', action='store_true')
+    group_common.add_argument('--profile', dest='profile', help='profile by adding profiling=1 into GYP_DEFINES', action='store_true')
+    group_common.add_argument('--process', dest='process', help='process, browser or renderer', default='browser')
+    group_common.add_argument('--debug', dest='debug', help='debug', action='store_true')
+    group_common.add_argument('--perf', dest='perf', help='perf', action='store_true')
+    group_common.add_argument('--perf-second', dest='perf_second', help='perf second', default='10')
+    group_common.add_argument('--perf-binary-host', dest='perf_binary_host', help='perf binary host', default='/usr/bin/perf')
+    group_common.add_argument('--perf-arg-host', dest='perf_arg_host', help='perf arg host, can be --stdio, -G', default='')
+    group_common.add_argument('--perf-dryrun', dest='perf_dryrun', help='without actual run of perf on target', action='store_true')
+    group_common.add_argument('--trace', dest='trace', help='trace', action='store_true')
+    group_common.add_argument('--trace-second', dest='trace_second', help='trace second', default='10')
 
     group_gclient = parser.add_argument_group('gclient')
     group_gclient.add_argument('--revert', dest='revert', help='revert', action='store_true')
@@ -337,14 +346,6 @@ examples:
     group_misc.add_argument('--layout', dest='layout', help='layout test')
     group_misc.add_argument('--backup-test', dest='backup_test', help='backup test, so that bug can be easily reproduced by others')
 
-    group_misc.add_argument('--debug', dest='debug', help='debug', action='store_true')
-    group_misc.add_argument('--process', dest='process', help='process, browser or renderer', default='browser')
-    group_misc.add_argument('--perf', dest='perf', help='perf', action='store_true')
-    group_misc.add_argument('--perf-second', dest='perf_second', help='perf second', default='10')
-    group_misc.add_argument('--perf-binary-host', dest='perf_binary_host', help='perf binary host', default='/usr/bin/perf')
-    group_misc.add_argument('--perf-arg-host', dest='perf_arg_host', help='perf arg host, can be --stdio, -G', default='')
-    group_misc.add_argument('--perf-dryrun', dest='perf_dryrun', help='without actual run of perf on target', action='store_true')
-
     add_argument_common(parser)
 
     args = parser.parse_args()
@@ -363,6 +364,8 @@ def setup():
     global dir_root, log, timestamp
 
     (timestamp, dir_root, log) = setup_common(args, _teardown)
+    if args.perf or args.trace:
+        args.profile = True
 
     target_arch = args.target_arch
     if not args.target_module:
@@ -379,8 +382,8 @@ def setup():
         dir_out_relative = 'out'
     else:
         dir_out_relative = 'out-' + target_arch
-        if args.profiling:
-            dir_out_relative += '-profiling'
+        if args.profile:
+            dir_out_relative += '-profile'
 
     dir_out_build_type = dir_src + '/' + dir_out_relative + '/' + build_type.capitalize()
 
@@ -462,7 +465,7 @@ def setup():
         else:
             gyp_defines += 'OS=%s werror= disable_nacl=1 enable_svg=0' % target_os
 
-    if args.profiling:
+    if args.profile:
         gyp_defines += ' profiling=1'
 
     if args.build_asan:
@@ -1227,6 +1230,21 @@ def perf():
     restore_dir()
 
 
+def trace():
+    if not args.trace:
+        return
+
+    _setup_device()
+    device_id = devices_id[0]
+
+    backup_dir(dir_src)
+    cmd = 'CHROMIUM_OUT_DIR=%s build/android/adb_profile_chrome --browser %s --time %s' % (dir_out_relative, target_module, args.trace_second)
+    result = execute(cmd, return_output=True)
+    match = re.search('file\://(.*)', result[1])
+    execute('google-chrome ' + match.group(1))
+    restore_dir()
+
+
 ########## Internal function begin ##########
 def _get_suite_default():
     global gtest_suite_default, instrumentation_suite_default
@@ -1897,13 +1915,17 @@ if __name__ == '__main__':
     phase_continue()
     install()
     run()
-    perf()
+
     # test
     test_build()
     test_run()
+
     # misc
     analyze()
     owner()
     layout()
     backup_test()
+
     debug()
+    perf()
+    trace()

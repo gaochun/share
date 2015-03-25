@@ -60,7 +60,7 @@ def setup():
     global dir_root, log, timestamp
 
     (timestamp, dir_root, log) = setup_common(args, _teardown)
-    args.trace = True
+    args.strace = True
 
     if os.path.exists(file_lock) and has_recent_change(file_lock, interval=24 * 3600):
         info('Server is running')

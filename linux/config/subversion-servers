@@ -141,8 +141,8 @@
 ### due to SSL.
 [global]
 # http-proxy-exceptions = *.exception.com, www.internal-site.org
-http-proxy-host = 127.0.0.1
-http-proxy-port = 8118
+http-proxy-host = child-prc.intel.com
+http-proxy-port = 913
 # http-proxy-username = defaultusername
 # http-proxy-password = defaultpassword
 http-compression = no

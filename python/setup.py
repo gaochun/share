@@ -263,6 +263,21 @@ def cleanup():
         execute(cmd_kernel, interactive=True)
 
 
+def proxy():
+    # proxies in linux/config
+    # [http/socks5] gitconfig
+    # [http] androidtool.cfg
+    # [http] apt.conf
+    # [http] boto.conf
+    # [http] subversion-servers
+    # [http] privoxy-config
+    # [all] zshrc
+
+    # proxies in python script
+    # [http] util.py
+    pass
+
+
 if __name__ == '__main__':
     parse_arg()
     setup()
@@ -274,3 +289,4 @@ if __name__ == '__main__':
     install_chromium()
     config_after_update()
     cleanup()
+    proxy()

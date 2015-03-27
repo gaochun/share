@@ -645,12 +645,8 @@ def unsetenv(env):
 
 
 def set_proxy():
-    if start_privoxy():
-        http_proxy = '127.0.0.1:8118'
-        https_proxy = '127.0.0.1:8118'
-    else:
-        http_proxy = 'proxy-shz.intel.com:911'
-        https_proxy = 'proxy-shz.intel.com:911'
+    http_proxy = 'http://child-prc.intel.com:913'
+    https_proxy = 'https://child-prc.intel.com:913'
     setenv('http_proxy', http_proxy)
     setenv('https_proxy', https_proxy)
     setenv('no_proxy', '127.0.0.1,intel.com,.intel.com,10.0.0.0/8,192.168.0.0/16,localhost,127.0.0.0/8,134.134.0.0/16,172.16.0.0/20,192.168.42.0/16,10.239.*.*,ubuntu-ygu5-*,wp-*')

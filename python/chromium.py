@@ -92,15 +92,10 @@ test_command_default = [
 ]
 
 gtest_suite_default = []
-# {test_apk : [target, name, apk, apk_package, test_apk, test_data, host_driven_root, ...]}
+# instrumentation_suite_default:
+# Use the description key directly as below.
+#   { test_apk : {target, name, apk, apk_package, test_apk, test_data, isolate_file_path, host_driven_root, ...} }
 instrumentation_suite_default = {}
-INSTRUMENTATION_SUITE_DEFAULT_INDEX_TARGET = 0
-INSTRUMENTATION_SUITE_DEFAULT_INDEX_NAME = 1
-INSTRUMENTATION_SUITE_DEFAULT_INDEX_APK = 2
-INSTRUMENTATION_SUITE_DEFAULT_INDEX_APK_PACKAGE = 3
-INSTRUMENTATION_SUITE_DEFAULT_INDEX_TEST_APK = 4
-INSTRUMENTATION_SUITE_DEFAULT_INDEX_TEST_DATA = 5
-INSTRUMENTATION_SUITE_DEFAULT_INDEX_HOST_DRIVEN_ROOT = 6
 
 test_suite = {}
 
@@ -1090,7 +1085,7 @@ def test_build(force=False):
                 else:
                     name = suite + '_apk'
             elif command == 'instrumentation':
-                name = instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_TARGET]
+                name = instrumentation_suite_default[suite]['target']
 
             result = _test_build_name(command, name)
             if result:
@@ -1267,30 +1262,73 @@ def _get_suite_default():
     f = open('src/build/android/buildbot/bb_device_steps.py')
     lines = f.readlines()
     f.close()
+
+    arguments = []
     i = 0
     while i < len(lines):
+        # parse the key of arguments of description
+        if re.match('def I\(', lines[i]):
+            flag_done = False
+            while not flag_done:
+                if re.search('\)\:', lines[i]):
+                    flag_done = True
+
+                line_temp = lines[i].replace('def I(', '').replace('):', '')
+                line_temp = line_temp.replace('\n', '').replace(' ', '')
+                keys = line_temp.split(',')
+                for k in keys:
+                    if len(k) == 0:
+                        continue
+                    if re.search('=', k):
+                        arguments.append(k.split('=')[0])
+                    else:
+                        arguments.append(k)
+                i = i + 1
+
+            if len(arguments) == 0:
+                error('Could not parse the arguments of instrumentation')
+
+        # parse the value of arguments of description
         if re.match('INSTRUMENTATION_TESTS =', lines[i]):
+            i = i + 1  # start from next line
             len_old = len(instrumentation_suite_default)
-            test_temp = []
+
+            count = 0
+            test_temp = {}
             while not re.match('    \]\)', lines[i]):
                 if re.search('I\(', lines[i]):
-                    test_temp = ['']
+                    # reset variables
+                    count = 0
+                    test_temp = {}
 
-                line_temp = lines[i].replace('\n', '').replace(' ', '').replace('I', '', 1).replace('(', '').replace(')', '').replace(',', '').replace('\'', '')
-                if line_temp == 'None':
-                    line_temp = ''
-                test_temp.append(line_temp)
+                line_temp = lines[i]
+                replacement = ['\n', 'I(', ')', ' ', '\'', ',', 'None']
+                for r in replacement:
+                    if r in line_temp:
+                        line_temp = line_temp.replace(r, '')
 
-                if re.search('\)\,', lines[i]):
-                    # get target
-                    name = test_temp[INSTRUMENTATION_SUITE_DEFAULT_INDEX_NAME]
+                if re.search('=', line_temp):
+                    key = line_temp.split('=')[0]
+                    value = line_temp.split('=')[1]
+                    test_temp[key] = value
+                else:
+                    key = arguments[count]
+                    test_temp[key] = line_temp
+
+                if re.search('\),', lines[i]):
+                    # finish parsing one group then set target
+                    name = test_temp['name']
                     name = name.replace('WebView', 'Webview')
                     name = (re.sub('([A-Z])', lambda p: '_' + p.group(1).lower(), name)).lstrip('_')
                     target = name + '_apk' + ' ' + name + '_test_apk'
-                    test_temp[INSTRUMENTATION_SUITE_DEFAULT_INDEX_TARGET] = target
+                    test_temp['target'] = target
+                    instrumentation_suite_default[test_temp['test_apk']] = test_temp
 
-                    instrumentation_suite_default[test_temp[INSTRUMENTATION_SUITE_DEFAULT_INDEX_TEST_APK]] = test_temp
+                count = count + 1
                 i = i + 1
+
+            # finish parsing of loop outside
+            break
         i = i + 1
 
     if len(instrumentation_suite_default) == len_old:
@@ -1343,7 +1381,7 @@ def _test_run_device(index_device, results):
 
                 if command == 'instrumentation':
                     # Install packages before running
-                    apk = instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_APK]
+                    apk = instrumentation_suite_default[suite]['apk']
                     _install_apk(apk=apk, device_id=device_id)
 
                     # push test data
@@ -1382,8 +1420,8 @@ def _test_run_device(index_device, results):
                     else:
                         cmd += ' -t 60'
 
-                if suite in instrumentation_suite_default and instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_TEST_DATA]:
-                    cmd += ' --test_data ' + instrumentation_suite_default[suite][INSTRUMENTATION_SUITE_DEFAULT_INDEX_TEST_DATA]
+                if suite in instrumentation_suite_default and 'isolate_file_path' in instrumentation_suite_default[suite]:
+                    cmd += ' --isolate_file_path ' + instrumentation_suite_default[suite]['isolate_file_path']
 
                 cmd += ' --num_retries 1'
                 if args.test_filter:

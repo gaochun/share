@@ -227,7 +227,7 @@ def config_after_update():
     copy_file(dir_etc_apache2 + '/sites-available', '000-default.conf', dir_etc_apache2 + '/sites-enabled', is_sylk=is_sylk)
 
     if host_name in ['ubuntu-ygu5-01', 'ubuntu-ygu5-02', 'wp-01']:
-        copy_file(dir_share_linux_config_apache2, 'ports-8000.conf', dir_etc_apache2, 'ports.conf', is_sylk=is_sylk)
+        copy_file(dir_share_linux_config_apache2, 'ports-8888.conf', dir_etc_apache2, 'ports.conf', is_sylk=is_sylk)
     else:
         copy_file(dir_share_linux_config_apache2, 'ports-80.conf', dir_etc_apache2, 'ports.conf', is_sylk=is_sylk)
 
@@ -236,7 +236,7 @@ def config_after_update():
         copy_file(dir_share_linux_config_apache2 + '/sites-available', '001-browsermark.conf', dir_etc_apache2 + '/sites-available', is_sylk=is_sylk)
         copy_file(dir_etc_apache2 + '/sites-available', '001-browsermark.conf', dir_etc_apache2 + '/sites-enabled', is_sylk=is_sylk)
     elif host_name in ['ubuntu-ygu5-01', 'ubuntu-ygu5-02', 'wp-01']:
-        copy_file(dir_share_linux_config_apache2 + '/sites-available', '000-default-8000.conf', dir_etc_apache2 + '/sites-available', '000-default.conf', is_sylk=is_sylk)
+        copy_file(dir_share_linux_config_apache2 + '/sites-available', '000-default-8888.conf', dir_etc_apache2 + '/sites-available', '000-default.conf', is_sylk=is_sylk)
     else:
         copy_file(dir_share_linux_config_apache2 + '/sites-available', '000-default-80.conf', dir_etc_apache2 + '/sites-available', '000-default.conf', is_sylk=is_sylk)
 

@@ -4,7 +4,7 @@
 # wp-01
 # build: Chromium feature test
 # backup: chrome-android, webcatch archive
-# web server (8000): webcatch archive
+# web server (8888): webcatch archive
 
 # wp-02
 # build: webcatch

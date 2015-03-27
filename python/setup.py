@@ -9,7 +9,7 @@
 
 from util import *
 is_sylk = True
-
+pkg_chromium = 'google-chrome-stable'
 pkgs_common = [
     'tsocks', 'privoxy',
     'apache2',
@@ -139,6 +139,8 @@ def install_pkg(force=False):
     if not force:
         return
 
+    execute('sudo apt-mark hold ' + pkg_chromium, show_cmd=False)
+
     ver_gcc_result = execute('ls -l /usr/bin/gcc', show_cmd=False, return_output=True)
     match = re.match('.+gcc-(.+)', ver_gcc_result[1])
     if match:
@@ -148,6 +150,8 @@ def install_pkg(force=False):
 
     for pkg in pkgs_common:
         _install_one_pkg(pkg)
+
+    execute('sudo apt-mark unhold ' + pkg_chromium, show_cmd=False)
 
 
 def _install_one_pkg(pkg):
@@ -162,7 +166,6 @@ def install_chromium():
     if not args.install_chromium:
         return
 
-    pkg_chromium = 'google-chrome-stable'
     if package_installed(pkg_chromium):
         return
 

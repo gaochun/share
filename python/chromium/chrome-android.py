@@ -68,6 +68,7 @@ examples:
     parser.add_argument('--debug', dest='debug', help='debug chromium with GDB', action='store_true')
     parser.add_argument('--analyze', dest='analyze', help='analyze test tombstone', action='store_true')
     parser.add_argument('--analyze-type', dest='analyze_type', help='type to analyze', choices=['tombstone', 'anr'], default='tombstone')
+    group_common.add_argument('--process', dest='process', help='process, browser, render, gpu', default='browser')
     add_argument_common(parser)
 
     args = parser.parse_args()
@@ -354,7 +355,8 @@ def debug():
 
     android_install_module(device_id, dir_symbol + '/Chromium.apk', module_name)
     chromium_run_module(device_id, module_name)
-    chromium_gdb_module(device_id, module_name, local_target_arch, dir_src, dir_symbol=dir_symbol, dir_out=dir_out)
+    pid = chromium_get_pid(device_id, module_name, args.process)
+    chromium_gdb_module(device_id, module_name, local_target_arch, pid, dir_src, dir_symbol=dir_symbol, dir_out=dir_out)
 
 
 def analyze():

@@ -249,16 +249,16 @@ examples:
   python %(prog)s -r -run-option=--enable-logging=stderr
   python %(prog)s -r --run-option--enable-logging=stderr
   python %(prog)s -r '--run-option --enable-logging=stderr'
-  python %(prog)s -r --run-debug-renderer
+  python %(prog)s -r --run-debug-render
   python %(prog)s -r --run-option 'http://browsermark.rightware.com'
 
   debug & perf:
-  python %(prog)s --perf --target-module chrome_shell --process renderer --perf-second 5 --perf-binary-host /usr/bin/perf
+  python %(prog)s --perf --target-module chrome_shell --process render --perf-second 5 --perf-binary-host /usr/bin/perf
 
   misc:
   python %(prog)s --owner
   python %(prog)s --backup-test content_gl_tests --time-fixed
-  python %(prog)s --run --run-link http://wp-02.sh.intel.com/media/vpx/vpx.html --debug --debug-process renderer
+  python %(prog)s --run --run-link http://wp-02.sh.intel.com/media/vpx/vpx.html --debug --debug-process render
 
   chrome-android:
   python %(prog)s --repo-type chrome-android --target-os android --target-module chrome --dir-root /workspace/project/chrome-android/37.0.2062.94 --target-arch x86 --ver 37.0.2062.94 --ver-type beta --phase-continue
@@ -283,7 +283,7 @@ examples:
     group_common.add_argument('--phase-continue', dest='phase_continue', help='run all left phases', action='store_true')
     group_common.add_argument('--build-type', dest='build_type', help='build type', choices=['release', 'debug'], default='release')
     group_common.add_argument('--profile', dest='profile', help='profile by adding profiling=1 into GYP_DEFINES', action='store_true')
-    group_common.add_argument('--process', dest='process', help='process, browser or renderer', default='browser')
+    group_common.add_argument('--process', dest='process', help='process, browser, render, gpu', default='browser')
     group_common.add_argument('--debug', dest='debug', help='debug', action='store_true')
     group_common.add_argument('--perf', dest='perf', help='perf', action='store_true')
     group_common.add_argument('--perf-second', dest='perf_second', help='perf second', default='10')
@@ -323,7 +323,7 @@ examples:
     group_basic.add_argument('--run-link', dest='run_link', help='link to run with', default='')
     group_basic.add_argument('--run-option', dest='run_option', help='option to run')
     group_basic.add_argument('--run-gpu', dest='run_GPU', help='enable GPU acceleration', action='store_true')
-    group_basic.add_argument('--run-debug-renderer', dest='run_debug_renderer', help='run gdb before renderer starts', action='store_true')
+    group_basic.add_argument('--run-debug-render', dest='run_debug_render', help='run gdb before render starts', action='store_true')
 
     group_test = parser.add_argument_group('test')
     group_test.add_argument('--test-build', dest='test_build', help='build test', action='store_true')
@@ -1007,7 +1007,7 @@ def run():
         if args.run_GPU:
             option += ' ' + '--enable-accelerated-2d-canvas --ignore-gpu-blacklist'
 
-        if args.run_debug_renderer:
+        if args.run_debug_render:
             if build_type == 'release':
                 warning('Debugger should run with debug version. Switch to it automatically')
             option = option + ' --renderer-cmd-prefix="xterm -title renderer -e gdb --args"'
@@ -1170,10 +1170,10 @@ def debug():
 
     _setup_device()
     device_id = devices_id[0]
-    dir_symbol = '/workspace/project/chromium-android/src/out-x86/Release/lib'
-    dir_out = 'out-' + target_arch
+    dir_symbol = '%s/%s/%s/lib' % (dir_src, dir_out_relative, build_type.capitalize())
     dir_src_tmp = 'src'
-    chromium_gdb_module(device_id, target_module, target_arch, dir_src=dir_src_tmp, dir_symbol=dir_symbol, dir_out=dir_out, process=args.process, pull_lib=False)
+    pid = chromium_get_pid(device_id, target_module, args.process)
+    chromium_gdb_module(device_id, target_module, target_arch, pid, dir_src=dir_src_tmp, dir_symbol=dir_symbol, dir_out=dir_out_relative, pull_lib=False)
 
 
 def perf():
@@ -1186,22 +1186,8 @@ def perf():
     # For perf data collection
     dryrun = args.perf_dryrun
 
-    # get pid
-    name_process = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_PKG]
-    if args.process == 'gpu':
-        name_process += ':privileged_process'
-    elif args.process == 'renderer':
-        name_process += ':sandboxed_process'
-    elif args.process == 'browser':
-        name_process += ''
-    cmd = adb('shell "ps |grep %s"' % name_process, device_id=device_id)
-    result = execute(cmd, return_output=True)
-    if result[0]:
-        error('Failed to find process')
-    else:
-        pid = result[1].strip('\n').split()[1]
-
     # run perf
+    pid = chromium_get_pid(device_id, target_module, args.process)
     cmd = adb('shell perf record -g -p %s -o /data/local/tmp/perf.data sleep %s' % (pid, args.perf_second), device_id=device_id)
     execute(cmd, dryrun=dryrun)
 

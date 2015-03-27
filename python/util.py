@@ -1723,7 +1723,24 @@ def chromium_run_module(device_id, module_name, url=''):
     execute_adb_shell(cmd, device_id=device_id)
 
 
-def chromium_gdb_module(device_id, module_name, target_arch, dir_src, dir_symbol='', build_type='release', dir_out='', process='browser', pull_lib=True, verbose=False):
+def chromium_get_pid(device_id, target_module, process):
+    name_process = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_PKG]
+    if process == 'gpu':
+        name_process += ':privileged_process'
+    elif process == 'render':
+        name_process += ':sandboxed_process'
+    elif process == 'browser':
+        name_process += ''
+    cmd = adb('shell "ps |grep %s"' % name_process, device_id=device_id)
+    result = execute(cmd, return_output=True)
+    if result[0]:
+        error('Failed to find process')
+
+    pid = result[1].strip('\n').split()[1]
+    return pid
+
+
+def chromium_gdb_module(device_id, module_name, target_arch, pid, dir_src, dir_symbol='', build_type='release', dir_out='', pull_lib=True, verbose=False):
     android_ensure_root(device_id)
     backup_dir(dir_src + '/build/android')
     cmd = ''
@@ -1739,6 +1756,7 @@ def chromium_gdb_module(device_id, module_name, target_arch, dir_src, dir_symbol
             cmd += ' ./adb_gdb_android_%s' % module_name
         else:
             cmd += ' ./adb_gdb_%s' % module_name
+    cmd += ' --pid=%s' % pid
 
     if target_arch:
         cmd += ' --target-arch=%s' % target_arch
@@ -1748,9 +1766,6 @@ def chromium_gdb_module(device_id, module_name, target_arch, dir_src, dir_symbol
 
     if not pull_lib:
         cmd += ' --no-pull-libs'
-
-    if process == 'renderer':
-        cmd += ' --sandboxed'
 
     cmd += ' --%s' % build_type
     cmd += ' --force'

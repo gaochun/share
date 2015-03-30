@@ -1219,7 +1219,7 @@ def trace():
     device_id = devices_id[0]
 
     backup_dir(dir_src)
-    cmd = 'CHROMIUM_OUT_DIR=%s build/android/adb_profile_chrome --browser %s --time %s' % (dir_out_relative, target_module, args.trace_second)
+    cmd = 'CHROMIUM_OUT_DIR=%s build/android/adb_profile_chrome -d %s --browser %s --time %s' % (device_id, dir_out_relative, target_module, args.trace_second)
     result = execute(cmd, return_output=True)
     match = re.search('file\://(.*)', result[1])
     execute('google-chrome ' + match.group(1))

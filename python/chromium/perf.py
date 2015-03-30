@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 
+# <image>
+# link: http://wp-02.sh.intel.com/webmark/image
+# | image               | chrome_stable (x86) | chrome_beta (x86) | others (x86, x86_64) |
+# | ecs_e7_64p-20150320 | 42-99               | 42-99             | 310967-999999        |
+# | ecs_e7_64p-20150105 | 38-41               | 38-41             | 297000-310966        |
+# </image>
+
 import sys
 sys.path.append(sys.path[0] + '/..')
 from util import *
@@ -37,16 +44,20 @@ device_module_case_to_analysis = {}
 
 # [[device.product, device.arch, device.governor, device.freq, module.os, module.arch, module.name, module.version]]
 combs_all = [
-    #['asus_t100_64p', 'x86_64', 'powersave', '400000', 'android', 'x86_64', 'content_shell', ['302000', '999999', 200]],
-    #['asus_t100_64p', 'x86_64', 'powersave', '400000', 'android', 'x86', 'content_shell', ['302000', '999999', 200]],
-    #['asus_t100_64p', 'x86_64', 'powersave', '400000', 'android', 'x86', 'chrome_stable', ['38', '99', 1]],
-    #['asus_t100_64p', 'x86_64', 'powersave', '400000', 'android', 'x86', 'chrome_beta', ['38', '99', 1]],
-    #['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86_64', 'content_shell', ['300000', '999999', 200]],
-    #['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'content_shell', ['300000', '999999', 200]],
-    ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86_64', 'chrome_shell', ['297000', '999999', 200]],
-    ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'chrome_shell', ['297000', '999999', 200]],
-    ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'chrome_stable', ['38', '99', 1]],
-    ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'chrome_beta', ['38', '99', 1]],
+    # ['asus_t100_64p', 'x86_64', 'powersave', '400000', 'android', 'x86_64', 'content_shell', ['302000', '999999', 200]],
+    # ['asus_t100_64p', 'x86_64', 'powersave', '400000', 'android', 'x86', 'content_shell', ['302000', '999999', 200]],
+    # ['asus_t100_64p', 'x86_64', 'powersave', '400000', 'android', 'x86', 'chrome_stable', ['38', '99', 1]],
+    # ['asus_t100_64p', 'x86_64', 'powersave', '400000', 'android', 'x86', 'chrome_beta', ['38', '99', 1]],
+    # ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86_64', 'content_shell', ['300000', '999999', 200]],
+    # ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'content_shell', ['300000', '999999', 200]],
+    # ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86_64', 'chrome_shell', ['297000', '999999', 200]],
+    # ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'chrome_shell', ['297000', '999999', 200]],
+    # ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'chrome_stable', ['38', '99', 1]],
+    # ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'chrome_beta', ['38', '99', 1]],
+    ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86_64', 'chrome_shell', ['310967', '999999', 200]],
+    ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'chrome_shell', ['310967', '999999', 200]],
+    ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'chrome_stable', ['42', '99', 1]],
+    ['ecs_e7_64p', 'x86_64', 'powersave', '600000', 'android', 'x86', 'chrome_beta', ['42', '99', 1]],
 ]
 
 

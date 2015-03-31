@@ -68,7 +68,7 @@ examples:
     parser.add_argument('--debug', dest='debug', help='debug chromium with GDB', action='store_true')
     parser.add_argument('--analyze', dest='analyze', help='analyze test tombstone', action='store_true')
     parser.add_argument('--analyze-type', dest='analyze_type', help='type to analyze', choices=['tombstone', 'anr'], default='tombstone')
-    group_common.add_argument('--process', dest='process', help='process, browser, render, gpu', default='browser')
+    parser.add_argument('--process', dest='process', help='process, browser, render, gpu', default='browser')
     add_argument_common(parser)
 
     args = parser.parse_args()

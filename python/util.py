@@ -226,6 +226,7 @@ dir_share_ignore_webcatch_log = dir_share_ignore_webcatch + '/log'
 dir_share_ignore_webcatch_pause = dir_share_ignore_webcatch + '/pause'
 dir_share_ignore_chromium = dir_share_ignore + '/chromium'
 path_share_ignore_chromium_perf = dir_share_ignore_chromium + '/perf'
+path_share_ignore_chromium_contrib = dir_share_ignore_chromium + '/contrib'
 
 dir_share_python = dir_share + '/python'
 dir_share_python_webcatch = dir_share_python + '/webcatch'
@@ -1047,6 +1048,8 @@ def ensure_nodir(dir_check, server=''):
 
 
 def ensure_file(path_file):
+    print os.path.dirname(os.path.abspath(path_file))
+    ensure_dir(os.path.dirname(os.path.abspath(path_file)))
     if not os.path.exists(path_file):
         execute('touch ' + path_file, show_cmd=True)
 

@@ -41,6 +41,47 @@ devices_type = []
 devices_arch = []
 devices_mode = []
 
+# <contrib>
+cmd_git_log = 'git log --since 2012-01-01'
+str_commit = 'commit (.*)'
+authors = ['yang.gu@intel.com', 'yunchao.he@intel.com', 'qiankun.miao@intel.com']
+MAX_LEN_REV = 6
+# all vers that are roll
+repo_rollset = {}
+# all info about roll
+# chromium_rev, repo_name, chromium_author, chromium_date, chromium_subject, chromium_hash, hash_start, hash_end
+repo_rolls = {}
+# rolls and our contribution
+# author, date, subject, hash
+repo_commits = {}
+REPO_COMMIT_INDEX_AUTHOR = 0
+REPO_COMMIT_INDEX_DATE = 1
+REPO_COMMIT_INDEX_SUBJECT = 2
+REPO_COMMIT_INDEX_HASH = 3
+REPO_COMMIT_INDEX_REV = 4
+# our contribution with roll info
+# chromium: 0-5
+# other: chromium_rev, repo_name, chromium_author, chromium_date, chromium_subject, chromium_hash, repo_author, repo_date, repo_subject, repo_hash, repo_rev
+contribs = []
+CONTRIB_INDEX_CHROMIUM_REV = 0
+CONTRIB_INDEX_REPO_NAME = 1
+CONTRIB_INDEX_DIRECTION = 2
+CONTRIB_INDEX_CHROMIUM_AUTHOR = 3
+CONTRIB_INDEX_CHROMIUM_DATE = 4
+CONTRIB_INDEX_CHROMIUM_SUBJECT = 5
+CONTRIB_INDEX_CHROMIUM_HASH = 6
+CONTRIB_INDEX_REPO_AUTHOR = 7
+CONTRIB_INDEX_REPO_DATE = 8
+CONTRIB_INDEX_REPO_SUBJECT = 9
+CONTRIB_INDEX_REPO_HASH = 10
+CONTRIB_INDEX_REPO_REV = 11
+
+repo_path = {
+    'webkit': 'third_party/WebKit',
+    'skia': 'third_party/skia',
+}
+# </contrib>
+
 # rev related
 rev = 0
 rev_hash = {}
@@ -340,6 +381,9 @@ examples:
     group_misc.add_argument('--owner', dest='owner', help='find owner for latest commit', action='store_true')
     group_misc.add_argument('--layout', dest='layout', help='layout test')
     group_misc.add_argument('--backup-test', dest='backup_test', help='backup test, so that bug can be easily reproduced by others')
+    group_misc.add_argument('--contrib', dest='contrib', help='upstream contribution', action='store_true')
+    group_misc.add_argument('--contrib-norevert', dest='contrib_norevert', help='only keep last roll', action='store_true')
+    group_misc.add_argument('--contrib-serialize', dest='contrib_serialize', help='contrib serialize', action='store_true')
 
     add_argument_common(parser)
 
@@ -1159,6 +1203,65 @@ def backup_test():
     backup_files(files_backup=files_backup, dir_backup=dir_backup, dir_src=dir_src)
 
 
+def contrib():
+    global repo_rollset, repo_rolls, repo_commits, contribs
+
+    if not args.contrib:
+        return
+
+    ensure_file(path_share_ignore_chromium_contrib)
+    if args.contrib_serialize:
+        f = open(path_share_ignore_chromium_contrib)
+        repo_rollset = pickle.load(f)
+        repo_rolls = pickle.load(f)
+        repo_commits = pickle.load(f)
+        f.close()
+    else:
+        f = open(path_share_ignore_chromium_contrib, 'w')
+        f.seek(0)
+        f.truncate()
+        f.close()
+
+        _get_repo_rolls()
+        _get_repo_commits()
+
+    # only handle revert in repo, not chromium
+    _get_repo_contrib()
+    if args.contrib_norevert:
+        # (backward, forward)
+        repo_pairs = {}
+        repo_topair = {}
+        indice = []
+        for repo in repo_path:
+            repo_pairs[repo] = []
+            repo_topair[repo] = 0
+        for index, contrib in enumerate(contribs):
+            if contrib[CONTRIB_INDEX_DIRECTION] == 'backward':
+                repo_pairs[repo].append([index, -1, contrib[CONTRIB_INDEX_REPO_HASH], contrib[CONTRIB_INDEX_REPO_REV]])
+                repo_topair[repo] += 1
+            elif repo_topair[repo] > 0:
+                pairs = repo_pairs[repo]
+                for pair in pairs:
+                    if pair[1] == -1 and contrib[CONTRIB_INDEX_REPO_HASH] == pair[2] and contrib[CONTRIB_INDEX_REPO_REV] == pair[3]:
+                        pair[1] = index
+                        repo_topair[repo] -= 1
+                        indice.append(pair[0])
+                        indice.append(pair[1])
+                        break
+
+        indice = sorted(indice, reverse=True)
+
+        for index in indice:
+            del contribs[index]
+
+    _get_chromium_contrib()
+
+    contribs = sorted(contribs, key=lambda x: x[0], reverse=True)
+
+    for contrib in contribs:
+        print '\t'.join(contrib)
+
+
 def debug():
     if not args.debug:
         return
@@ -1911,6 +2014,332 @@ def _setup_rev():
         rev = chromium_get_rev_max(dir_src=dir_src, need_fetch=False)
 
 
+# <contrib>
+def _git_match(lines, index, hash_tmp, author_tmp, subject_tmp, date_tmp, rev_tmp):
+    line = lines[index].strip()
+
+    # hash
+    match = re.match(str_commit, line)
+    if match:
+        hash_tmp = match.group(1)
+
+    # author
+    match = re.match('Author:', lines[index])
+    if match:
+        match = re.search('<(.*@.*)@.*>', line)
+        if match:
+            author_tmp = match.group(1)
+        else:
+            match = re.search('(\S+@\S+)', line)
+            if match:
+                author_tmp = match.group(1)
+                author_tmp = author_tmp.lstrip('<')
+                author_tmp = author_tmp.rstrip('>')
+            else:
+                author_tmp = line.rstrip('\n').replace('Author:', '').strip()
+                warning('The author %s is in abnormal format' % author_tmp)
+
+    # update author for commit bot
+    match = re.match('Author: (.*)', line)
+    if match and match.group(1) in authors and author_tmp not in authors:
+        author_tmp = match.group(1)
+
+    # date & subject
+    match = re.match('Date:(.*)', line)
+    if match:
+        date_tmp = match.group(1).strip()
+        index += 2
+        subject_tmp = lines[index].strip()
+
+    # rev
+    match = re.match('git-svn-id: .*@(.*) .*', line)
+    if match:
+        rev_tmp = match.group(1)
+    match = re.match('Cr-Commit-Position: refs/heads/master@{#(.*)}', line)
+    if match:
+        rev_tmp = match.group(1)
+
+    return (hash_tmp, author_tmp, subject_tmp, date_tmp, rev_tmp)
+
+
+def _is_hash(ver):
+    if len(ver) > MAX_LEN_REV:
+        return True
+
+    return False
+
+
+# get all rolls hash or svn id into repo_rollset
+# get all rolls into repo_rolls
+# hash is for git, rev is for svn, ver for either.
+def _get_repo_rolls():
+    global repo_rollset, repo_rolls
+
+    for repo in repo_path:
+        repo_rollset[repo] = []
+        repo_rolls[repo] = []
+
+    repos = repo_path.keys()
+
+    backup_dir(dir_src)
+
+    result = execute('git log -p DEPS', show_cmd=False, return_output=True)
+    lines = result[1].split('\n')
+
+    index = 0
+    is_roll = False
+    repo_tmp = ''
+    hash_begin = ''
+    hash_end = ''
+    rev_begin = ''
+    rev_end = ''
+
+    while True:
+        if index >= len(lines) or re.match(str_commit, lines[index]):
+            if index != 0 and is_roll:
+                # For rev before 241675, many skia hash values are not correct. So we prefer to use svn rev
+                if int(rev_tmp) <= '241675':
+                    if not rev_begin or not rev_end:
+                        if not hash_begin or not hash_end:
+                            print rev_tmp
+                            error('Both hash_begin and hash_end should be valid')
+                        ver_begin = hash_begin
+                        ver_end = hash_end
+                    else:
+                        ver_begin = rev_begin
+                        ver_end = rev_end
+                else:
+                    if not hash_begin or not hash_end:
+                        if not rev_begin or not rev_end:
+                            print rev_tmp
+                            error('Both rev_begin and rev_end should be valid')
+                        ver_begin = rev_begin
+                        ver_end = rev_end
+                    else:
+                        ver_begin = hash_begin
+                        ver_end = hash_end
+
+                if ver_begin not in repo_rollset[repo_tmp]:
+                    repo_rollset[repo_tmp].append(ver_begin)
+                if ver_end not in repo_rollset[repo_tmp]:
+                    repo_rollset[repo_tmp].append(ver_end)
+
+                repo_rolls[repo_tmp].append([rev_tmp, repo_tmp, author_tmp, date_tmp, subject_tmp, hash_tmp, ver_begin, ver_end])
+
+            if index >= len(lines):
+                break
+
+            # reset
+            hash_tmp = ''
+            author_tmp = ''
+            date_tmp = ''
+            subject_tmp = ''
+            rev_tmp = ''
+
+            is_roll = False
+            repo_tmp = ''
+            hash_begin = ''
+            hash_end = ''
+            rev_begin = ''
+            rev_end = ''
+
+        (hash_tmp, author_tmp, subject_tmp, date_tmp, rev_tmp) = _git_match(lines, index, hash_tmp, author_tmp, subject_tmp, date_tmp, rev_tmp)
+
+        # 291561 changes from svn id to git hash
+        # 194995 fix a typo
+        # 116215 fix "103944444444" -> "103944"
+        if rev_tmp in ['291561', '194995', '116215']:
+            index += 1
+            continue
+
+        # smaller than r15949, it's not easy to get ver_begin and ver_end
+        if rev_tmp and int(rev_tmp) <= 15949:
+            break
+
+        line = lines[index].strip()
+        # skia: It is a mess here. skia_revision may contain svn id or hash. skia_hash only contains hash. svn id and hash may appear at same time
+        # we can get svn id or hash from webkit_revision
+        for repo in repos:
+            strs_ver = [
+                '  (?:\'|")%s_(?:revision|hash)(?:\'|"): (?:\'|")(\S+)(?:\'|"),' % repo,
+                '    "http://skia.googlecode.com/svn/trunk/src@(\S+)"',
+                '    "http://skia.googlecode.com/svn/trunk@(\S+)"'
+            ]
+            for str_ver in strs_ver:
+                match = re.match('-' + str_ver, line)
+                if match:
+                    if _is_hash(match.group(1)):
+                        hash_begin = match.group(1)
+                    else:
+                        rev_begin = match.group(1)
+
+                match = re.match('\+' + str_ver, line)
+                if match:
+                    # This is a bug for chromium r116206 (bed92ce4a201fa067d7f3ac566eb30e06e40ec4e)
+                    if match.group(1) == '103944444444':
+                        rev_end = '103944'
+                    # r79257 forgot to delete old svn id
+                    elif match.group(1) == '81851':
+                        rev_end = match.group(1)
+                        rev_begin = '81791'
+                    elif _is_hash(match.group(1)):
+                        hash_end = match.group(1)
+                    else:
+                        rev_end = match.group(1)
+
+                    is_roll = True
+                    repo_tmp = repo
+
+        index += 1
+
+    restore_dir()
+
+    f = open(path_share_ignore_chromium_contrib, 'a+')
+    pickle.dump(repo_rollset, f)
+    pickle.dump(repo_rolls, f)
+    f.close()
+
+
+def _is_roll(repo, hash_tmp, rev_tmp):
+    for repo_tmp in repo_rollset:
+        if repo_tmp != repo:
+            continue
+
+        rolls = repo_rollset[repo]
+        for roll in rolls:
+            if not _is_hash(roll) and rev_tmp == roll:
+                return True
+            if _is_hash(roll) and hash_tmp.startswith(roll):
+                return True
+
+    return False
+
+
+# get commits, either contributed by us, or roll, in cared repos
+def _get_repo_commits():
+    global repo_commits, repo_rollset
+
+    for repo in repo_path:
+        repo_commits[repo] = []
+
+    for repo in repo_path:
+        path = repo_path[repo]
+        backup_dir(dir_src + '/' + path)
+        result = execute(cmd_git_log, show_cmd=False, return_output=True)
+        lines = result[1].split('\n')
+
+        index = 0
+
+        while True:
+            if index >= len(lines) or re.match(str_commit, lines[index].strip()):
+                if index != 0 and (author_tmp in authors or _is_roll(repo, hash_tmp, rev_tmp)):
+                    repo_commits[repo].append([author_tmp, date_tmp, subject_tmp, hash_tmp, rev_tmp])
+                if index >= len(lines):
+                    break
+                # reset
+                hash_tmp = ''
+                author_tmp = ''
+                date_tmp = ''
+                subject_tmp = ''
+                rev_tmp = ''
+
+            (hash_tmp, author_tmp, subject_tmp, date_tmp, rev_tmp) = _git_match(lines, index, hash_tmp, author_tmp, subject_tmp, date_tmp, rev_tmp)
+            index += 1
+
+        restore_dir()
+
+    f = open(path_share_ignore_chromium_contrib, 'a+')
+    pickle.dump(repo_commits, f)
+    f.close()
+
+
+def _update_roll(chromium_rev, repo, chromium_author, chromium_date, chromium_subject, chromium_hash, ver_begin, ver_end):
+    global contribs
+
+    if _is_hash(ver_begin) ^ _is_hash(ver_end):
+        print ver_begin, ver_end
+        error('ver_begin and ver_end should have same length')
+
+    if not _is_hash(ver_begin):
+        if int(ver_begin) < int(ver_end):
+            direction = 'forward'
+        else:
+            direction = 'backward'
+    else:
+        result = execute('git rev-list --count %s..%s' % (ver_begin, ver_end), return_output=True, show_cmd=False)
+        if result[1].strip('\n') != '0':
+            direction = 'forward'
+        else:
+            direction = 'backward'
+
+    if direction == 'forward':
+        ver_begin_tmp = ver_begin
+        ver_end_tmp = ver_end
+    else:
+        ver_begin_tmp = ver_end
+        ver_end_tmp = ver_begin
+
+    commits = repo_commits[repo]
+    check = False
+    for commit in commits:
+        hash_tmp = commit[REPO_COMMIT_INDEX_HASH]
+        rev_tmp = commit[REPO_COMMIT_INDEX_REV]
+
+        if not _is_hash(ver_begin_tmp):
+            if rev_tmp and int(rev_tmp) <= int(ver_end_tmp):
+                check = True
+            if rev_tmp and int(rev_tmp) <= int(ver_begin_tmp):
+                return
+        else:
+            if hash_tmp.startswith(ver_end_tmp):
+                check = True
+            if hash_tmp.startswith(ver_begin_tmp):
+                return
+
+        if check:
+            author_tmp = commit[REPO_COMMIT_INDEX_AUTHOR]
+            if author_tmp in authors:
+                contribs.append([chromium_rev, repo, direction, chromium_author, chromium_date, chromium_subject, chromium_hash, author_tmp, commit[REPO_COMMIT_INDEX_DATE], commit[REPO_COMMIT_INDEX_SUBJECT], hash_tmp, commit[REPO_COMMIT_INDEX_REV]])
+
+
+def _get_repo_contrib():
+    for repo in repo_rolls:
+        backup_dir(dir_src + '/' + repo_path[repo])
+        rolls = repo_rolls[repo]
+        for roll in rolls:
+            _update_roll(roll[0], roll[1], roll[2], roll[3], roll[4], roll[5], roll[6], roll[7])
+        restore_dir()
+
+
+# can be done earlier as it has no dependence with others
+def _get_chromium_contrib():
+    global contribs
+
+    backup_dir(dir_src)
+    result = execute(cmd_git_log, show_cmd=False, return_output=True)
+    lines = result[1].split('\n')
+
+    index = 0
+    while True:
+        if index >= len(lines) or re.match(str_commit, lines[index]):
+            if index != 0 and author_tmp in authors:
+                contribs.append([rev_tmp, 'chromium', 'forward', author_tmp, date_tmp, subject_tmp, hash_tmp])
+            if index >= len(lines):
+                break
+            # reset
+            hash_tmp = ''
+            author_tmp = ''
+            date_tmp = ''
+            subject_tmp = ''
+            rev_tmp = ''
+
+        (hash_tmp, author_tmp, subject_tmp, date_tmp, rev_tmp) = _git_match(lines, index, hash_tmp, author_tmp, subject_tmp, date_tmp, rev_tmp)
+        index += 1
+
+    restore_dir()
+# </contrib>
+
+
 def _teardown():
     pass
 ########## Internal function end ##########
@@ -1953,3 +2382,5 @@ if __name__ == '__main__':
     debug()
     perf()
     trace()
+
+    contrib()

@@ -49,7 +49,7 @@ class Parser(HTMLParser):
     def handle_data(self, data):
         if self.is_a:
             # Skip 720P link
-            if data == '720P':
+            if data in ['720P', 'mp4']:
                 return
             match = re.search(self.pattern, data)
             # all the good links are continuous. Exit using an exception as close() seems not work.

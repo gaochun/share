@@ -3,7 +3,7 @@
         "BigBang": {
             "state": "active", 
             "season": 8, 
-            "episode": 16, 
+            "episode": 19, 
             "resources": {
                 "cn163": [
                     "3639", 
@@ -14,7 +14,7 @@
         "DowntonAbbey": {
             "state": "active", 
             "season": 5, 
-            "episode": 8, 
+            "episode": 9, 
             "resources": {
                 "cn163": [
                     "390", 
@@ -69,7 +69,7 @@
         "PersonOfInterest": {
             "state": "active", 
             "season": 4, 
-            "episode": 16, 
+            "episode": 18, 
             "resources": {
                 "cn163": [
                     "3197", 
@@ -80,10 +80,21 @@
         "Revenge": {
             "state": "active", 
             "season": 4, 
-            "episode": 7, 
+            "episode": 18, 
             "resources": {
                 "cn163": [
                     "3645", 
+                    "(\\d+)\u96c6.*1024.mkv"
+                ]
+            }
+        }, 
+        "TheNightShift": {
+            "state": "active", 
+            "season": 2, 
+            "episode": 7, 
+            "resources": {
+                "cn163": [
+                    "4104", 
                     "(\\d+)\u96c6.*1024.mkv"
                 ]
             }
@@ -95,10 +106,6 @@
     }, 
     "movie_pause": {
         "Extant": {
-            "season": 2, 
-            "episode": 0
-        }, 
-        "TheNightShift": {
             "season": 2, 
             "episode": 0
         }, 

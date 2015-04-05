@@ -28,7 +28,6 @@ import multiprocessing
 from multiprocessing import Pool
 import operator
 import os
-import pexpect
 import pickle
 import platform
 import random
@@ -41,6 +40,11 @@ import sys
 import threading
 import time
 import urllib2
+
+try:
+    import pexpect
+except:
+    'Please install package pexpect'
 # </import>
 
 # <globals>

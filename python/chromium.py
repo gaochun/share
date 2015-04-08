@@ -281,12 +281,12 @@ examples:
   python %(prog)s -b --target-module chrome
 
   run:
-  python %(prog)s -r --build-type release
-  python %(prog)s -r -run-option=--enable-logging=stderr
-  python %(prog)s -r --run-option--enable-logging=stderr
-  python %(prog)s -r '--run-option --enable-logging=stderr'
-  python %(prog)s -r --run-debug-render
-  python %(prog)s -r --run-option 'http://browsermark.rightware.com'
+  python %(prog)s --run --build-type release
+  python %(prog)s --run --run-option=--enable-logging=stderr
+  python %(prog)s --run --run-option--enable-logging=stderr
+  python %(prog)s --run '--run-option --enable-logging=stderr'
+  python %(prog)s --run --run-debug-render
+  python %(prog)s --run --run-option 'http://browsermark.rightware.com'
 
   debug & perf:
   python %(prog)s --perf --target-module chrome_shell --process render --perf-second 5 --perf-binary-host /usr/bin/perf
@@ -312,6 +312,8 @@ examples:
     group_common.add_argument('--device-id', dest='device_id', help='device id list separated by ","', default='')
     group_common.add_argument('--just-out', dest='just_out', help='stick to out, instead of out-x86_64', action='store_true')
     group_common.add_argument('--rev', dest='rev', type=int, help='revision')
+    group_common.add_argument('--hash-webkit', dest='hash_webkit', help='hash of webkit')
+    group_common.add_argument('--hash-skia', dest='hash_skia', help='hash of skia')
     group_common.add_argument('--ver', dest='ver', help='ver for chrome-android')
     group_common.add_argument('--ver-type', dest='ver_type', help='ver type, stable or beta')
     group_common.add_argument('--chrome-android-apk', dest='chrome_android_apk', help='chrome android apk')
@@ -670,6 +672,14 @@ def sync(force=False):
                 error('Could not find hash for rev ' + str(rev))
             cmd_extra = '--revision src@' + hash_temp
         _run_gclient(cmd_type='sync', cmd_extra=cmd_extra)
+        if args.hash_webkit:
+            backup_dir(dir_src + '/third_party/WebKit')
+            execute('git reset --hard %s' % args.hash_webkit)
+            restore_dir()
+        if args.hash_skia:
+            backup_dir(dir_src + '/third_party/skia')
+            execute('git reset --hard %s' % args.hash_skia)
+            restore_dir()
 
     if repo_type == 'chrome-android':
         _update_phase(get_caller_name())

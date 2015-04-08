@@ -25,6 +25,7 @@ rev_min = 0
 rev_max = 0
 build_fail = 0
 slave_only = False
+rev_sub = ''
 
 # (target_os, target_arch, target_module): [binary_format, rev_min_built, rev_max_built]
 comb_valid = {
@@ -97,6 +98,8 @@ examples:
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', default='all')
     parser.add_argument('--target-module', dest='target_module', help='target module', default='all')
     parser.add_argument('-r', '--rev', dest='rev', help='revisions to build. E.g., 233137, 217377-225138')
+    parser.add_argument('--hash-webkit', dest='hash_webkit', help='hash of webkit')
+    parser.add_argument('--hash-skia', dest='hash_skia', help='hash of skia')
     parser.add_argument('--build', dest='build', help='build', action='store_true')
     parser.add_argument('--build-every', dest='build_every', help='build every number', type=int, default=10)
     parser.add_argument('--build-fail-max', dest='build_fail_max', help='maximum failure number of build', type=int, default=1)
@@ -115,7 +118,7 @@ examples:
 
 
 def setup():
-    global rev_min, rev_max, dir_chromium_src_main, combs, build_every, rev_expectfail, slave_only
+    global rev_min, rev_max, dir_chromium_src_main, combs, build_every, rev_expectfail, slave_only, rev_sub
 
     if args.slave_only:
         slave_only = True
@@ -190,11 +193,24 @@ def setup():
         else:
             rev_expectfail.append(rev)
 
+    subs = []
+    if args.hash_webkit:
+        subs.append('webkit' + args.hash_webkit[:6])
+    if args.hash_skia:
+        subs.append('skia' + args.hash_skia[:6])
+
+    if len(subs):
+        rev_sub = '-'.join(subs)
+
 
 def build():
     global build_fail
 
     if not args.build:
+        return
+
+    if len(combs) == 0:
+        warning('There is no combs to be built')
         return
 
     _pause()
@@ -450,8 +466,10 @@ typedef user_regs_struct regs_struct;
     restore_dir()
 
 
-def _move_to_server(file, target_os, target_arch, target_module):
+def _move_to_server(file, rev, target_os, target_arch, target_module):
     dir_comb_server = dir_server_chromium + '/' + _get_comb_name(target_os, target_arch, target_module)
+    if rev_sub:
+        dir_comb_server += '/%s' % str(rev)
     if re.match('ubuntu', server_webcatch[MACHINES_INDEX_HOSTNAME]):
         username = 'gyagp'
     else:
@@ -470,9 +488,11 @@ def _build(comb_next):
     comb_next_target_module = comb_next[COMB_INDEX_TARGET_MODULE]
     comb_next_target_rev = comb_next[COMB_INDEX_REV]
     comb_next_name = _get_comb_name(comb_next_target_os, comb_next_target_arch, comb_next_target_module, str(comb_next_target_rev))
-    dashboard('[webcatch] Begin ' + comb_next_name)
+    if not slave_only:
+        dashboard('[webcatch] Begin ' + comb_next_name)
     result = _build_one(comb_next)
-    dashboard('[webcatch] End ' + comb_next_name)
+    if not slave_only:
+        dashboard('[webcatch] End ' + comb_next_name)
     comb_next[COMB_INDEX_REV] += build_every
     if result:
         build_fail = 0
@@ -482,24 +502,38 @@ def _build(comb_next):
             error('You have reached maximum failure number')
 
 
+def _get_file_name(rev, type):
+    name = str(rev)
+    if rev_sub:
+        name += '/' + rev_sub
+    name += '.%s' % type
+    return name
+
+
 def _build_one(comb_next):
     (target_os, target_arch, target_module, rev) = comb_next
     comb_name = _get_comb_name(target_os, target_arch, target_module)
     dir_comb = dir_project_webcatch_out + '/' + comb_name
 
+    if rev_sub:
+        if slave_only:
+            ensure_dir(dir_comb + '/' + str(rev))
+        else:
+            ensure_dir(dir_server_chromium + '/' + comb_name + '/' + str(rev), server=server_webcatch[MACHINES_INDEX_HOSTNAME])
+
     if rev in rev_expectfail:
-        file_final = dir_comb + '/' + str(rev) + '.EXPECTFAIL'
+        file_final = dir_comb + '/' + _get_file_name(rev, 'EXPECTFAIL')
         execute('touch ' + file_final)
         if not slave_only:
-            if not _move_to_server(file_final, target_os, target_arch, target_module):
+            if not _move_to_server(file_final, rev, target_os, target_arch, target_module):
                 _report_fail('upload')
         return True
 
     if not chromium_get_hash(dir_chromium_src_main, rev):
-        file_final = dir_comb + '/' + str(rev) + '.NULL'
+        file_final = dir_comb + '/' + _get_file_name(rev, 'NULL')
         execute('touch ' + file_final)
         if not slave_only:
-            if not _move_to_server(file_final, target_os, target_arch, target_module):
+            if not _move_to_server(file_final, rev, target_os, target_arch, target_module):
                 _report_fail('upload')
         return True
 
@@ -509,11 +543,15 @@ def _build_one(comb_next):
 
     # lock
     if not slave_only:
-        file_lock = dir_server_chromium + '/' + comb_name + '/' + str(rev) + '.LOCK'
+        file_lock = dir_server_chromium + '/' + comb_name + '/' + _get_file_name(rev, 'LOCK')
         execute(_remotify_cmd('touch ' + file_lock))
 
     # sync
     cmd_sync = python_share_chromium + ' --sync --sync-reset --dir-root ' + dir_repo + ' --rev ' + str(rev)
+    if args.hash_webkit:
+        cmd_sync += ' --hash-webkit %s' % args.hash_webkit
+    if args.hash_skia:
+        cmd_sync += ' --hash-skia %s' % args.hash_skia
     result = execute(cmd_sync, dryrun=DRYRUN, interactive=True)
     if result[0]:
         cmd = python_share_chromium + ' --revert --dir-root ' + dir_repo
@@ -566,11 +604,11 @@ def _build_one(comb_next):
     if target_os == 'android' and target_module in ['content_shell', 'chrome_shell', 'webview_shell']:
         name_apk = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_APK]
         if result_build[0] or not os.path.exists(dir_out_build_type + '/apks/%s.apk' % name_apk):
-            file_final = dir_comb + '/' + str(rev) + '.FAIL'
+            file_final = dir_comb + '/' + _get_file_name(rev, 'FAIL')
             execute('touch ' + file_final)
             result = False
         else:
-            file_final = dir_comb + '/' + str(rev) + '.apk'
+            file_final = dir_comb + '/' + _get_file_name(rev, 'apk')
             execute('cp ' + dir_out_build_type + '/apks/%s.apk ' % name_apk + file_final, dryrun=DRYRUN)
             execute('rm -f ' + file_log)
             result = True
@@ -619,7 +657,7 @@ def _build_one(comb_next):
 
     # backup
     if not slave_only:
-        result = _move_to_server(file_final, target_os, target_arch, target_module)
+        result = _move_to_server(file_final, rev, target_os, target_arch, target_module)
         execute(_remotify_cmd('rm -f ' + file_lock))
         if not result:
             _report_fail('upload')
@@ -653,7 +691,11 @@ def _rev_is_built(comb, rand=False):
     comb_name = _get_comb_name(target_os, target_arch, target_module)
 
     if slave_only:
-        cmd = 'ls ' + dir_project_webcatch_out + '/' + comb_name + '/' + str(rev) + '*'
+        cmd = 'ls ' + dir_project_webcatch_out + '/' + comb_name + '/' + str(rev)
+        if rev_sub:
+            cmd += '/*%s*' % rev_sub
+        else:
+            cmd += '\.*'
         result = execute(cmd, show_cmd=False)
         if result[0] == 0:
             return True
@@ -666,7 +708,11 @@ def _rev_is_built(comb, rand=False):
             if rev >= comb_valid_rev_min and rev <= comb_valid_rev_max:
                 return True
 
-        cmd = 'ls ' + dir_server_chromium + '/' + comb_name + '/' + str(rev) + '*'
+        cmd = 'ls ' + dir_server_chromium + '/' + comb_name + '/' + str(rev)
+        if rev_sub:
+            cmd += '/*%s*' % rev_sub
+        else:
+            cmd += '\.*'
         if _rev_is_built_one(cmd):
             return True
 

@@ -70,7 +70,7 @@ examples:
   python %(prog)s --run
   python %(prog)s --analyze
   python %(prog)s --analyze --analyze-serialize
-  python %(prog)s --analyze --analyze-serialize --analyze-filter '{"module":{"name":"content_shell","arch":"x86"},"case":{"name":"octane"}}'
+  python %(prog)s --analyze --analyze-serialize --analyze-filter '{"module":{"name":"content_shell","arch":"x86","version":"300000-999999"},"case":{"name":"octane"}}'
 ''')
 
     parser.add_argument('--run', dest='run', help='run chromium performance test with combs need to run', action='store_true')
@@ -208,44 +208,8 @@ def analyze():
         y_reg_known = []
         x_reg_unknown = []
         y_reg_unknown = []
-        for index_version, version in enumerate(device_module_to_version[index_dm]):
-            x.append(index_version)
-            x_name.append(version)
-            value = device_module_case_to_perf[dmc][version]
-            y.append(value)
-
-            if index_version > 0:
-                version_prev = device_module_to_version[index_dm][index_version - 1]
-                value_prev = device_module_case_to_perf[dmc][version_prev]
-                if value_prev == 0:
-                    diff = 0
-                else:
-                    diff = round(abs(value - value_prev) / value_prev, 2) * 100
-                if diff > PERF_CHANGE_PERCENT:
-
-                    found = False
-                    if dmc in device_module_case_to_analysis:
-                        for analysis in device_module_case_to_analysis[dmc]:
-                            version_min = analysis[0]
-                            version_max = analysis[1]
-                            if ver_cmp(version, version_min) >= 0 and ver_cmp(version, version_max) <= 0:
-                                found = True
-                                break
-
-                    if re.search('\+', combs_case[index_c][3]) and value > value_prev or re.search('\-', combs_case[index_c][3]) and value < value_prev:
-                        if found:
-                            x_imp_known.append(index_version)
-                            y_imp_known.append(value)
-                        else:
-                            x_imp_unknown.append(index_version)
-                            y_imp_unknown.append(value)
-                    else:
-                        if found:
-                            x_reg_known.append(index_version)
-                            y_reg_known.append(value)
-                        else:
-                            x_reg_unknown.append(index_version)
-                            y_reg_unknown.append(value)
+        version_min = ''
+        version_max = ''
 
         # filter
         if args.analyze_filter:
@@ -273,11 +237,61 @@ def analyze():
                 if need_filter:
                     break
                 for key_l2 in af[key_l1]:
+                    if key_l1 not in dmc_info or key_l2 not in dmc_info[key_l1]:
+                        continue
                     if af[key_l1][key_l2] != dmc_info[key_l1][key_l2]:
                         need_filter = True
                         break
             if need_filter:
                 continue
+
+            if 'module' in af and 'version' in af['module']:
+                af_version = af['module']['version'].split('-')
+                version_min = af_version[0]
+                version_max = af_version[1]
+
+        for index_version, version in enumerate(device_module_to_version[index_dm]):
+            if version_min and version_max:
+                if ver_cmp(version, version_min) < 0 or ver_cmp(version, version_max) > 0:
+                    continue
+
+            x.append(index_version)
+            x_name.append(version)
+            value = device_module_case_to_perf[dmc][version]
+            y.append(value)
+
+            if index_version > 0:
+                version_prev = device_module_to_version[index_dm][index_version - 1]
+                value_prev = device_module_case_to_perf[dmc][version_prev]
+                if value_prev == 0:
+                    diff = 0
+                else:
+                    diff = round(abs(value - value_prev) / value_prev, 2) * 100
+                if diff > PERF_CHANGE_PERCENT:
+
+                    found = False
+                    if dmc in device_module_case_to_analysis:
+                        for analysis in device_module_case_to_analysis[dmc]:
+                            version_min_anal = analysis[0]
+                            version_max_anal = analysis[1]
+                            if ver_cmp(version, version_min_anal) >= 0 and ver_cmp(version, version_max_anal) <= 0:
+                                found = True
+                                break
+
+                    if re.search('\+', combs_case[index_c][3]) and value > value_prev or re.search('\-', combs_case[index_c][3]) and value < value_prev:
+                        if found:
+                            x_imp_known.append(index_version)
+                            y_imp_known.append(value)
+                        else:
+                            x_imp_unknown.append(index_version)
+                            y_imp_unknown.append(value)
+                    else:
+                        if found:
+                            x_reg_known.append(index_version)
+                            y_reg_known.append(value)
+                        else:
+                            x_reg_unknown.append(index_version)
+                            y_reg_unknown.append(value)
 
         if args.analyze_unknown:
             if args.analyze_unknown == 'all' and not x_imp_unknown and not x_reg_unknown:

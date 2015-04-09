@@ -919,6 +919,9 @@ def _get_repo_info():
             elif merge == 'android-5.0.0_r2':
                 repo_type = 'upstream'
                 repo_ver = '5.0.0'
+            elif merge == 'android-5.1.0_r3':
+                repo_type = 'upstream'
+                repo_ver = '5.1.0'
             elif merge == 'abt/private/topic/aosp_stable/lmaster':
                 repo_type = 'stable'
                 repo_ver = '2.0'

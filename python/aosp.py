@@ -196,7 +196,7 @@ def init():
 
     if repo_type == 'upstream':
         file_repo = 'https://storage.googleapis.com/git-repo-downloads/repo'
-    elif repo_type in ['gminl', 'gminl64', 'stable', 'stable-old']:
+    elif repo_type in ['gminl', 'gminlmr1', 'gminl64', 'stable', 'stable-old']:
         file_repo = 'https://android.intel.com/static/repo'
     elif repo_type == 'irdal':
         file_repo = 'https://buildbot-otc.jf.intel.com/repo.otc'
@@ -212,6 +212,8 @@ def init():
         cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/private/topic/aosp_stable/master'
     elif repo_type == 'gminl':
         cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/topic/gmin/l-dev/master'
+    elif repo_type == 'gminlmr1':
+        cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/topic/gmin/l-dev/mr1/master'
     elif repo_type == 'gminl64':
         cmd = './repo init -u ssh://android.intel.com/a/aosp/platform/manifest -b abt/topic/gmin/l-dev/aosp/64bit/master'
     elif repo_type == 'irdal':
@@ -438,7 +440,7 @@ def flash_image():
                 file_image = dir_root + '/out/dist/%s-om-factory.tgz' % product
             elif repo_type == 'stable':
                 file_image = dir_root + '/out/dist/%s-flashfiles-%s.%s.zip' % (product, variant, username)
-            elif repo_type in ['irdal', 'gminl', 'gminl64']:
+            elif repo_type in ['irdal', 'gminl', 'gminl64', 'gminlmr1']:
                 file_image = dir_root + '/out/dist/%s' % _get_factory_file(product)
 
         if not os.path.exists(file_image):
@@ -494,7 +496,7 @@ def flash_image():
         combo = _get_combo(device_arch, device_type)
         cmd = bashify_cmd('. build/envsetup.sh && lunch ' + combo + ' && fastboot -w flashall')
         execute(cmd, interactive=True, dryrun=False)
-    elif repo_type in ['gminl', 'gminl64', 'irdal']:
+    elif repo_type in ['gminl', 'gminl64', 'irdal', 'gminlmr1']:
         execute('./flash-all.sh', interactive=True, dryrun=False)
         execute('timeout 10s %s -s %s reboot' % (path_fastboot, device_id))
         execute('rm -rf ' + dir_extract, dryrun=False)
@@ -799,7 +801,7 @@ def _backup_one(arch, device_type, module):
         #dest_dir = dir_backup_img + get_datetime() + '-' + device_id + '-' + variant + '/'
         #os.mkdir(dest_dir)
         #execute('cp ' + root_dir + 'out/target/product/' + device_code_name + '/*.img ' + dest_dir)
-    elif repo_type in ['irdal', 'gminl', 'gminl64']:
+    elif repo_type in ['irdal', 'gminl', 'gminl64', 'gminlmr1']:
         files_backup = {'.': 'out/dist/%s' % _get_factory_file(product)}
     elif repo_type == 'stable' or repo_type == 'stable-old':
         if module == 'webview':
@@ -935,6 +937,8 @@ def _get_repo_info():
                 repo_type = 'mcg'
             elif merge == 'abt/topic/gmin/l-dev/master':
                 repo_type = 'gminl'
+            elif merge == 'abt/topic/gmin/l-dev/mr1/master':
+                repo_type = 'gminlmr1'
             elif merge == 'abt/topic/gmin/l-dev/aosp/64bit/master':
                 repo_type = 'gminl64'
             elif merge == 'irda/l-dev/master':

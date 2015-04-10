@@ -112,6 +112,7 @@ commands = [
     ('network', 'watch -n 1 "/sbin/ifconfig wlan0 | grep bytes"', 'Network speed.', TYPE_RUNNABLE),
     ('network', 'lsof -Pnl +M -i4', 'List IPV4 connections', TYPE_NULL),
     ('network', 'netstat', '-l Show only listening sockets, -a All sockets, -p Show PID and name, -t tcp, -u udp, -x Unix sockets, -c timer', TYPE_NULL),
+    ('network', 'sudo tcpdump -i eth0', 'sniff eth0', TYPE_RUNNABLE),
     ('misc', 'sudo apt-get remove flashplugin-installer', 'This package will hang all the time during update', TYPE_NULL),
     ('misc', 'watch -n1 -d prebuilts/misc/linux-x86/ccache/ccache -s', 'watch ccache usage', TYPE_NULL),
     ('misc', 'gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=all.pdf -dBATCH *.pdf', 'merge pdf', TYPE_RUNNABLE),

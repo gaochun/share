@@ -184,14 +184,9 @@ repo_type_info = {
                     'MediaSourcePlayerTest.DemuxerConfigRequestedIfInUnit1AfterPrefetch',  # decoder not request new data.
                     'MediaSourcePlayerTest.PrerollContinuesAcrossReleaseAndStart',  # 419122. disable in upstream.
                 ],
-                'unit_tests': [
-                    # call failed at gmock but pass to call directly
-                    'GoogleSearchCounterAndroidTest.BadOmniboxSearch',
-                    'GoogleSearchCounterAndroidTest.BadOtherSearch',
-                    'GoogleSearchCounterAndroidTest.GoodOmniboxSearch',
-                    'GoogleSearchCounterAndroidTest.GoodOtherSearch',
-                    'GoogleSearchCounterAndroidTest.SearchAppStart',
-                    'GoogleSearchCounterAndroidTest.SearchAppSearch',
+                'net_unittests': [
+                    # Status: TODO
+                    'CertNetFetcherImplTest.Cache',  # new added case from #324261. have not confirmed the cause.
                 ],
                 # content_gl_tests is disabled in upstream
                 'content_gl_tests': [
@@ -216,10 +211,8 @@ repo_type_info = {
                 ],
                 'ChromeShellTest': [
                     # Status: TODO
-                    'ExternalPrerenderRequestTest#testAddPrerenderAndCancel',
-                    'ExternalPrerenderRequestTest#testAddingPrerendersInaRow',
-                    'ExternalPrerenderRequestTest#testCancelPrerender',
                 ],
+                # MojoTest is disabled in upstream
                 'MojoTest': [
                     # TODO
                     'CoreImplTest#testDataPipeCreation',
@@ -227,6 +220,11 @@ repo_type_info = {
                 ]
             },
             ('baytrail', 'x86_64'): {
+                'media_unittests': [
+                    # can not create Drm Service from system.
+                    'MediaDrmBridgeTest.CreateWithoutSessionSupport_Widevine',
+                    'MediaDrmBridgeTest.SetSecurityLevel_Widevine',
+                ]
             },
             ('baytrail', 'x86'): {
                 'AndroidWebViewTest': [

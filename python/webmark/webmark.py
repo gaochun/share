@@ -5,7 +5,10 @@ import sys
 sys.path.append(sys.path[0] + '/..')
 from util import *
 import json
-from selenium import webdriver
+try:
+    from selenium import webdriver
+except:
+    'Please install package selenium'
 
 logger = ''
 device_arch = ''

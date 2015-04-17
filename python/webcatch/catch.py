@@ -27,6 +27,7 @@ examples:
 
   python %(prog)s -r 218527-226662 --case-name cocos
   python %(prog)s -r 264037-266292 --case-name browsermark --case-config '"test": "Search", "version": "2.0"'
+  python %(prog)s -r 218527-226662 --case-name aquarium --run-option="--ignore-gpu-blacklist,--allow-file-access-from-files"
 
 ''')
     group_device = parser.add_argument_group('device')
@@ -48,6 +49,7 @@ examples:
     parser.add_argument('-r', '--rev', dest='rev', help='revision from A to B')
     parser.add_argument('--diff', dest='diff', type=int, help='percentage gap between good and bad', default=5)
     parser.add_argument('--skip-install', dest='skip_install', help='skip the installation of module', action='store_true')
+    parser.add_argument('--run-option', dest='run_option', help='run option passed to webmark')
 
     args = parser.parse_args()
     args_dict = vars(args)
@@ -134,6 +136,8 @@ def _run(rev):
         cmd += ' --case-config ' + '\'' + args.case_config + '\''
     if not args.skip_install:
         cmd += ' --module-path %s/%s.apk' % (dir_download, str(rev))
+    if args.run_option:
+        cmd += ' --run-option="%s"' % args.run_option
     result_cmd = execute(cmd, return_output=True, show_progress=True)
     if result_cmd[0]:
         error('Failed to run case_name ' + case_name + ' with revision ' + str(rev))

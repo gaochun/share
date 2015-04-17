@@ -60,6 +60,7 @@ examples:
     parser.add_argument('--analyze', dest='analyze', help='file to analyze')
     parser.add_argument('--upload', dest='upload', help='file to upload')
     parser.add_argument('--formal', dest='formal', help='formal benchmark results, which would send email and backup to samba server', action='store_true')
+    parser.add_argument('--run-option', dest='run_option', help='run option')
 
     add_argument_common(parser)
 
@@ -420,7 +421,7 @@ class Suite:
                 restore_dir()
 
             chrome_android_cleanup(device.id)
-            result = execute('adb install -r ' + module_path, interactive=True)
+            result = execute('adb install -r ' + module_path, interactive=True, dryrun=False)
             if result[0]:
                 error('Can not install ' + module_path)
 
@@ -457,7 +458,11 @@ class Suite:
             if dryrun:
                 driver = None
             else:
-                capabilities = get_capabilities(device.id, module.name, args.use_running_app, ['--disable-web-security'])
+                options = ['--disable-web-security']
+                if args.run_option:
+                    options = options + args.run_option.split(',')
+                capabilities = get_capabilities(device.id, module.name, args.use_running_app, options)
+                # This step would generate *-command-line under /data/local/tmp
                 driver = webdriver.Remote('http://127.0.0.1:9515', capabilities)
             result = self.cases[i].run(driver)
             fw.write(result + '\n')

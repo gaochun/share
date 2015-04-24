@@ -6,9 +6,9 @@
 #    /workspace/project/linux-kernel/3.19.2/tools/perf/perf and /usr/bin/perf are similar.
 #    We can also use perf from aosp /workspace/project/aosp-gminl/out/host/linux-x86/bin/perfhost
 
-
-import fileinput
-from multiprocessing import Pool
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from util import *
 
 args = ''

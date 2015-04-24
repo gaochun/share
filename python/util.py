@@ -47,7 +47,7 @@ except:
     'Please install package pexpect'
 
 # pesudo usage to mute linter
-codecs, collections, HTMLParser, BadStatusLine, json, Pool, operator, pickle, urllib2, pexpect
+codecs, collections, fileinput, HTMLParser, BadStatusLine, json, Pool, operator, pickle, random, urllib2, pexpect
 # </import>
 
 # <globals>
@@ -1905,11 +1905,6 @@ def chromium_git_match(lines, index, hash_tmp, author_tmp, subject_tmp, date_tmp
 
 
 ## <internal>
-def _surpress_warning():
-    fileinput
-    random
-
-
 # dir_repo: repo dir
 # path_patch: Full path of patch
 # count: Recent commit count to check

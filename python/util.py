@@ -45,6 +45,9 @@ try:
     import pexpect
 except:
     'Please install package pexpect'
+
+# pesudo usage to mute linter
+codecs, collections, HTMLParser, BadStatusLine, json, Pool, operator, pickle, urllib2, pexpect
 # </import>
 
 # <globals>
@@ -62,6 +65,7 @@ args = argparse.Namespace()
 dir_stack = []
 log_stack = []
 timer = {}
+str_commit = 'commit (.*)'
 
 # webmark
 webmark_format = ['category', 'name', 'version', 'metric', 'result']
@@ -273,7 +277,33 @@ nexus_codename = {
 ## </android>
 
 ## <chromium>
-chromium_rev_max = 9999999
+CHROMIUM_REV_MAX = 9999999
+CHROMIUM_MAX_LEN_REV = 6
+# Each chromium version is: major.minor.build.patch
+# major -> svn rev, git commit, build. major commit is after build commit.
+# To get this, search 'The atomic number' in 'git log origin master chrome/VERSION'
+chromium_majorver_info = {
+    43: [317497, 'b4b0dad750fcdaefea8f034ab83df7ba588701d4', 2312],
+    42: [310967, '2eb44014970b8aa0333940a9f88ebd83edb497ac', 2273],
+    41: [303373, 'e9c657d834d5946b9cb09a47fd087970a3b1d91a', 2215],
+    40: [297098, '86e466451cdca1e32a912df33838d9eec0dadcd7', 2172],
+    39: [290085, '292f233e2a09f983aa93134c50ff3eb0cb438c28', 2126],
+    38: [278979, '85c11da0bf7aad87c0a563c7093cb52ee58e4666', 2063],
+    37: [269579, '47c9991b3153128d79eac26ad0e8ecb3d7e21128', 1986],
+    36: [260368, 'b1f8bdb570beade2a212e69bee1ea7340d80838e', 1917],
+    35: [252136, '6d5ba2122914c53d753e5fb960a601b43cb79c60', 1848],
+    34: [241271, '3824512f1312ec4260ad0b8bf372619c7168ef6b', 1751],
+    33: [233137, 'eeaecf1bb1c52d4b9b56a620cc5119409d1ecb7b', 1701],
+    32: [225138, '6a384c4afe48337237e3da81ccff8658755e2a02', 1652],
+    31: [217377, 'c95dd877deb939ec7b064831c2d20d92e93a4775', 1600],
+    30: [208581, '88367e9bf6a10b9e024ec99f12755b6f626bbe0c', 1548],
+}
+CHROMIUM_MAJORVER_INFO_INDEX_REV = 0
+CHROMIUM_MAJORVER_INFO_INDEX_HASH = 1
+CHROMIUM_MAJORVER_INFO_MIN = chromium_majorver_info[43]
+CHROMIUM_REV_MIN = CHROMIUM_MAJORVER_INFO_MIN[CHROMIUM_MAJORVER_INFO_INDEX_REV]
+CHROMIUM_HASH_MIN = CHROMIUM_MAJORVER_INFO_MIN[CHROMIUM_MAJORVER_INFO_INDEX_HASH]
+chromium_majorvers = sorted(chromium_majorver_info.keys(), reverse=True)
 
 # src/build/android/pylib/constants.py
 chromium_android_info = {
@@ -303,30 +333,6 @@ CHROMIUM_ANDROID_INFO_INDEX_ISKNOWN = 3
 CHROMIUM_ANDROID_INFO_INDEX_SONAME = 4
 CHROMIUM_ANDROID_INFO_INDEX_DIRLIB = 5
 
-# Each chromium version is: major.minor.build.patch
-# major -> svn rev, git commit, build. major commit is after build commit.
-# To get this, search 'The atomic number' in 'git log origin master chrome/VERSION'
-chromium_majorver_info = {
-    43: [317497, 'b4b0dad750fcdaefea8f034ab83df7ba588701d4', 2312],
-    42: [310967, '2eb44014970b8aa0333940a9f88ebd83edb497ac', 2273],
-    41: [303373, 'e9c657d834d5946b9cb09a47fd087970a3b1d91a', 2215],
-    40: [297098, '86e466451cdca1e32a912df33838d9eec0dadcd7', 2172],
-    39: [290085, '292f233e2a09f983aa93134c50ff3eb0cb438c28', 2126],
-    38: [278979, '85c11da0bf7aad87c0a563c7093cb52ee58e4666', 2063],
-    37: [269579, '47c9991b3153128d79eac26ad0e8ecb3d7e21128', 1986],
-    36: [260368, 'b1f8bdb570beade2a212e69bee1ea7340d80838e', 1917],
-    35: [252136, '6d5ba2122914c53d753e5fb960a601b43cb79c60', 1848],
-    34: [241271, '3824512f1312ec4260ad0b8bf372619c7168ef6b', 1751],
-    33: [233137, 'eeaecf1bb1c52d4b9b56a620cc5119409d1ecb7b', 1701],
-    32: [225138, '6a384c4afe48337237e3da81ccff8658755e2a02', 1652],
-    31: [217377, 'c95dd877deb939ec7b064831c2d20d92e93a4775', 1600],
-    30: [208581, '88367e9bf6a10b9e024ec99f12755b6f626bbe0c', 1548],
-}
-CHROMIUM_MAJORVER_INFO_INDEX_REV = 0
-
-# revision range to care about
-chromium_rev_default = [chromium_majorver_info[36][CHROMIUM_MAJORVER_INFO_INDEX_REV], 999999]
-
 # combs used by webmark.py and chromium-perf.py follow below index rule:
 # ['asus_t100_64p', 'x86_64', 'powersave', '400000', 'android', 'x86_64', 'content_shell', ['302000', '999999', 200]]
 PERF_COMBS_INDEX_DEVICE_PRODUCT = 0
@@ -342,6 +348,39 @@ PERF_COMBS_INDEX_MODULE_VERSION_MAX = 1
 PERF_COMBS_INDEX_MODULE_VERSION_INTERVAL = 2
 
 PERF_CHANGE_PERCENT = 5  # means regression or improvement
+
+chromium_repo_path = {
+    'webkit': 'third_party/WebKit',
+    'skia': 'third_party/skia',
+}
+chromium_repos = chromium_repo_path.keys()
+chromium_authors = ['yang.gu@intel.com', 'yunchao.he@intel.com', 'qiankun.miao@intel.com']
+
+# {dir_src: [rev_max, rev_info, roll_info]}
+chromium_src_info = {}
+CHROMIUM_SRC_INFO_INDEX_REV_MAX = 0
+CHROMIUM_SRC_INFO_INDEX_REV_INFO = 1
+CHROMIUM_SRC_INFO_INDEX_ROLL_INFO = 2
+
+CHROMIUM_REV_INFO_INDEX_HASH = 0
+CHROMIUM_REV_INFO_INDEX_AUTHOR = 1
+CHROMIUM_REV_INFO_INDEX_DATE = 2
+CHROMIUM_REV_INFO_INDEX_SUBJECT = 3
+CHROMIUM_REV_INFO_INDEX_END = 3  # last index
+
+CHROMIUM_ROLL_INFO_INDEX_HASH = 0
+CHROMIUM_ROLL_INFO_INDEX_AUTHOR = 1
+CHROMIUM_ROLL_INFO_INDEX_DATE = 2
+CHROMIUM_ROLL_INFO_INDEX_SUBJECT = 3
+CHROMIUM_ROLL_INFO_INDEX_REPO = 4
+CHROMIUM_ROLL_INFO_INDEX_VER_BEGIN = 5
+CHROMIUM_ROLL_INFO_INDEX_VER_END = 6
+CHROMIUM_ROLL_INFO_INDEX_DIRECTION = 7
+CHROMIUM_ROLL_INFO_INDEX_COUNT = 8
+CHROMIUM_ROLL_INFO_INDEX_VERS = 9
+
+CHROMIUM_DEPS_REV_MIN = 26
+CHROMIUM_DEPS_HASH_MIN = 'e49138c2cbd4d61ed1298af56533f5b98895730c'
 ## </chromium>
 # </globals>
 
@@ -1052,7 +1091,6 @@ def ensure_nodir(dir_check, server=''):
 
 
 def ensure_file(path_file):
-    print os.path.dirname(os.path.abspath(path_file))
     ensure_dir(os.path.dirname(os.path.abspath(path_file)))
     if not os.path.exists(path_file):
         execute('touch ' + path_file, show_cmd=True)
@@ -1594,7 +1632,7 @@ def android_get_egl_debug_proc(device_id=''):
 # <android_set>
 def android_set_prop(key, value, device_id=''):
     cmd = adb(cmd='shell setprop %s %s' % (key, value), device_id=device_id)
-    result = execute(cmd, return_output=True, show_cmd=False)
+    execute(cmd, return_output=True, show_cmd=False)
 
 
 # value: related to "enable opengl traces in settings".
@@ -1611,72 +1649,6 @@ def android_set_egl_debug_proc(value, device_id=''):
 
 
 ## <chromium>
-# need_fetch: True to get latest rev from upstream. False to get local latest rev.
-def chromium_get_rev_max(dir_src, need_fetch=True):
-    if not os.path.exists(dir_src):
-        error('Chromium src dir %s does not exist' % dir_src)
-
-    backup_dir(dir_src)
-    if need_fetch:
-        execute('git fetch', dryrun=False)
-    rev_hash = _chromium_get_rev_hash(chromium_rev_max)
-    restore_dir()
-    return rev_hash.keys()[0]
-
-
-# get hash according to rev
-def chromium_get_hash(dir_src, rev):
-    if not os.path.exists(dir_src):
-        error('Chromium src dir does not exist')
-
-    backup_dir(dir_src)
-    rev_hash = _chromium_get_rev_hash(rev, rev, force=False)
-    if not rev_hash:
-        execute('git fetch', dryrun=False)
-        rev_hash = _chromium_get_rev_hash(rev, rev, force=False)
-    restore_dir()
-
-    if not rev_hash:
-        return ''
-    else:
-        return rev_hash[rev]
-
-
-# single rev: return hash for general rev, return ''  if failed to find. return rev_max for chromium_rev_max
-# rev range: return valid hashes within range, return {} if failed to find.
-def chromium_get_rev_hash(dir_src, rev_min, *rev_extra):
-    if len(rev_extra):
-        rev_max = rev_extra[0]
-    else:
-        rev_max = rev_min
-
-    if rev_min > rev_max:
-        return {}
-
-    if not os.path.exists(dir_src):
-        error('Chromium src dir does not exist')
-
-    backup_dir(dir_src)
-    if rev_min == chromium_rev_max:
-        rev_hash = {}
-    else:
-        rev_hash = _chromium_get_rev_hash(rev_min, rev_max, force=False)
-    if not rev_hash:
-        execute('git fetch', dryrun=False)
-        rev_hash = _chromium_get_rev_hash(rev_min, rev_max, force=True)
-    restore_dir()
-
-    if len(rev_extra):
-        return rev_hash
-    elif rev_min == chromium_rev_max:
-        return rev_hash.keys()[0]
-    else:
-        if rev_min in rev_hash:
-            return rev_hash[rev_min]
-        else:
-            return ''
-
-
 def get_capabilities(device_id, target_module, use_running_app=False, args=[]):
     capabilities = {}
     capabilities['chromeOptions'] = {}
@@ -1778,6 +1750,157 @@ def chromium_gdb_module(device_id, module_name, target_arch, pid, dir_src, dir_s
 
 def chromium_get_soname(module):
     return 'lib' + chromium_android_info[module][CHROMIUM_ANDROID_INFO_INDEX_SONAME] + '.so'
+
+
+def chromium_is_hash(ver):
+    if len(str(ver)) > CHROMIUM_MAX_LEN_REV:
+        return True
+    return False
+
+
+# return rev_max with fetch
+def chromium_fetch(dir_src):
+    backup_dir(dir_src)
+    execute('git fetch', show_cmd=False)
+    chromium_get_src_info(dir_src, CHROMIUM_REV_MAX, CHROMIUM_REV_MAX)
+    restore_dir()
+    return chromium_src_info[dir_src][CHROMIUM_SRC_INFO_INDEX_REV_MAX]
+
+
+# return rev_max without fetch
+def chromium_get_rev_max(dir_src):
+    if dir_src not in chromium_src_info:
+        chromium_get_src_info(dir_src, CHROMIUM_REV_MAX, CHROMIUM_REV_MAX)
+    return chromium_src_info[dir_src][CHROMIUM_SRC_INFO_INDEX_REV_MAX]
+
+
+# get hash according to rev
+def chromium_get_hash(dir_src, rev):
+    if dir_src not in chromium_src_info or rev not in chromium_src_info[dir_src][CHROMIUM_SRC_INFO_INDEX_REV_INFO]:
+        chromium_get_src_info(dir_src, rev, rev)
+
+    if rev > chromium_src_info[dir_src][CHROMIUM_SRC_INFO_INDEX_REV_MAX]:
+        chromium_fetch(dir_src)
+
+    rev_info = chromium_src_info[dir_src][CHROMIUM_SRC_INFO_INDEX_REV_INFO]
+    if rev in rev_info:
+        return rev_info[rev][CHROMIUM_REV_INFO_INDEX_HASH]
+    else:
+        return ''
+
+
+# get max if rev_min and rev_max are CHROMIUM_REV_MAX
+def chromium_get_src_info(dir_src, rev_min, rev_max):
+    global chromium_src_info
+
+    backup_dir(dir_src)
+
+    # initialize if needed
+    if dir_src not in chromium_src_info:
+        chromium_src_info[dir_src] = [0, {CHROMIUM_DEPS_REV_MIN: CHROMIUM_DEPS_HASH_MIN}, {}]
+
+    # rev_info
+    src_info = chromium_src_info[dir_src]
+    _chromium_get_rev_info(src_info, rev_min, rev_max)
+
+    # roll_info
+    rev_info = src_info[CHROMIUM_SRC_INFO_INDEX_REV_INFO]
+    if rev_min not in rev_info:
+        rev_min_tmp = CHROMIUM_DEPS_REV_MIN  # first rev for DEPS
+    else:
+        rev_min_tmp = rev_min
+    if rev_max not in rev_info:
+        rev_max_tmp = src_info[CHROMIUM_SRC_INFO_INDEX_REV_MAX]
+    else:
+        rev_max_tmp = rev_max
+    hash_min = rev_info[rev_min_tmp][CHROMIUM_REV_INFO_INDEX_HASH]
+    hash_max = rev_info[rev_max_tmp][CHROMIUM_REV_INFO_INDEX_HASH]
+    _chromium_get_roll_info(src_info[CHROMIUM_SRC_INFO_INDEX_ROLL_INFO], rev_min, rev_max, hash_min, hash_max)
+
+    restore_dir()
+
+
+def chromium_get_repo_info(repo, ver_begin, ver_end):
+    backup_dir(chromium_repo_path[repo], verbose=False)
+
+    if chromium_is_hash(ver_begin) ^ chromium_is_hash(ver_end):
+        error('ver_begin %s and ver_end %s should have same length' % (ver_begin, ver_end))
+
+    if chromium_is_hash(ver_begin):
+        result = execute('git rev-list --count %s..%s' % (ver_begin, ver_end), return_output=True, show_cmd=False)
+        count = int(result[1].strip('\n'))
+        if count != 0:
+            direction = 'forward'
+        else:
+            direction = 'backward'
+            (ver_begin, ver_end) = (ver_end, ver_begin)
+
+        result = execute('git rev-list %s..%s^' % (ver_begin, ver_end), return_output=True, show_cmd=False)
+        vers = result[1].split('\n')
+        # remove the empty one
+        del vers[-1]
+        vers.reverse()
+    else:
+        if ver_begin < ver_end:
+            direction = 'forward'
+        else:
+            direction = 'backward'
+            (ver_begin, ver_end) = (ver_end, ver_begin)
+
+        vers = range(ver_begin, ver_end + 1)
+
+    restore_dir()
+    count = len(vers)
+    return (direction, count, vers, ver_begin, ver_end)
+
+
+def chromium_git_match(lines, index, hash_tmp, author_tmp, subject_tmp, date_tmp, rev_tmp):
+    line = lines[index]
+    line_strip = line.strip()
+
+    # hash
+    match = re.match(str_commit, line)
+    if match:
+        hash_tmp = match.group(1)
+
+    # author
+    match = re.match('Author:', lines[index])
+    if match:
+        match = re.search('<(.*@.*)@.*>', line)
+        if match:
+            author_tmp = match.group(1)
+        else:
+            match = re.search('(\S+@\S+)', line)
+            if match:
+                author_tmp = match.group(1)
+                author_tmp = author_tmp.lstrip('<')
+                author_tmp = author_tmp.rstrip('>')
+            else:
+                author_tmp = line.rstrip('\n').replace('Author:', '').strip()
+                warning('The author %s is in abnormal format' % author_tmp)
+
+    # update author for commit bot
+    match = re.match('Author: (.*)', line_strip)
+    if match and match.group(1) in chromium_authors and author_tmp not in chromium_authors:
+        author_tmp = match.group(1)
+
+    # date & subject
+    match = re.match('Date:(.*)', line)
+    if match:
+        date_tmp = match.group(1).strip()
+        index += 2
+        subject_tmp = lines[index].strip()
+
+    # rev
+    match = re.match('git-svn-id: .*@(.*) .*', line_strip)
+    if match:
+        rev_tmp = int(match.group(1))
+    # from r291561, use below new format
+    match = re.match('Cr-Commit-Position: refs/heads/master@{#(.*)}', line_strip)
+    if match:
+        rev_tmp = int(match.group(1))
+
+    return (hash_tmp, author_tmp, subject_tmp, date_tmp, rev_tmp)
 ## </chromium>
 
 
@@ -1807,52 +1930,6 @@ def _patch_applied(dir_repo, path_patch, count=30):
         return True
 
 
-# force: True so that rev_hash will return as much as possible
-def _chromium_get_rev_hash(rev_min, rev_max=0, force=False):
-    result = execute('git log origin master', show_cmd=False, return_output=True)
-    lines = result[1].split('\n')
-
-    pattern_hash = re.compile('^commit (.*)')
-    pattern_rev = re.compile('^git-svn-id: .*@(.*) (.*)')
-    # from r291561, use below new format
-    pattern_rev2 = re.compile('Cr-Commit-Position: refs/heads/master@{#(.*)}')
-    hash_temp = ''
-    rev_temp = 0
-    rev_hash = {}
-    is_rev = False
-    is_first = True
-    for index, line in enumerate(lines):
-        match = pattern_hash.search(line)
-        if match:
-            hash_temp = match.group(1)
-
-        match = pattern_rev.search(line.lstrip())
-        if match:
-            if pattern_hash.search(lines[index + 2].lstrip()):
-                rev_temp = int(match.group(1))
-                is_rev = True
-
-        match = pattern_rev2.search(line.lstrip())
-        if match:
-            if pattern_hash.search(lines[index + 2].lstrip()):
-                rev_temp = int(match.group(1))
-                is_rev = True
-
-        if is_rev:
-            is_rev = False
-            if is_first:
-                is_first = False
-                if rev_min == chromium_rev_max:
-                    rev_hash[rev_temp] = hash_temp
-                    return rev_hash
-                if rev_temp < rev_max and not force:
-                    return rev_hash
-            if rev_temp >= rev_min and rev_temp <= rev_max:
-                rev_hash[rev_temp] = hash_temp
-            elif rev_temp < rev_min:
-                return rev_hash
-
-
 def _msg(msg, show_strace=False):
     m = inspect.stack()[1][3].upper()
     if show_strace:
@@ -1863,5 +1940,200 @@ def _msg(msg, show_strace=False):
     execute('echo "%s" >>"%s"' % (m, log), show_cmd=False)
 
 
+def _chromium_get_rev_info(src_info, rev_min, rev_max):
+    rev_info = src_info[CHROMIUM_SRC_INFO_INDEX_REV_INFO]
+    if rev_min == rev_max and rev_min in rev_info:
+        return
+
+    hash_min_closest = _chromium_get_closest_hash(rev_min)
+    if hash_min_closest:
+        cmd = 'git log %s^..HEAD origin master' % hash_min_closest
+    else:
+        cmd = 'git log origin master'
+    result = execute(cmd, show_cmd=False, return_output=True)
+    lines = result[1].split('\n')
+
+    index = 0
+    hash_tmp = ''
+    author_tmp = ''
+    date_tmp = ''
+    subject_tmp = ''
+    rev_tmp = 0
+    while True:
+        if rev_tmp and (index >= len(lines) or re.match(str_commit, lines[index])):
+            if rev_min == CHROMIUM_REV_MAX:
+                rev_min = rev_tmp
+            if rev_max == CHROMIUM_REV_MAX:
+                rev_max = rev_tmp
+            if rev_tmp > src_info[CHROMIUM_SRC_INFO_INDEX_REV_MAX]:
+                src_info[CHROMIUM_SRC_INFO_INDEX_REV_MAX] = rev_tmp
+            if rev_tmp < rev_min:
+                break
+            if rev_tmp > rev_max:
+                # reset
+                hash_tmp = ''
+                author_tmp = ''
+                date_tmp = ''
+                subject_tmp = ''
+                rev_tmp = 0
+                continue
+
+            if rev_tmp not in rev_info:
+                rev_info[rev_tmp] = [hash_tmp, author_tmp, date_tmp, subject_tmp]
+            if index >= len(lines):
+                break
+
+            # reset
+            hash_tmp = ''
+            author_tmp = ''
+            date_tmp = ''
+            subject_tmp = ''
+            rev_tmp = 0
+
+        # no valuable info exists
+        if index >= len(lines):
+            break
+        (hash_tmp, author_tmp, subject_tmp, date_tmp, rev_tmp) = chromium_git_match(lines, index, hash_tmp, author_tmp, subject_tmp, date_tmp, rev_tmp)
+        index += 1
+
+    # not all rev is existed. e.g., 129386
+    for rev_tmp in range(rev_min, rev_max + 1):
+        if rev_tmp not in rev_info:
+            rev_info[rev_tmp] = [''] * (CHROMIUM_REV_INFO_INDEX_END + 1)
+
+
+# hash (str) is for git, rev (int) is for svn, ver for either.
+def _chromium_get_roll_info(roll_info, rev_min, rev_max, hash_min, hash_max):
+    result = execute('git log -p %s^..%s DEPS' % (hash_min, hash_max), show_cmd=False, return_output=True)
+    lines = result[1].split('\n')
+
+    index = 0
+    hash_tmp = ''
+    author_tmp = ''
+    date_tmp = ''
+    subject_tmp = ''
+    rev_tmp = 0
+
+    is_roll = False
+    repo_tmp = ''
+    hash_begin = ''
+    hash_end = ''
+    rev_begin = ''
+    rev_end = ''
+
+    while True:
+        if is_roll and (index >= len(lines) or re.match(str_commit, lines[index])):
+            # smaller than r15949, it's not easy to get ver_begin and ver_end
+            if rev_tmp and (rev_tmp <= 15949 or rev_tmp < rev_min):
+                break
+
+            # 291561 changes from svn id to git hash
+            # 194995 fix a typo
+            # 116215 fix "103944444444" -> "103944"
+            if rev_tmp in [291561, 272672, 194995, 116215] or rev_tmp > rev_max:
+                # reset
+                hash_tmp = ''
+                author_tmp = ''
+                date_tmp = ''
+                subject_tmp = ''
+                rev_tmp = 0
+
+                is_roll = False
+                repo_tmp = ''
+                hash_begin = ''
+                hash_end = ''
+                rev_begin = ''
+                rev_end = ''
+                continue
+
+            # For rev before 241675, many skia hash values are not correct. So we prefer to use svn rev
+            if rev_tmp <= 241675:
+                if not rev_begin or not rev_end:
+                    if not hash_begin or not hash_end:
+                        error('Both hash_begin and hash_end should be valid for rev %s' % rev_tmp)
+                    ver_begin = hash_begin
+                    ver_end = hash_end
+                else:
+                    ver_begin = rev_begin
+                    ver_end = rev_end
+            else:
+                if not hash_begin or not hash_end:
+                    if not rev_begin or not rev_end:
+                        error('Both rev_begin and rev_end should be valid for rev %s' % rev_tmp)
+                    ver_begin = rev_begin
+                    ver_end = rev_end
+                else:
+                    ver_begin = hash_begin
+                    ver_end = hash_end
+
+            (direction, count, vers, _, _) = chromium_get_repo_info(repo_tmp, ver_begin, ver_end)
+            roll_info[rev_tmp] = [hash_tmp, author_tmp, date_tmp, subject_tmp, repo_tmp, ver_begin, ver_end, direction, count, vers]
+
+            if index >= len(lines):
+                break
+
+            # reset
+            hash_tmp = ''
+            author_tmp = ''
+            date_tmp = ''
+            subject_tmp = ''
+            rev_tmp = 0
+
+            is_roll = False
+            repo_tmp = ''
+            hash_begin = ''
+            hash_end = ''
+            rev_begin = ''
+            rev_end = ''
+
+        # no valuable info exists
+        if index >= len(lines):
+            break
+        (hash_tmp, author_tmp, subject_tmp, date_tmp, rev_tmp) = chromium_git_match(lines, index, hash_tmp, author_tmp, subject_tmp, date_tmp, rev_tmp)
+
+        line_strip = lines[index].strip()
+        # skia: It is a mess here. skia_revision may contain svn id or hash. skia_hash only contains hash. svn id and hash may appear at same time
+        # we can get svn id or hash from webkit_revision
+        for repo in chromium_repos:
+            strs_ver = [
+                '  (?:\'|")%s_(?:revision|hash)(?:\'|"): (?:\'|")(\S+)(?:\'|"),' % repo,
+                '    "http://skia.googlecode.com/svn/trunk/src@(\S+)"',
+                '    "http://skia.googlecode.com/svn/trunk@(\S+)"'
+            ]
+            for str_ver in strs_ver:
+                match = re.match('-' + str_ver, line_strip)
+                if match:
+                    if chromium_is_hash(match.group(1)):
+                        hash_begin = match.group(1)
+                    else:
+                        rev_begin = int(match.group(1))
+
+                match = re.match('\+' + str_ver, line_strip)
+                if match:
+                    # This is a bug for chromium r116206 (bed92ce4a201fa067d7f3ac566eb30e06e40ec4e)
+                    if match.group(1) == '103944444444':
+                        rev_end = 103944
+                    # r79257 forgot to delete old svn id
+                    elif match.group(1) == '81851':
+                        rev_end = int(match.group(1))
+                        rev_begin = 81791
+                    elif chromium_is_hash(match.group(1)):
+                        hash_end = match.group(1)
+                    else:
+                        rev_end = int(match.group(1))
+
+                    is_roll = True
+                    repo_tmp = repo
+
+        index += 1
+
+
+# get closest hash that is smaller than designated rev
+def _chromium_get_closest_hash(rev):
+    for majorver in chromium_majorvers:
+        if chromium_majorver_info[majorver][CHROMIUM_MAJORVER_INFO_INDEX_REV] <= rev:
+            return chromium_majorver_info[majorver][CHROMIUM_MAJORVER_INFO_INDEX_HASH]
+    else:
+        return ''
 ## </internal>
 # </functions>

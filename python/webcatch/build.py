@@ -23,9 +23,9 @@ dir_patch = dir_share_python_webcatch + '/patch'
 
 rev_min = 0
 rev_max = 0
-build_fail = 0
+count_fail = 0
 slave_only = False
-rev_sub = ''
+build_roll = False
 
 # (target_os, target_arch, target_module): [binary_format, rev_min_built, rev_max_built]
 comb_valid = {
@@ -57,6 +57,12 @@ COMB_INDEX_TARGET_OS = 0
 COMB_INDEX_TARGET_ARCH = 1
 COMB_INDEX_TARGET_MODULE = 2
 COMB_INDEX_REV = 3
+COMB_INDEX_ROLL_REPO = 4
+COMB_INDEX_ROLL_COUNT = 5
+COMB_INDEX_ROLL_SEQ = 6
+COMB_INDEX_ROLL_VERS = 7
+COMB_INDEX_ROLL_BEGIN = 4  # first index of roll
+COMB_INDEX_ROLL_END = 7  # last index of roll
 
 # [reva, revb], where reva is bad, and revb is good
 # A failure is by default for all combs expect for some specification, like [arm] in comment
@@ -98,13 +104,12 @@ examples:
     parser.add_argument('--target-arch', dest='target_arch', help='target arch', default='all')
     parser.add_argument('--target-module', dest='target_module', help='target module', default='all')
     parser.add_argument('-r', '--rev', dest='rev', help='revisions to build. E.g., 233137, 217377-225138')
-    parser.add_argument('--hash-webkit', dest='hash_webkit', help='hash of webkit')
-    parser.add_argument('--hash-skia', dest='hash_skia', help='hash of skia')
     parser.add_argument('--build', dest='build', help='build', action='store_true')
+    parser.add_argument('--build-roll', dest='build_roll', help='build all commits inside a roll', action='store_true')
     parser.add_argument('--build-every', dest='build_every', help='build every number', type=int, default=10)
-    parser.add_argument('--build-fail-max', dest='build_fail_max', help='maximum failure number of build', type=int, default=1)
     parser.add_argument('--build-skip-mark', dest='build_skip_mark', help='build regardless of comb_valid', action='store_true')
     parser.add_argument('--build-auto-checkout', dest='build_auto_checkout', help='auto checkout if waiting for future commit', action='store_true')
+    parser.add_argument('--count-fail-max', dest='count_fail_max', help='maximum failure number of build', type=int, default=1)
     parser.add_argument('--keep-out', dest='keep_out', help='do not remove out dir after failure', action='store_true')
     parser.add_argument('--slave-only', dest='slave_only', help='only do things at slave machine, for sake of test', action='store_true')
     parser.add_argument('--clean-lock', dest='clean_lock', help='clean all lock files', action='store_true')
@@ -118,7 +123,7 @@ examples:
 
 
 def setup():
-    global rev_min, rev_max, dir_chromium_src_main, combs, build_every, rev_expectfail, slave_only, rev_sub
+    global rev_min, rev_max, dir_src_main, combs, build_every, rev_expectfail, slave_only, build_roll
 
     if args.slave_only:
         slave_only = True
@@ -150,6 +155,7 @@ def setup():
         arg_target_module = args.target_module.split(',')
 
     build_every = args.build_every
+    build_roll = args.build_roll
 
     if args.rev:
         revs_temp = [int(x) for x in args.rev.split('-')]
@@ -184,7 +190,7 @@ def setup():
         if rev_min_round <= rounddown(rev_max, build_every):
             combs.append([target_os, target_arch, target_module, rev_min_round])
 
-    dir_chromium_src_main = dir_project_webcatch_project + '/chromium-' + target_os_main + '/src'
+    dir_src_main = dir_project_webcatch_project + '/chromium-' + target_os_main + '/src'
 
     for rev in expectfail:
         if isinstance(rev, list):
@@ -193,18 +199,9 @@ def setup():
         else:
             rev_expectfail.append(rev)
 
-    subs = []
-    if args.hash_webkit:
-        subs.append('webkit' + args.hash_webkit[:6])
-    if args.hash_skia:
-        subs.append('skia' + args.hash_skia[:6])
-
-    if len(subs):
-        rev_sub = '-'.join(subs)
-
 
 def build():
-    global build_fail
+    global count_fail
 
     if not args.build:
         return
@@ -214,9 +211,9 @@ def build():
         return
 
     _pause()
-    build_fail = 0
+    chromium_get_src_info(dir_src_main, rev_min, rev_max)
     interval_git = 300
-    rev_git_max = _chromium_get_rev_max(need_fetch=False)
+    rev_git_max = chromium_get_rev_max(dir_src_main)
     time_git = 0
     comb_next = _get_comb_next()
     rev_next = comb_next[COMB_INDEX_REV]
@@ -225,11 +222,11 @@ def build():
         if rev_next > rev_max:
             return
         elif rev_next <= rev_git_max:
-            _build(comb_next)
+            _build_comb(comb_next)
             comb_next = _get_comb_next()
             rev_next = comb_next[COMB_INDEX_REV]
         elif args.build_auto_checkout:
-            rev_git_max = _chromium_get_rev_max(need_fetch=True)
+            rev_git_max = chromium_fetch(dir_src_main)
             time_git = get_epoch_second()
             if rev_next > rev_git_max:
                 return
@@ -239,7 +236,7 @@ def build():
                 info('Sleeping ' + str(interval_git) + ' seconds...')
                 time.sleep(interval_git)
 
-            rev_git_max = _chromium_get_rev_max(need_fetch=True)
+            rev_git_max = chromium_fetch(dir_src_main)
             time_git = get_epoch_second()
 
 
@@ -482,76 +479,134 @@ def _move_to_server(file, rev, target_os, target_arch, target_module):
         return True
 
 
-def _build(comb_next):
-    comb_next_target_os = comb_next[COMB_INDEX_TARGET_OS]
-    comb_next_target_arch = comb_next[COMB_INDEX_TARGET_ARCH]
-    comb_next_target_module = comb_next[COMB_INDEX_TARGET_MODULE]
-    comb_next_target_rev = comb_next[COMB_INDEX_REV]
-    comb_next_name = _get_comb_name(comb_next_target_os, comb_next_target_arch, comb_next_target_module, str(comb_next_target_rev))
-    if not slave_only:
-        dashboard('[webcatch] Begin ' + comb_next_name)
-    result = _build_one(comb_next)
-    if not slave_only:
-        dashboard('[webcatch] End ' + comb_next_name)
-    comb_next[COMB_INDEX_REV] += build_every
-    if result:
-        build_fail = 0
+# get the smallest comb
+def _get_comb_next():
+    if build_roll:
+        for comb in combs:
+            _add_roll_info(comb)
+
+    while True:
+        index_min = 0
+        for index in range(1, len(combs)):
+            if combs[index][COMB_INDEX_REV] < combs[index_min][COMB_INDEX_REV] or \
+                    _comb_is_roll(combs[index]) and \
+                    _comb_is_roll(combs[index_min]) and \
+                    combs[index][COMB_INDEX_REV] == combs[index_min][COMB_INDEX_REV] and \
+                    combs[index][COMB_INDEX_ROLL_SEQ] < combs[index_min][COMB_INDEX_ROLL_SEQ]:
+                index_min = index
+
+        if combs[index_min][COMB_INDEX_REV] > rev_max:
+            return combs[index_min]
+
+        if _comb_is_built(combs[index_min]):
+            comb = combs[index_min]
+            if _comb_is_roll(comb):
+                comb_tmp = comb[:-1]
+            else:
+                comb_tmp = comb
+            info(str(comb_tmp) + ' has been built')
+            _march_comb(comb)
+        else:
+            return combs[index_min]
+
+
+def _march_comb(comb):
+    if _comb_is_roll(comb):
+        roll_seq_tmp = comb[COMB_INDEX_ROLL_SEQ] + 1
+        if roll_seq_tmp >= comb[COMB_INDEX_ROLL_COUNT]:
+            # build the rev without roll
+            del comb[COMB_INDEX_ROLL_BEGIN:]
+        else:
+            comb[COMB_INDEX_ROLL_SEQ] = roll_seq_tmp
     else:
-        build_fail += 1
-        if build_fail >= args.build_fail_max:
+        comb[COMB_INDEX_REV] += build_every
+        del comb[COMB_INDEX_ROLL_BEGIN:]
+        if comb[COMB_INDEX_REV] > rev_max:
+            return
+        if build_roll:
+            _add_roll_info(comb)
+
+
+def _build_comb(comb):
+    global count_fail
+
+    comb_target_os = comb[COMB_INDEX_TARGET_OS]
+    comb_target_arch = comb[COMB_INDEX_TARGET_ARCH]
+    comb_target_module = comb[COMB_INDEX_TARGET_MODULE]
+    comb_target_rev = comb[COMB_INDEX_REV]
+    comb_name = _get_comb_name(comb_target_os, comb_target_arch, comb_target_module, str(comb_target_rev))
+    if not slave_only:
+        dashboard('[webcatch] Begin ' + comb_name)
+    result = _build_one(comb)
+    if not slave_only:
+        dashboard('[webcatch] End ' + comb_name)
+
+    _march_comb(comb)
+    if result:
+        count_fail = 0
+    else:
+        count_fail += 1
+        if count_fail >= args.count_fail_max:
             error('You have reached maximum failure number')
 
 
-def _get_file_name(rev, type):
-    name = str(rev)
-    if rev_sub:
-        name += '/' + rev_sub
-    name += '.%s' % type
-    return name
+def _build_one(comb):
+    has_roll = _comb_is_roll(comb)
+    target_os = comb[COMB_INDEX_TARGET_OS]
+    target_arch = comb[COMB_INDEX_TARGET_ARCH]
+    target_module = comb[COMB_INDEX_TARGET_MODULE]
+    rev = comb[COMB_INDEX_REV]
 
+    if has_roll:
+        roll_repo = comb[COMB_INDEX_ROLL_REPO]
+        roll_seq = comb[COMB_INDEX_ROLL_SEQ]
+        roll_vers = comb[COMB_INDEX_ROLL_VERS]
+    else:
+        roll_repo = ''
+        roll_seq = 0
+        roll_vers = []
 
-def _build_one(comb_next):
-    (target_os, target_arch, target_module, rev) = comb_next
     comb_name = _get_comb_name(target_os, target_arch, target_module)
     dir_comb = dir_project_webcatch_out + '/' + comb_name
 
-    if rev_sub:
+    # expectfail
+    if rev in rev_expectfail:
+        file_final = dir_comb + '/' + _get_file_name(rev, 'EXPECTFAIL', roll_vers, roll_seq)
+        execute('touch ' + file_final)
+        if not slave_only:
+            if not _move_to_server(file_final, rev, target_os, target_arch, target_module):
+                _report_fail('upload')
+        return True
+
+    # null
+    if not chromium_get_hash(dir_src_main, rev):
+        file_final = dir_comb + '/' + _get_file_name(rev, 'NULL', roll_vers, roll_seq)
+        execute('touch ' + file_final)
+        if not slave_only:
+            if not _move_to_server(file_final, rev, target_os, target_arch, target_module):
+                _report_fail('upload')
+        return True
+
+    if has_roll:
         if slave_only:
             ensure_dir(dir_comb + '/' + str(rev))
         else:
             ensure_dir(dir_server_chromium + '/' + comb_name + '/' + str(rev), server=server_webcatch[MACHINES_INDEX_HOSTNAME])
 
-    if rev in rev_expectfail:
-        file_final = dir_comb + '/' + _get_file_name(rev, 'EXPECTFAIL')
-        execute('touch ' + file_final)
-        if not slave_only:
-            if not _move_to_server(file_final, rev, target_os, target_arch, target_module):
-                _report_fail('upload')
-        return True
+    info('Begin to build ' + comb_name + '@' + _get_file_name(rev, 'apk', roll_vers, roll_seq))
 
-    if not chromium_get_hash(dir_chromium_src_main, rev):
-        file_final = dir_comb + '/' + _get_file_name(rev, 'NULL')
-        execute('touch ' + file_final)
-        if not slave_only:
-            if not _move_to_server(file_final, rev, target_os, target_arch, target_module):
-                _report_fail('upload')
-        return True
-
-    info('Begin to build ' + comb_name + '@' + str(rev) + '...')
     dir_repo = dir_project_webcatch_project + '/chromium-' + target_os
-    file_log = dir_project_webcatch_log + '/' + comb_name + '@' + str(rev) + '.log'
+    file_log = dir_project_webcatch_log + '/' + comb_name + '@' + _get_file_name(rev, 'log', roll_vers, roll_seq)
 
     # lock
     if not slave_only:
-        file_lock = dir_server_chromium + '/' + comb_name + '/' + _get_file_name(rev, 'LOCK')
+        file_lock = dir_server_chromium + '/' + comb_name + '/' + _get_file_name(rev, 'LOCK', roll_vers, roll_seq)
         execute(_remotify_cmd('touch ' + file_lock))
+    else:
+        file_lock = ''
 
     # sync
     cmd_sync = python_share_chromium + ' --sync --sync-reset --dir-root ' + dir_repo + ' --rev ' + str(rev)
-    if args.hash_webkit:
-        cmd_sync += ' --hash-webkit %s' % args.hash_webkit
-    if args.hash_skia:
-        cmd_sync += ' --hash-skia %s' % args.hash_skia
     result = execute(cmd_sync, dryrun=DRYRUN, interactive=True)
     if result[0]:
         cmd = python_share_chromium + ' --revert --dir-root ' + dir_repo
@@ -561,6 +616,14 @@ def _build_one(comb_next):
         result = execute(cmd_sync, dryrun=DRYRUN, interactive=True)
         if result[0]:
             _report_fail('sync', file_lock)
+
+    if has_roll:
+        backup_dir(dir_src_main + '/' + chromium_repo_path[roll_repo])
+        roll_hash = roll_vers[roll_seq]
+        if chromium_is_hash(roll_hash):
+            error('%s is not a hash' % roll_hash)
+        execute('git reset --hard %s' % roll_hash, dryrun=False, show_cmd=True)
+        restore_dir()
 
     _patch_after_sync(target_os, target_arch, target_module, rev)
 
@@ -604,11 +667,11 @@ def _build_one(comb_next):
     if target_os == 'android' and target_module in ['content_shell', 'chrome_shell', 'webview_shell']:
         name_apk = chromium_android_info[target_module][CHROMIUM_ANDROID_INFO_INDEX_APK]
         if result_build[0] or not os.path.exists(dir_out_build_type + '/apks/%s.apk' % name_apk):
-            file_final = dir_comb + '/' + _get_file_name(rev, 'FAIL')
+            file_final = dir_comb + '/' + _get_file_name(rev, 'FAIL', roll_vers, roll_seq)
             execute('touch ' + file_final)
             result = False
         else:
-            file_final = dir_comb + '/' + _get_file_name(rev, 'apk')
+            file_final = dir_comb + '/' + _get_file_name(rev, 'apk', roll_vers, roll_seq)
             execute('cp ' + dir_out_build_type + '/apks/%s.apk ' % name_apk + file_final, dryrun=DRYRUN)
             execute('rm -f ' + file_log)
             result = True
@@ -665,35 +728,51 @@ def _build_one(comb_next):
     return result
 
 
-# get the smallest rev in combs
-def _get_comb_next():
-    while True:
-        index_min = 0
-        for index in range(1, len(combs)):
-            if combs[index][COMB_INDEX_REV] < combs[index_min][COMB_INDEX_REV]:
-                index_min = index
-
-        if combs[index_min][COMB_INDEX_REV] > rev_max:
-            return combs[index_min]
-
-        if _rev_is_built(combs[index_min]):
-            info(str(combs[index_min]) + ' has been built')
-            combs[index_min][COMB_INDEX_REV] += build_every
-        else:
-            return combs[index_min]
+def _get_file_name(rev, type, roll_vers, roll_seq):
+    name = str(rev)
+    if roll_vers:
+        name += '/%03d-%s' % (roll_seq, roll_vers[roll_seq])
+    name += '.%s' % type
+    return name
 
 
-def _rev_is_built(comb, rand=False):
+def _add_roll_info(comb):
+    if _comb_is_roll(comb):
+        return
+    rev_max = chromium_get_rev_max(dir_src_main)
+    rev = comb[COMB_INDEX_REV]
+    if rev > rev_max:
+        return
+
+    chromium_get_src_info(dir_src_main, rev, rev)
+    roll_info = chromium_src_info[dir_src_main][CHROMIUM_SRC_INFO_INDEX_ROLL_INFO]
+    if roll in roll_info:
+        comb.extend(range(COMB_INDEX_ROLL_BEGIN, COMB_INDEX_ROLL_END + 1))
+        info = roll_info[roll]
+        comb[COMB_INDEX_ROLL_REPO] = info[CHROMIUM_ROLL_INFO_INDEX_REPO]
+        comb[COMB_INDEX_ROLL_COUNT] = info[CHROMIUM_ROLL_INFO_INDEX_COUNT]
+        comb[COMB_INDEX_ROLL_SEQ] = 0
+        comb[COMB_INDEX_ROLL_VERS] = info[CHROMIUM_ROLL_INFO_INDEX_VERS]
+
+
+def _comb_is_roll(comb):
+    return len(comb) > COMB_INDEX_ROLL_BEGIN
+
+
+def _comb_is_built(comb, rand=False):
     target_os = comb[COMB_INDEX_TARGET_OS]
     target_arch = comb[COMB_INDEX_TARGET_ARCH]
     target_module = comb[COMB_INDEX_TARGET_MODULE]
     rev = comb[COMB_INDEX_REV]
+    has_roll = _comb_is_roll(comb)
+    if has_roll:
+        roll_seq = comb[COMB_INDEX_ROLL_SEQ]
     comb_name = _get_comb_name(target_os, target_arch, target_module)
 
     if slave_only:
         cmd = 'ls ' + dir_project_webcatch_out + '/' + comb_name + '/' + str(rev)
-        if rev_sub:
-            cmd += '/*%s*' % rev_sub
+        if has_roll:
+            cmd += '/%s*' % _get_roll_seq_str(roll_seq)
         else:
             cmd += '\.*'
         result = execute(cmd, show_cmd=False)
@@ -709,11 +788,11 @@ def _rev_is_built(comb, rand=False):
                 return True
 
         cmd = 'ls ' + dir_server_chromium + '/' + comb_name + '/' + str(rev)
-        if rev_sub:
-            cmd += '/*%s*' % rev_sub
+        if has_roll:
+            cmd += '/%s*' % _get_roll_seq_str(roll_seq)
         else:
             cmd += '\.*'
-        if _rev_is_built_one(cmd):
+        if _comb_is_built_one(cmd):
             return True
 
         # Be cautious on not built
@@ -721,14 +800,14 @@ def _rev_is_built(comb, rand=False):
         info('Sleep %s seconds and check again to ensure %s is not built yet' % (str(second), str(comb)))
         time.sleep(second)
 
-        if _rev_is_built_one(cmd):
+        if _comb_is_built_one(cmd):
             return True
         else:
             return False
 
 
 # check if rev is built in server
-def _rev_is_built_one(cmd):
+def _comb_is_built_one(cmd):
     for server in servers_webcatch:
         cmd_server = remotify_cmd(cmd, server=server[MACHINES_INDEX_HOSTNAME])
         result = execute(cmd_server, show_cmd=False)
@@ -751,10 +830,6 @@ def _roundup(num):
 
 def _rounddown(num):
     return rounddown(num, build_every)
-
-
-def _chromium_get_rev_max(need_fetch=True):
-    return chromium_get_rev_max(dir_chromium_src_main, need_fetch=need_fetch)
 
 
 def _report_fail(phase, file_lock=''):
@@ -792,6 +867,10 @@ def _pause():
                 continue
             else:
                 break
+
+
+def _get_roll_seq_str(seq):
+    return '%03d' % seq
 # </internal>
 
 

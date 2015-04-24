@@ -214,11 +214,11 @@ def _bisect(index_small, index_big):
             dir_src = dir_chromium + '/src'
             suspect_log = dir_share_ignore_webcatch_log + '/suspect.log'
             execute('rm -f ' + suspect_log)
-            rev_hash = chromium_get_rev_hash(dir_src, rev_small_final + 1, rev_big_final)
-            revs = sorted(rev_hash.keys())
+
             backup_dir(dir_src)
-            for rev in revs:
-                execute('git show ' + rev_hash[rev] + ' >>' + suspect_log, show_cmd=True)
+            for rev in range(rev_small_final + 1, rev_big_final + 1):
+                hash_tmp = chromium_get_rev(dir_src, rev)
+                execute('git show ' + hash_tmp + ' >>' + suspect_log, show_cmd=True)
             restore_dir()
             info('Check ' + suspect_log + ' for suspected checkins')
 

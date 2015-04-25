@@ -47,7 +47,8 @@ except:
     'Please install package pexpect'
 
 # pesudo usage to mute linter
-codecs, collections, fileinput, HTMLParser, BadStatusLine, json, Pool, operator, pickle, random, urllib2, pexpect
+if 0:
+    codecs, collections, fileinput, HTMLParser, BadStatusLine, json, Pool, operator, pickle, random, urllib2, pexpect
 # </import>
 
 # <globals>

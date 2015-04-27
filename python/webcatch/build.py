@@ -731,7 +731,7 @@ def _build_one(comb):
 def _get_file_name(rev, type, roll_vers, roll_seq):
     name = str(rev)
     if roll_vers:
-        name += '/%03d-%s' % (roll_seq, roll_vers[roll_seq])
+        name += '/' + CHROMIUM_ROLL_FORMAT % roll_seq + '-%s' % roll_vers[roll_seq]
     name += '.%s' % type
     return name
 
@@ -870,7 +870,7 @@ def _pause():
 
 
 def _get_roll_seq_str(seq):
-    return '%03d' % seq
+    return CHROMIUM_ROLL_FORMAT % seq
 # </internal>
 
 

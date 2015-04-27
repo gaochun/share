@@ -37,15 +37,16 @@ examples:
     group_device.add_argument('--device-governor', dest='device_governor', help='device governor')
 
     group_module = parser.add_argument_group('module')
-    group_module.add_argument('--module-arch', dest='module_arch', help='module arch')
+    group_module.add_argument('--module-arch', dest='module_arch', help='module arch', default='x86')
     group_module.add_argument('--module-driver', dest='module_driver', help='module driver')
     group_module.add_argument('--module-mode', dest='module_mode', help='module mode')
-    group_module.add_argument('--module-name', dest='module_name', help='module name', default='chrome_stable')
-    group_module.add_argument('--module-os', dest='module_os', help='module os')
+    group_module.add_argument('--module-name', dest='module_name', help='module name', default='chrome_shell')
+    group_module.add_argument('--module-os', dest='module_os', help='module os', default='android')
     group_module.add_argument('--module-path', dest='module_path', help='module path')
     group_module.add_argument('--module-proxy', dest='module_proxy', help='module proxy')
     group_module.add_argument('--module-switch', dest='module_switch', help='module switch')
     group_module.add_argument('--module-version', dest='module_version', help='module version')
+    group_module.add_argument('--module-roll', dest='module_roll', type=int, help='index in a roll')
 
     group_case = parser.add_argument_group('case')
     group_case.add_argument('--case-name', dest='case_name', help='case name')
@@ -404,7 +405,25 @@ class Suite:
                 if module.name == 'chrome_stable' or module.name == 'chrome_beta':
                     module_path = path_web_chrome_android + '/%s-%s-chrome/%s-%s/Chrome.apk' % (module.os, module.arch, module.version, module.name.replace('chrome_', ''))
                 elif module.name == 'content_shell' or module.name == 'webview_shell' or module.name == 'chrome_shell':
-                    module_path = path_web_webcatch + '/%s-%s-%s/%s.apk' % (module.os, module.arch, module.name, module.version)
+                    if module.roll:
+                        path_server = path_web_webcatch + '/%s-%s-%s/%s' % (module.os, module.arch, module.name, module.version)
+                        try:
+                            u = urllib2.urlopen(path_server)
+                        except:
+                            error('Can NOT open %s' % path_server)
+                        html = u.read().decode('utf-8')
+                        lines = html.split('\n')
+                        for line in lines:
+                            match = re.search('(' + CHROMIUM_ROLL_FORMAT % module.roll + '-\S{40}.apk)', line)
+                            if match:
+                                file_apk = match.group(1)
+                                break
+                        else:
+                            error('Could not find designed apk for the roll')
+
+                        module_path = path_server + '/%s' % file_apk
+                    else:
+                        module_path = path_web_webcatch + '/%s-%s-%s/%s.apk' % (module.os, module.arch, module.name, module.version)
                 else:
                     error('module path is not correct')
             else:
@@ -412,10 +431,14 @@ class Suite:
             if re.match('http', module_path):
                 backup_dir(dir_share_ignore_webmark_download)
                 if module.os == 'android':
-                    module_file = '%s-%s-%s-%s.apk' % (module.os, module.arch, module.name, module.version)
+                    module_file = '%s-%s-%s-%s' % (module.os, module.arch, module.name, module.version)
+                    if module.roll:
+                        module_file += '-' + CHROMIUM_ROLL_FORMAT % module.roll
+                    module_file += '.apk'
                     if not os.path.exists(module_file):
                         result = execute('wget %s -O %s' % (module_path, module_file), dryrun=False)
                         if result[0]:
+                            execute('rm -f %s' % module_file, show_cmd=False)
                             error('Failed to download ' + module_path)
                     module_path = dir_share_ignore_webmark_download + '/' + module_file
                 restore_dir()
@@ -534,6 +557,7 @@ class Module:
         ['proxy', 'O', 'O'],
         ['switch', 'O', 'P'],
         ['version', 'O', 'P', '0'],
+        ['roll', 'O', 'P', 0],
     ]
 
     def __init__(self, data):

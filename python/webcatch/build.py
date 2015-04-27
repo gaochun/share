@@ -740,11 +740,11 @@ def _add_roll_info(comb):
     if _comb_is_roll(comb):
         return
     rev_max = chromium_get_rev_max(dir_src_main)
-    rev = comb[COMB_INDEX_REV]
-    if rev > rev_max:
+    roll = comb[COMB_INDEX_REV]
+    if roll > rev_max:
         return
 
-    chromium_get_src_info(dir_src_main, rev, rev)
+    chromium_get_src_info(dir_src_main, roll, roll)
     roll_info = chromium_src_info[dir_src_main][CHROMIUM_SRC_INFO_INDEX_ROLL_INFO]
     if roll in roll_info:
         comb.extend(range(COMB_INDEX_ROLL_BEGIN, COMB_INDEX_ROLL_END + 1))

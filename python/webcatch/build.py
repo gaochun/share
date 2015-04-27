@@ -34,13 +34,13 @@ comb_valid = {
     ('android', 'arm', 'content_shell'): ['(.*).apk$', 260368, 301780],
     ('android', 'arm64', 'content_shell'): ['(.*).apk$', 260368, 301780],
 
-    ('android', 'x86', 'chrome_shell'): ['(.*).apk$', 297098, 320070],
-    ('android', 'x86_64', 'chrome_shell'): ['(.*).apk$', 297098, 320070],
-    ('android', 'arm', 'chrome_shell'): ['(.*).apk$', 297098, 320070],
-    ('android', 'arm64', 'chrome_shell'): ['(.*).apk$', 297098, 320070],
+    ('android', 'x86', 'chrome_shell'): ['(.*).apk$', 297098, 326520],
+    ('android', 'x86_64', 'chrome_shell'): ['(.*).apk$', 297098, 326520],
+    ('android', 'arm', 'chrome_shell'): ['(.*).apk$', 297098, 326520],
+    ('android', 'arm64', 'chrome_shell'): ['(.*).apk$', 297098, 326520],
 
-    ('android', 'x86', 'webview_shell'): ['(.*).apk$', 297098, 320070],
-    ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 297098, 320070],
+    ('android', 'x86', 'webview_shell'): ['(.*).apk$', 297098, 326520],
+    ('android', 'x86_64', 'webview_shell'): ['(.*).apk$', 297098, 326520],
     #('android', 'arm', 'webview_shell'): ['(.*).apk$', 297098, 300720],
     #('android', 'arm64', 'webview_shell'): ['(.*).apk$', 297098, 300720],
 
@@ -463,9 +463,9 @@ typedef user_regs_struct regs_struct;
     restore_dir()
 
 
-def _move_to_server(file, rev, target_os, target_arch, target_module):
+def _move_to_server(file, rev, target_os, target_arch, target_module, has_roll):
     dir_comb_server = dir_server_chromium + '/' + _get_comb_name(target_os, target_arch, target_module)
-    if rev_sub:
+    if has_roll:
         dir_comb_server += '/%s' % str(rev)
     if re.match('ubuntu', server_webcatch[MACHINES_INDEX_HOSTNAME]):
         username = 'gyagp'
@@ -574,7 +574,7 @@ def _build_one(comb):
         file_final = dir_comb + '/' + _get_file_name(rev, 'EXPECTFAIL', roll_vers, roll_seq)
         execute('touch ' + file_final)
         if not slave_only:
-            if not _move_to_server(file_final, rev, target_os, target_arch, target_module):
+            if not _move_to_server(file_final, rev, target_os, target_arch, target_module, has_roll):
                 _report_fail('upload')
         return True
 
@@ -583,7 +583,7 @@ def _build_one(comb):
         file_final = dir_comb + '/' + _get_file_name(rev, 'NULL', roll_vers, roll_seq)
         execute('touch ' + file_final)
         if not slave_only:
-            if not _move_to_server(file_final, rev, target_os, target_arch, target_module):
+            if not _move_to_server(file_final, rev, target_os, target_arch, target_module, has_roll):
                 _report_fail('upload')
         return True
 
@@ -720,7 +720,7 @@ def _build_one(comb):
 
     # backup
     if not slave_only:
-        result = _move_to_server(file_final, rev, target_os, target_arch, target_module)
+        result = _move_to_server(file_final, rev, target_os, target_arch, target_module, has_roll)
         execute(_remotify_cmd('rm -f ' + file_lock))
         if not result:
             _report_fail('upload')

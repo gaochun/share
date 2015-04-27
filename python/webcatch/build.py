@@ -746,7 +746,7 @@ def _add_roll_info(comb):
 
     chromium_get_src_info(dir_src_main, roll, roll)
     roll_info = chromium_src_info[dir_src_main][CHROMIUM_SRC_INFO_INDEX_ROLL_INFO]
-    if roll in roll_info:
+    if roll in roll_info and roll_info[roll][CHROMIUM_ROLL_INFO_INDEX_COUNT] > 1:
         comb.extend(range(COMB_INDEX_ROLL_BEGIN, COMB_INDEX_ROLL_END + 1))
         info = roll_info[roll]
         comb[COMB_INDEX_ROLL_REPO] = info[CHROMIUM_ROLL_INFO_INDEX_REPO]

@@ -1,1 +1,1 @@
-chrome_shell --disable-fre --disable-web-security --enable-remote-debugging --ignore-certificate-errors --metrics-recording-only
+chrome_shell --disable-fre --disable-web-security --enable-remote-debugging --ignore-certificate-errors --metrics-recording-only --enable-unsafe-es3-apis

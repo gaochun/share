@@ -136,7 +136,7 @@ class Benchmark(object):
                     times_skip = times_skip - 1
                     continue
                 result = self.get_result(driver)
-                info('Round result: ' + ','.join(result))
+                info('Round result: ' + ','.join([str(x) for x in result]))
                 results.append([float(x) for x in result])
                 if self.run_fail:
                     break

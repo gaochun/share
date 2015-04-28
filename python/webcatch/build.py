@@ -639,7 +639,7 @@ def _build_one(comb):
     if has_roll:
         backup_dir(dir_src_main + '/' + chromium_repo_path[roll_repo])
         roll_hash = roll_vers[roll_seq]
-        if chromium_is_hash(roll_hash):
+        if not chromium_is_hash(roll_hash):
             error('%s is not a hash' % roll_hash)
         execute('git reset --hard %s' % roll_hash, dryrun=False, show_cmd=True)
         restore_dir()

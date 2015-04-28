@@ -317,6 +317,9 @@ def _patch_after_sync(target_os, target_arch, target_module, rev):
     if rev >= 276595 and rev < 277148:
         _patch_func('regs_struct')
 
+    if rev >= 286756 and rev <= 304029:
+        _patch_func('rn_check')
+
     restore_dir()
 
 
@@ -456,6 +459,22 @@ typedef user_regs_struct regs_struct;
     for line in fileinput.input(file, inplace=1):
         if need_change and re.search(old, line):
             line = line.replace(old, new)
+            need_change = False
+        # We can not use print here as it will generate blank line
+        sys.stdout.write(line)
+    fileinput.close()
+    restore_dir()
+
+
+def _patch_rn_check():
+    backup_dir('src/v8/src/arm')
+
+    file = 'assembler-arm.cc'
+    old = 'rn should never be ip'
+    need_change = True
+    for line in fileinput.input(file, inplace=1):
+        if need_change and re.search(old, line):
+            line = line.replace('CHECK', '// CHECK')
             need_change = False
         # We can not use print here as it will generate blank line
         sys.stdout.write(line)

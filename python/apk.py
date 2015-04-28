@@ -46,7 +46,7 @@ def parse_arg():
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog='''
 examples:
-  python %(prog)s --email your-email@gmail.com --password your-password --name com.arttech.xbugsfree --country 'Italy' --operator '3' --device your-device-id
+  python %(prog)s --email your-email@gmail.com --password your-password --package com.android.chrome --device your-device-id
 ''')
 
     parser.add_argument('--email', dest='email', help='Your android account email.')
